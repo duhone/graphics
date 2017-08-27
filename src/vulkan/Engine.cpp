@@ -3,9 +3,11 @@
 #include "vulkan/vulkan.h"
 #include <memory>
 #include <exception>
+#include <vector>
 
 using namespace CR::Graphics;
 using namespace std;
+using namespace std::string_literals;
 
 namespace {
 	constexpr uint MajorVersion = 0; //64K max
@@ -27,6 +29,21 @@ namespace {
 }
 
 Engine::Engine(const EngineSettings& a_settings) {
+
+	vector<string> enabledLayers;
+	if(a_settings.EnableDebug) {
+		uint numLayers;
+		vkEnumerateInstanceLayerProperties(&numLayers, nullptr);
+		vector<VkLayerProperties> layers;
+		layers.resize(numLayers);
+		vkEnumerateInstanceLayerProperties(&numLayers, data(layers));
+		for(uint i = 0; i < numLayers; ++i) {
+			if("VK_LAYER_LUNARG_standard_validation"s == layers[i].layerName) {
+				enabledLayers.push_back(layers[i].layerName);
+			}
+		}
+	}
+
 	VkApplicationInfo appInfo;
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pNext = nullptr;
@@ -35,14 +52,19 @@ Engine::Engine(const EngineSettings& a_settings) {
 	appInfo.pEngineName = "Conjure";
 	appInfo.engineVersion = Version;
 	appInfo.apiVersion = VK_API_VERSION_1_0;
+	
+	vector<const char *> enabledLayersPtrs;
+	for(auto & layer : enabledLayers) {
+		enabledLayersPtrs.push_back(layer.c_str());
+	}
 
 	VkInstanceCreateInfo createInfo;
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pNext = nullptr;
 	createInfo.flags = 0;
 	createInfo.pApplicationInfo = &appInfo;
-	createInfo.enabledLayerCount = 0;
-	createInfo.ppEnabledLayerNames = nullptr;
+	createInfo.enabledLayerCount = (uint32_t)size(enabledLayersPtrs);
+	createInfo.ppEnabledLayerNames = data(enabledLayersPtrs);
 	createInfo.enabledExtensionCount = 0;
 	createInfo.ppEnabledExtensionNames = nullptr;
 
