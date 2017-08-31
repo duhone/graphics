@@ -4,6 +4,7 @@
 #include <memory>
 #include <exception>
 #include <vector>
+#include <iostream>
 
 using namespace CR::Graphics;
 using namespace std;
@@ -12,7 +13,7 @@ using namespace std::string_literals;
 namespace {
 	constexpr uint MajorVersion = 0; //64K max
 	constexpr uint MinorVersion = 1; //256 max
-	constexpr uint PatchVersion = 0; //256 max
+	constexpr uint PatchVersion = 1; //256 max
 	constexpr uint Version = (MajorVersion << 16) || (MajorVersion << 8) || (PatchVersion);
 
 	class Engine {
@@ -68,10 +69,55 @@ Engine::Engine(const EngineSettings& a_settings) {
 	createInfo.enabledExtensionCount = 0;
 	createInfo.ppEnabledExtensionNames = nullptr;
 
-	VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
-	if(result != VK_SUCCESS) {
-		throw runtime_error(TranslateError(result).data());
-	} 
+	TranslateError(vkCreateInstance(&createInfo, nullptr, &m_Instance));
+	
+	vector<VkPhysicalDevice> physicalDevices;
+	uint32_t deviceCount;
+	TranslateError(vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr));
+	physicalDevices.resize(deviceCount);
+	TranslateError(vkEnumeratePhysicalDevices(m_Instance, &deviceCount, data(physicalDevices)));
+
+	VkPhysicalDevice selectedDevice;
+	bool foundDevice = false;
+	for(auto& device : physicalDevices) {
+		VkPhysicalDeviceProperties props;
+		vkGetPhysicalDeviceProperties(device, &props);
+		cout << "Device Name: " << props.deviceName << endl;
+		VkPhysicalDeviceMemoryProperties memProps;
+		vkGetPhysicalDeviceMemoryProperties(device, &memProps);
+		for(uint32_t i = 0; i < memProps.memoryTypeCount; ++i) {
+			if(memProps.memoryTypes[i].propertyFlags == VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+				cout << "Device Local Memory Amount: " << memProps.memoryHeaps[memProps.memoryTypes[i].heapIndex].size/(1024*1024) << "MB" << endl;
+			}
+		}
+
+		uint32_t queueFamilyCount;
+		vector<VkQueueFamilyProperties> queueProps;
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+		queueProps.resize(queueFamilyCount);
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, data(queueProps));
+		bool supportsGraphics = false;
+		bool supportsTransfer = false;
+		for(const auto& queueFam : queueProps) {
+			//This one should only be false for tesla compute cards and similiar
+			if((queueFam.queueFlags & VK_QUEUE_GRAPHICS_BIT) && queueFam.queueCount >= 1) {
+				supportsGraphics = true;
+			}
+			if((queueFam.queueFlags & VK_QUEUE_TRANSFER_BIT) && queueFam.queueCount >= 1) {
+				supportsTransfer = true;
+			}
+		}
+		//TODO: We dont have a good heuristic for selecting a device, for now just take first one that supports graphics and hope for the best.
+		//My machine has only one, so cant test a better implementation.
+		if(supportsGraphics && supportsTransfer) {
+			foundDevice = true;
+			selectedDevice = device;
+			break;
+		}
+	}
+	if(!foundDevice) {
+		throw runtime_error("Could not find a valid vulkan device");
+	}
 }
 
 Engine::~Engine() {
