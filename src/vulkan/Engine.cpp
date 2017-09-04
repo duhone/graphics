@@ -24,6 +24,7 @@ namespace {
 		Engine& operator=(const Engine&) = delete;
 	private:
 		VkInstance m_Instance{nullptr};
+		VkDevice m_Device;
 	};
 
 	unique_ptr<Engine> g_Engine;
@@ -79,6 +80,8 @@ Engine::Engine(const EngineSettings& a_settings) {
 
 	VkPhysicalDevice selectedDevice;
 	bool foundDevice = false;
+	int graphicsQueueIndex = -1;
+	int transferQueueIndex = -1;
 	for(auto& device : physicalDevices) {
 		VkPhysicalDeviceProperties props;
 		vkGetPhysicalDeviceProperties(device, &props);
@@ -86,7 +89,7 @@ Engine::Engine(const EngineSettings& a_settings) {
 		VkPhysicalDeviceMemoryProperties memProps;
 		vkGetPhysicalDeviceMemoryProperties(device, &memProps);
 		for(uint32_t i = 0; i < memProps.memoryTypeCount; ++i) {
-			if(memProps.memoryTypes[i].propertyFlags == VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+			if(memProps.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
 				cout << "Device Local Memory Amount: " << memProps.memoryHeaps[memProps.memoryTypes[i].heapIndex].size/(1024*1024) << "MB" << endl;
 			}
 		}
@@ -98,18 +101,24 @@ Engine::Engine(const EngineSettings& a_settings) {
 		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, data(queueProps));
 		bool supportsGraphics = false;
 		bool supportsTransfer = false;
-		for(const auto& queueFam : queueProps) {
+		for(int i = 0; i < queueProps.size(); ++i) {
 			//This one should only be false for tesla compute cards and similiar
-			if((queueFam.queueFlags & VK_QUEUE_GRAPHICS_BIT) && queueFam.queueCount >= 1) {
+			if((queueProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) && queueProps[i].queueCount >= 1) {
 				supportsGraphics = true;
+				graphicsQueueIndex = i;
 			}
-			if((queueFam.queueFlags & VK_QUEUE_TRANSFER_BIT) && queueFam.queueCount >= 1) {
+			if((queueProps[i].queueFlags & VK_QUEUE_TRANSFER_BIT) && queueProps[i].queueCount >= 1) {
 				supportsTransfer = true;
+				transferQueueIndex = i;
 			}
 		}
+
+		VkPhysicalDeviceFeatures features;
+		vkGetPhysicalDeviceFeatures(device, &features);
+		
 		//TODO: We dont have a good heuristic for selecting a device, for now just take first one that supports graphics and hope for the best.
 		//My machine has only one, so cant test a better implementation.
-		if(supportsGraphics && supportsTransfer) {
+		if(supportsGraphics && supportsTransfer && features.textureCompressionBC && features.fullDrawIndexUint32) {
 			foundDevice = true;
 			selectedDevice = device;
 			break;
@@ -118,6 +127,38 @@ Engine::Engine(const EngineSettings& a_settings) {
 	if(!foundDevice) {
 		throw runtime_error("Could not find a valid vulkan device");
 	}
+
+	VkPhysicalDeviceFeatures requiredFeatures;
+	memset(&requiredFeatures, 0, sizeof(requiredFeatures));
+	requiredFeatures.textureCompressionBC = true;
+	requiredFeatures.fullDrawIndexUint32 = true;
+
+	float graphicsPriority = 1.0f;
+	float transferPriority = 0.0f;
+	VkDeviceQueueCreateInfo queueInfos[2];
+	queueInfos[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueInfos[0].pNext = nullptr;
+	queueInfos[0].flags = 0;
+	queueInfos[0].queueFamilyIndex = graphicsQueueIndex;
+	queueInfos[0].queueCount = 1;
+	queueInfos[0].pQueuePriorities = &graphicsPriority;
+	queueInfos[1] = queueInfos[0];
+	queueInfos[1].queueFamilyIndex = transferQueueIndex;
+	queueInfos[1].pQueuePriorities = &transferPriority;
+
+	VkDeviceCreateInfo createLogDevInfo;
+	createLogDevInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	createLogDevInfo.pNext = nullptr;
+	createLogDevInfo.flags = 0;
+	createLogDevInfo.queueCreateInfoCount = (int)size(queueInfos);
+	createLogDevInfo.pQueueCreateInfos = queueInfos;
+	createLogDevInfo.pEnabledFeatures = &requiredFeatures;
+	createLogDevInfo.enabledLayerCount = 0;
+	createLogDevInfo.ppEnabledLayerNames = nullptr;
+	createLogDevInfo.enabledExtensionCount = 0;
+	createLogDevInfo.ppEnabledExtensionNames = nullptr;
+
+	TranslateError(vkCreateDevice(selectedDevice, &createLogDevInfo, nullptr, &m_Device));
 }
 
 Engine::~Engine() {

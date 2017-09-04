@@ -11,6 +11,6 @@ TEST_CASE("engine creation/destruction", "")
 	settings.EnableDebug = true;
 	settings.TrackMemory = false;
 	
-	CreateEngine(settings);
-	ShutdownEngine();
+	REQUIRE_NOTHROW(CreateEngine(settings));
+	REQUIRE_NOTHROW(ShutdownEngine());
 }
