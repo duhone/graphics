@@ -1,7 +1,7 @@
 #pragma once
 #include "math/Types.h"
 
-namespace CR::Graphics {	
+namespace CR::Graphics {
 	struct EngineSettings {
 		std::string ApplicationName;
 		uint ApplicationVersion{0};
@@ -11,4 +11,4 @@ namespace CR::Graphics {
 
 	void CreateEngine(const EngineSettings& a_settings);
 	void ShutdownEngine();
-}
+}    // namespace CR::Graphics
