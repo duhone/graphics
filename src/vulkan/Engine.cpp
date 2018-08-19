@@ -159,6 +159,7 @@ Engine::Engine(const EngineSettings& a_settings) {
 }
 
 Engine::~Engine() {
+	vkDestroyDevice(m_Device, nullptr);
 	vkDestroyInstance(m_Instance, nullptr);
 }
 
