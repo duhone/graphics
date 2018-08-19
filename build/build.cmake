@@ -17,8 +17,6 @@ set(GRAPHICS_PUBLIC_HDRS
 
 set(GRAPHICS_SRCS
     ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Engine.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/ErrorTranslation.h
-    ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/ErrorTranslation.cpp
 )
 
 set(GRAPHICS_BUILD
