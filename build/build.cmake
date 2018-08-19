@@ -1,3 +1,5 @@
+find_package(Vulkan REQUIRED)
+
 include_directories(
 	"${CMAKE_CURRENT_LIST_DIR}/../inc"
 	$ENV{VULKAN_SDK}/include
@@ -29,6 +31,7 @@ source_group("Public Headers" FILES ${GRAPHICS_PUBLIC_HDRS})
 source_group("Source" FILES ${GRAPHICS_SRCS})
 source_group("Build" FILES ${GRAPHICS_BUILD})
 	
+target_include_directories(graphics PRIVATE Vulkan::Vulkan)
 				
 if(IncludeTests)  
 	###############################################
@@ -45,7 +48,7 @@ set(GRAPHICS_TEST_SRCS
 						${GRAPHICS_TEST_SRCS})
 	
 	target_link_libraries(
-		graphics_tests vulkan-1.lib
+		graphics_tests Vulkan::Vulkan
 	)
 
 	source_group("Source" FILES ${GRAPHICS_TEST_SRCS})
