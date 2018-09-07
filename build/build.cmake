@@ -13,10 +13,13 @@ link_directories(
 ###############################################
 set(GRAPHICS_PUBLIC_HDRS
     ${CMAKE_CURRENT_LIST_DIR}/../inc/Graphics/Engine.h
+    ${CMAKE_CURRENT_LIST_DIR}/../inc/Graphics/Buffer.h
 )
 
 set(GRAPHICS_SRCS
+    ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/EngineInternal.h
     ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Engine.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Buffer.cpp
 )
 
 set(GRAPHICS_BUILD
@@ -38,6 +41,7 @@ if(IncludeTests)
 set(GRAPHICS_TEST_SRCS
     ${CMAKE_CURRENT_LIST_DIR}/../tests/main.cpp
     ${CMAKE_CURRENT_LIST_DIR}/../tests/Engine.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../tests/Buffer.cpp
 )
 	
 	add_executable(graphics_tests  $<TARGET_OBJECTS:graphics>

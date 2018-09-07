@@ -1,5 +1,5 @@
 #include "Graphics/Engine.h"
-#include "ErrorTranslation.h"
+#include "EngineInternal.h"
 #include "vulkan/vulkan.hpp"
 #include <exception>
 #include <iostream>
@@ -23,7 +23,7 @@ namespace {
 		Engine(const Engine&) = delete;
 		Engine& operator=(const Engine&) = delete;
 
-	  private:
+		// private: internal so private anyway
 		vk::Instance m_Instance;
 		vk::Device m_Device;
 	};
@@ -140,4 +140,9 @@ void CR::Graphics::CreateEngine(const EngineSettings& a_settings) {
 
 void CR::Graphics::ShutdownEngine() {
 	g_Engine.reset();
+}
+
+vk::Device& CR::Graphics::GetDevice() {
+	assert(g_Engine.get());
+	return g_Engine->m_Device;
 }
