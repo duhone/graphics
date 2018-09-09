@@ -13,7 +13,7 @@ TEST_CASE("image creation/destruction", "") {
 
 	REQUIRE_NOTHROW(CreateEngine(settings));
 
-	auto image = CreateImage(ImageType::AsRGB, 256, 256, 1, 1);
+	auto image = CreateImage(ImageType::sRGBAUncompressed, 256, 256, 1, 1);
 	image.reset();
 
 	REQUIRE_NOTHROW(ShutdownEngine());

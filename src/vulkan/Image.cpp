@@ -31,20 +31,11 @@ VKImage::VKImage(ImageType a_type, uint a_width, uint a_height, uint a_arrayLaye
 	createInfo.imageType     = vk::ImageType::e2D;
 	createInfo.flags         = vk::ImageCreateFlagBits::e2DArrayCompatible;
 	switch(a_type) {
-		case ImageType::AsRGB:
+		case ImageType::sRGBAUncompressed:
 			createInfo.format = vk::Format::eA8B8G8R8SrgbPack32;
 			break;
-		case ImageType::BC1:
-			createInfo.format = vk::Format::eBc1RgbSrgbBlock;
-			break;
-		case ImageType::BC3:
-			createInfo.format = vk::Format::eBc3SrgbBlock;
-			break;
-		case ImageType::BC4:
-			createInfo.format = vk::Format::eBc4UnormBlock;
-			break;
-		case ImageType::BC5:
-			createInfo.format = vk::Format::eBc5UnormBlock;
+		case ImageType::sRGBACompressed:
+			createInfo.format = vk::Format::eBc7SrgbBlock;
 			break;
 		default:
 			assert(false);

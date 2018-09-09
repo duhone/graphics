@@ -44,6 +44,7 @@ set(GRAPHICS_TEST_SRCS
     ${CMAKE_CURRENT_LIST_DIR}/../tests/main.cpp
     ${CMAKE_CURRENT_LIST_DIR}/../tests/Engine.cpp
     ${CMAKE_CURRENT_LIST_DIR}/../tests/Buffer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../tests/Image.cpp
 )
 	
 	add_executable(graphics_tests  $<TARGET_OBJECTS:graphics>
