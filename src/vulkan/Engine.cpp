@@ -103,6 +103,17 @@ Engine::Engine(const EngineSettings& a_settings) {
 	}
 	if(!foundDevice) { throw runtime_error("Could not find a valid vulkan device"); }
 
+	vk::Format formatsToLog[] = {vk::Format::eBc1RgbSrgbBlock, vk::Format::eBc3SrgbBlock, vk::Format::eBc4UnormBlock,
+	                             vk::Format::eBc5SnormBlock, vk::Format::eA8B8G8R8SrgbPack32};
+	for(auto& format : formatsToLog) {
+		auto formatProps = selectedDevice.getImageFormatProperties(
+		    format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled,
+		    vk::ImageCreateFlagBits::e2DArrayCompatible);
+		cout << to_string(format) << " - Max width: " << formatProps.maxExtent.width
+		     << " Max height: " << formatProps.maxExtent.height << " Max array size: " << formatProps.maxArrayLayers
+		     << endl;
+	}
+
 	vk::PhysicalDeviceFeatures requiredFeatures;
 	requiredFeatures.textureCompressionBC = true;
 	requiredFeatures.fullDrawIndexUint32  = true;
