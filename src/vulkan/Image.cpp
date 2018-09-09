@@ -14,6 +14,7 @@ namespace {
 		virtual ~VKImage();
 
 		vk::Image m_Image;
+		vk::ImageView m_View;
 	};
 }    // namespace
 
@@ -43,6 +44,18 @@ VKImage::VKImage(ImageType a_type, uint a_width, uint a_height, uint a_arrayLaye
 	}
 
 	m_Image = GetDevice().createImage(createInfo);
+
+	vk::ImageViewCreateInfo viewInfo;
+	viewInfo.image                         = m_Image;
+	viewInfo.viewType                      = a_arrayLayers == 1 ? vk::ImageViewType::e2D : vk::ImageViewType::e2DArray;
+	viewInfo.format                        = createInfo.format;
+	viewInfo.subresourceRange.aspectMask   = vk::ImageAspectFlagBits::eColor;
+	viewInfo.subresourceRange.baseMipLevel = 0;
+	viewInfo.subresourceRange.levelCount   = a_mips;
+	viewInfo.subresourceRange.baseArrayLayer = 0;
+	viewInfo.subresourceRange.layerCount     = a_arrayLayers;
+
+	// m_View = GetDevice().createImageView(viewInfo);
 }
 
 VKImage::~VKImage() {
