@@ -14,12 +14,14 @@ link_directories(
 set(GRAPHICS_PUBLIC_HDRS
     ${CMAKE_CURRENT_LIST_DIR}/../inc/Graphics/Engine.h
     ${CMAKE_CURRENT_LIST_DIR}/../inc/Graphics/Buffer.h
+    ${CMAKE_CURRENT_LIST_DIR}/../inc/Graphics/Image.h
 )
 
 set(GRAPHICS_SRCS
     ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/EngineInternal.h
     ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Engine.cpp
     ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Buffer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Image.cpp
 )
 
 set(GRAPHICS_BUILD
