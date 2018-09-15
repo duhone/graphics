@@ -59,6 +59,7 @@ VKImage::VKImage(ImageType a_type, uint a_width, uint a_height, uint a_arrayLaye
 }
 
 VKImage::~VKImage() {
+	// GetDevice().destroyImageView(m_View);
 	GetDevice().destroyImage(m_Image);
 }
 
