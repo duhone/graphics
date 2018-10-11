@@ -26,6 +26,9 @@ namespace {
 		// private: internal so private anyway
 		vk::Instance m_Instance;
 		vk::Device m_Device;
+
+		uint32_t DeviceMemoryIndex{numeric_limits<uint32_t>::max()};
+		uint32_t HostMemoryIndex{numeric_limits<uint32_t>::max()};
 	};
 
 	unique_ptr<Engine> g_Engine;
@@ -69,9 +72,12 @@ Engine::Engine(const EngineSettings& a_settings) {
 		auto props = device.getProperties();
 		cout << "Device Name: " << props.deviceName << endl;
 		auto memProps = device.getMemoryProperties();
+		cout << "  Device max allocations: " << props.limits.maxMemoryAllocationCount << endl;
+		cout << "  Device max array layers: " << props.limits.maxImageArrayLayers << endl;
+		cout << "  Device max 2D image dimensions: " << props.limits.maxImageDimension2D << endl;
 		for(uint32_t i = 0; i < memProps.memoryTypeCount; ++i) {
 			if(memProps.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) {
-				cout << "Device Local Memory Amount: "
+				cout << "  Device Local Memory Amount: "
 				     << memProps.memoryHeaps[memProps.memoryTypes[i].heapIndex].size / (1024 * 1024) << "MB" << endl;
 			}
 		}
@@ -103,15 +109,38 @@ Engine::Engine(const EngineSettings& a_settings) {
 	}
 	if(!foundDevice) { throw runtime_error("Could not find a valid vulkan device"); }
 
-	vk::Format formatsToLog[] = {vk::Format::eBc1RgbSrgbBlock, vk::Format::eBc3SrgbBlock, vk::Format::eBc4UnormBlock,
-	                             vk::Format::eBc5SnormBlock, vk::Format::eA8B8G8R8SrgbPack32};
-	for(auto& format : formatsToLog) {
-		auto formatProps = selectedDevice.getImageFormatProperties(
-		    format, vk::ImageType::e2D, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eSampled,
-		    vk::ImageCreateFlagBits::e2DArrayCompatible);
-		cout << to_string(format) << " - Max width: " << formatProps.maxExtent.width
-		     << " Max height: " << formatProps.maxExtent.height << " Max array size: " << formatProps.maxArrayLayers
-		     << endl;
+	auto memProps = selectedDevice.getMemoryProperties();
+	for(uint32_t i = 0; i < memProps.memoryHeapCount; ++i) {
+		auto heapSize   = memProps.memoryHeaps[i].size / 1024 / 1024;
+		auto& heapFlags = memProps.memoryHeaps[i].flags;
+		if(heapFlags & vk::MemoryHeapFlagBits::eDeviceLocal) {
+			cout << "Device Heap. Size " << heapSize << "MB" << endl;
+		} else {
+			cout << "Host Heap. Size " << heapSize << "MB" << endl;
+		}
+	}
+	for(uint32_t i = 0; i < memProps.memoryTypeCount; ++i) {
+		auto& heapIndex    = memProps.memoryTypes[i].heapIndex;
+		auto& heapFlags    = memProps.memoryTypes[i].propertyFlags;
+		auto printHeapInfo = [&]() {
+			cout << "Device Heap: " << heapIndex << " Type Index: " << i << endl;
+			if(heapFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) { cout << "  Device local" << endl; }
+			if(heapFlags & vk::MemoryPropertyFlagBits::eHostVisible) { cout << "  Host visible" << endl; }
+			if(heapFlags & vk::MemoryPropertyFlagBits::eHostCached) { cout << "  Host cached" << endl; }
+			if(heapFlags & vk::MemoryPropertyFlagBits::eHostCoherent) { cout << "  Host coherent" << endl; }
+		};
+
+		if((heapFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) &&
+		   (DeviceMemoryIndex == numeric_limits<uint32_t>::max())) {
+			DeviceMemoryIndex = i;
+			printHeapInfo();
+		}
+
+		if((heapFlags & vk::MemoryPropertyFlagBits::eHostVisible) &&
+		   (HostMemoryIndex == numeric_limits<uint32_t>::max())) {
+			HostMemoryIndex = i;
+			printHeapInfo();
+		}
 	}
 
 	vk::PhysicalDeviceFeatures requiredFeatures;
@@ -156,4 +185,14 @@ void CR::Graphics::ShutdownEngine() {
 vk::Device& CR::Graphics::GetDevice() {
 	assert(g_Engine.get());
 	return g_Engine->m_Device;
+}
+
+uint32_t CR::Graphics::GetDeviceMemoryIndex() {
+	assert(g_Engine.get());
+	return g_Engine->DeviceMemoryIndex;
+}
+
+uint32_t CR::Graphics::GetHostMemoryIndex() {
+	assert(g_Engine.get());
+	return g_Engine->HostMemoryIndex;
 }
