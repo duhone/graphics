@@ -31,7 +31,10 @@ namespace {
 		uint32_t HostMemoryIndex{numeric_limits<uint32_t>::max()};
 	};
 
-	unique_ptr<Engine> g_Engine;
+	unique_ptr<Engine>& GetEngine() {
+		static unique_ptr<Engine> engine;
+		return engine;
+	}
 }    // namespace
 
 Engine::Engine(const EngineSettings& a_settings) {
@@ -175,24 +178,26 @@ Engine::~Engine() {
 }
 
 void CR::Graphics::CreateEngine(const EngineSettings& a_settings) {
-	g_Engine = make_unique<Engine>(a_settings);
+	assert(!GetEngine().get());
+	GetEngine() = make_unique<Engine>(a_settings);
 }
 
 void CR::Graphics::ShutdownEngine() {
-	g_Engine.reset();
+	assert(GetEngine().get());
+	GetEngine().reset();
 }
 
 vk::Device& CR::Graphics::GetDevice() {
-	assert(g_Engine.get());
-	return g_Engine->m_Device;
+	assert(GetEngine().get());
+	return GetEngine()->m_Device;
 }
 
 uint32_t CR::Graphics::GetDeviceMemoryIndex() {
-	assert(g_Engine.get());
-	return g_Engine->DeviceMemoryIndex;
+	assert(GetEngine().get());
+	return GetEngine()->DeviceMemoryIndex;
 }
 
 uint32_t CR::Graphics::GetHostMemoryIndex() {
-	assert(g_Engine.get());
-	return g_Engine->HostMemoryIndex;
+	assert(GetEngine().get());
+	return GetEngine()->HostMemoryIndex;
 }
