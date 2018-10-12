@@ -8,6 +8,14 @@ namespace CR::Graphics {
 		Buffer(Buffer&) = delete;
 		Buffer& operator=(Buffer&) = delete;
 		virtual ~Buffer()          = default;
+
+		virtual void* Map()  = 0;
+		virtual void UnMap() = 0;
+
+		template<typename T>
+		T* Map() {
+			return (T*)Map();
+		}
 	};
 
 	enum class BufferType {
