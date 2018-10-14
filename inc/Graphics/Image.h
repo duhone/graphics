@@ -1,6 +1,8 @@
 #pragma once
 #include "math/Types.h"
+#include <atomic>
 #include <memory>
+#include <vector>
 
 namespace CR::Graphics {
 	struct Image {
@@ -8,6 +10,12 @@ namespace CR::Graphics {
 		Image(Image&)  = delete;
 		Image& operator=(Image&) = delete;
 		virtual ~Image()         = default;
+
+		struct ImageUpdate {
+			std::atomic_bool Ready{false};
+		};
+
+		virtual std::shared_ptr<ImageUpdate> UpdateImage(std::vector<uint8_t>&& data, uint32_t a_arrayIndex) = 0;
 	};
 
 	enum class ImageType {
