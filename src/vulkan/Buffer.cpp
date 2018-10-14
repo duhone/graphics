@@ -68,6 +68,8 @@ VKBuffer::VKBuffer(BufferType a_type, uint a_bytes) : m_type(a_type) {
 	assert(bufferRequirements.alignment <= 256);
 	allocInfo.allocationSize = bufferRequirements.size;
 	m_StagingBufferMemory    = GetDevice().allocateMemory(allocInfo);
+
+	GetDevice().bindBufferMemory(m_StagingBuffer, m_StagingBufferMemory, 0);
 }
 
 VKBuffer::~VKBuffer() {
