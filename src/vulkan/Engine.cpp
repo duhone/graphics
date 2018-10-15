@@ -86,25 +86,38 @@ Engine::Engine(const EngineSettings& a_settings) {
 		}
 
 		vector<vk::QueueFamilyProperties> queueProps = device.getQueueFamilyProperties();
-		bool supportsGraphics                        = false;
-		bool supportsTransfer                        = false;
 		for(uint32_t i = 0; i < queueProps.size(); ++i) {
+			bool supportsGraphics = false;
+			bool supportsTransfer = false;
+
+			cout << "Queue family: " << i << endl;
 			// This one should only be false for tesla compute cards and similiar
 			if((queueProps[i].queueFlags & vk::QueueFlagBits::eGraphics) && queueProps[i].queueCount >= 1) {
-				supportsGraphics   = true;
-				graphicsQueueIndex = i;
+				supportsGraphics = true;
+				cout << "  supports graphics" << endl;
+			}
+			if((queueProps[i].queueFlags & vk::QueueFlagBits::eCompute) && queueProps[i].queueCount >= 1) {
+				cout << "  supports compute" << endl;
 			}
 			if((queueProps[i].queueFlags & vk::QueueFlagBits::eTransfer) && queueProps[i].queueCount >= 1) {
-				supportsTransfer   = true;
-				transferQueueIndex = i;
+				supportsTransfer = true;
+				cout << "  supports transfer " << endl;
+			}
+			// for transfers, prefer a dedicated transfer queue(probably doesnt matter)
+			if(!supportsGraphics && supportsTransfer) { transferQueueIndex = i; }
+			if(supportsGraphics && supportsTransfer) {
+				graphicsQueueIndex = i;
+				if(transferQueueIndex == -1) { transferQueueIndex = i; }
 			}
 		}
-
+		cout << "graphics queue family: " << graphicsQueueIndex << " transfer queue index: " << transferQueueIndex
+		     << endl;
 		auto features = device.getFeatures();
 
 		// TODO: We dont have a good heuristic for selecting a device, for now just take first one that supports
 		// graphics and hope for the best.  My machine has only one, so cant test a better implementation.
-		if(supportsGraphics && supportsTransfer && features.textureCompressionBC && features.fullDrawIndexUint32) {
+		if((graphicsQueueIndex != -1) && (transferQueueIndex != -1) && features.textureCompressionBC &&
+		   features.fullDrawIndexUint32) {
 			foundDevice    = true;
 			selectedDevice = device;
 			break;
