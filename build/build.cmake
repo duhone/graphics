@@ -2,6 +2,7 @@ find_package(Vulkan REQUIRED)
 
 include_directories(
 	"${CMAKE_CURRENT_LIST_DIR}/../inc"
+	"${CMAKE_CURRENT_LIST_DIR}/../src"
 	$ENV{VULKAN_SDK}/include
 )
 link_directories(
@@ -18,10 +19,13 @@ set(GRAPHICS_PUBLIC_HDRS
 )
 
 set(GRAPHICS_SRCS
+    ${CMAKE_CURRENT_LIST_DIR}/../src/Commands.h
+    ${CMAKE_CURRENT_LIST_DIR}/../src/CommandPool.h
     ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/EngineInternal.h
     ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Engine.cpp
     ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Buffer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Image.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/CommandPool.cpp
 )
 
 set(GRAPHICS_BUILD

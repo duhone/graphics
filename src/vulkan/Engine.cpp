@@ -26,6 +26,10 @@ namespace {
 		// private: internal so private anyway
 		vk::Instance m_Instance;
 		vk::Device m_Device;
+		int32_t m_GraphicsQueueIndex{-1};
+		int32_t m_TransferQueueIndex{-1};
+		vk::Queue m_GraphicsQueue;
+		vk::Queue m_TransferQueue;
 
 		uint32_t DeviceMemoryIndex{numeric_limits<uint32_t>::max()};
 		uint32_t HostMemoryIndex{numeric_limits<uint32_t>::max()};
@@ -68,9 +72,7 @@ Engine::Engine(const EngineSettings& a_settings) {
 	vector<vk::PhysicalDevice> physicalDevices = m_Instance.enumeratePhysicalDevices();
 
 	vk::PhysicalDevice selectedDevice;
-	bool foundDevice       = false;
-	int graphicsQueueIndex = -1;
-	int transferQueueIndex = -1;
+	bool foundDevice = false;
 	for(auto& device : physicalDevices) {
 		auto props = device.getProperties();
 		cout << "Device Name: " << props.deviceName << endl;
@@ -104,19 +106,19 @@ Engine::Engine(const EngineSettings& a_settings) {
 				cout << "  supports transfer " << endl;
 			}
 			// for transfers, prefer a dedicated transfer queue(probably doesnt matter)
-			if(!supportsGraphics && supportsTransfer) { transferQueueIndex = i; }
-			if(supportsGraphics && supportsTransfer) {
-				graphicsQueueIndex = i;
-				if(transferQueueIndex == -1) { transferQueueIndex = i; }
+			if(!supportsGraphics && supportsTransfer) { m_TransferQueueIndex = i; }
+			if(supportsGraphics) {
+				m_GraphicsQueueIndex = i;
+				if(supportsTransfer && (m_TransferQueueIndex == -1)) { m_TransferQueueIndex = i; }
 			}
 		}
-		cout << "graphics queue family: " << graphicsQueueIndex << " transfer queue index: " << transferQueueIndex
+		cout << "graphics queue family: " << m_GraphicsQueueIndex << " transfer queue index: " << m_TransferQueueIndex
 		     << endl;
 		auto features = device.getFeatures();
 
 		// TODO: We dont have a good heuristic for selecting a device, for now just take first one that supports
 		// graphics and hope for the best.  My machine has only one, so cant test a better implementation.
-		if((graphicsQueueIndex != -1) && (transferQueueIndex != -1) && features.textureCompressionBC &&
+		if((m_GraphicsQueueIndex != -1) && (m_TransferQueueIndex != -1) && features.textureCompressionBC &&
 		   features.fullDrawIndexUint32) {
 			foundDevice    = true;
 			selectedDevice = device;
@@ -166,11 +168,11 @@ Engine::Engine(const EngineSettings& a_settings) {
 	float graphicsPriority = 1.0f;
 	float transferPriority = 0.0f;
 	vk::DeviceQueueCreateInfo queueInfos[2];
-	queueInfos[0].queueFamilyIndex = graphicsQueueIndex;
+	queueInfos[0].queueFamilyIndex = m_GraphicsQueueIndex;
 	queueInfos[0].queueCount       = 1;
 	queueInfos[0].pQueuePriorities = &graphicsPriority;
 	queueInfos[1]                  = queueInfos[0];
-	queueInfos[1].queueFamilyIndex = transferQueueIndex;
+	queueInfos[1].queueFamilyIndex = m_TransferQueueIndex;
 	queueInfos[1].pQueuePriorities = &transferPriority;
 
 	vk::DeviceCreateInfo createLogDevInfo;
@@ -183,6 +185,9 @@ Engine::Engine(const EngineSettings& a_settings) {
 	createLogDevInfo.ppEnabledExtensionNames = nullptr;
 
 	m_Device = selectedDevice.createDevice(createLogDevInfo);
+
+	m_GraphicsQueue = m_Device.getQueue(m_GraphicsQueueIndex, 0);
+	m_TransferQueue = m_Device.getQueue(m_TransferQueueIndex, m_GraphicsQueueIndex == m_TransferQueueIndex ? 1 : 0);
 }
 
 Engine::~Engine() {
@@ -213,4 +218,24 @@ uint32_t CR::Graphics::GetDeviceMemoryIndex() {
 uint32_t CR::Graphics::GetHostMemoryIndex() {
 	assert(GetEngine().get());
 	return GetEngine()->HostMemoryIndex;
+}
+
+uint32_t CR::Graphics::GetGraphicsQueueIndex() {
+	assert(GetEngine().get());
+	return GetEngine()->m_GraphicsQueueIndex;
+}
+
+uint32_t CR::Graphics::GetTransferQueueIndex() {
+	assert(GetEngine().get());
+	return GetEngine()->m_TransferQueueIndex;
+}
+
+vk::Queue& CR::Graphics::GetGraphicsQueue() {
+	assert(GetEngine().get());
+	return GetEngine()->m_GraphicsQueue;
+}
+
+vk::Queue& CR::Graphics::GetTransferQueue() {
+	assert(GetEngine().get());
+	return GetEngine()->m_TransferQueue;
 }
