@@ -8,6 +8,6 @@ namespace CR::Graphics {
 
 	uint32_t GetGraphicsQueueIndex();
 	uint32_t GetTransferQueueIndex();
-	vk::Queue& GetGraphicsQueue();
-	vk::Queue& GetTransferQueue();
+	void SubmitGraphicsCommands(const std::vector<vk::CommandBuffer>& cmds);
+	void SubmitTransferCommands(const std::vector<vk::CommandBuffer>& cmds);
 }    // namespace CR::Graphics

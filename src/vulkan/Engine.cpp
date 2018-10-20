@@ -230,12 +230,18 @@ uint32_t CR::Graphics::GetTransferQueueIndex() {
 	return GetEngine()->m_TransferQueueIndex;
 }
 
-vk::Queue& CR::Graphics::GetGraphicsQueue() {
+void CR::Graphics::SubmitGraphicsCommands(const std::vector<vk::CommandBuffer>& cmds) {
 	assert(GetEngine().get());
-	return GetEngine()->m_GraphicsQueue;
+	vk::SubmitInfo submit;
+	submit.commandBufferCount = (uint32_t)cmds.size();
+	submit.pCommandBuffers    = cmds.data();
+	GetEngine()->m_GraphicsQueue.submit(1, &submit, vk::Fence{});
 }
 
-vk::Queue& CR::Graphics::GetTransferQueue() {
+void CR::Graphics::SubmitTransferCommands(const std::vector<vk::CommandBuffer>& cmds) {
 	assert(GetEngine().get());
-	return GetEngine()->m_TransferQueue;
+	vk::SubmitInfo submit;
+	submit.commandBufferCount = (uint32_t)cmds.size();
+	submit.pCommandBuffers    = cmds.data();
+	GetEngine()->m_TransferQueue.submit(1, &submit, vk::Fence{});
 }
