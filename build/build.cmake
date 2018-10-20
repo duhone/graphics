@@ -26,6 +26,7 @@ set(GRAPHICS_SRCS
     ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Buffer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Image.cpp
     ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/CommandPool.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Commands.cpp
 )
 
 set(GRAPHICS_BUILD

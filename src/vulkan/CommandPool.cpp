@@ -8,7 +8,7 @@ namespace {
 	class CommandPoolImpl : public CommandPool {
 	  public:
 		CommandPoolImpl(CommandPool::PoolType a_type);
-		virtual ~CommandPoolImpl()              = default;
+		virtual ~CommandPoolImpl();
 		CommandPoolImpl(const CommandPoolImpl&) = delete;
 		CommandPoolImpl& operator=(const CommandPoolImpl&) = delete;
 
@@ -27,6 +27,9 @@ namespace {
 		CommandBufferImpl& operator=(const CommandBufferImpl&) = delete;
 
 	  private:
+		void* GetHandle() override { return &m_Buffer; }
+		void Begin() override;
+		void End() override;
 		void Reset() override;
 
 		vk::CommandPool& m_CommandPool;
@@ -55,6 +58,10 @@ CommandPoolImpl::CommandPoolImpl(CommandPool::PoolType a_type) : m_Type(a_type) 
 	m_CommandPool = GetDevice().createCommandPool(info);
 }
 
+CommandPoolImpl::~CommandPoolImpl() {
+	GetDevice().destroyCommandPool(m_CommandPool);
+}
+
 std::unique_ptr<CommandBuffer> CommandPoolImpl::CreateCommandBuffer() {
 	vk::CommandBufferAllocateInfo info;
 	info.commandBufferCount = 1;
@@ -69,6 +76,16 @@ CommandBufferImpl::CommandBufferImpl(vk::CommandPool& commandPool, const vk::Com
 
 CommandBufferImpl::~CommandBufferImpl() {
 	GetDevice().freeCommandBuffers(m_CommandPool, 1, &m_Buffer);
+}
+
+void CommandBufferImpl::Begin() {
+	vk::CommandBufferBeginInfo info;
+	info.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+	m_Buffer.begin(info);
+}
+
+void CommandBufferImpl::End() {
+	m_Buffer.end();
 }
 
 void CommandBufferImpl::Reset() {

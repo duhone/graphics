@@ -8,6 +8,9 @@ namespace CR::Graphics {
 		CommandBuffer(const CommandBuffer&) = delete;
 		CommandBuffer& operator=(const CommandBuffer&) = delete;
 
+		virtual void* GetHandle() = 0;
+		virtual void Begin() = 0;
+		virtual void End()   = 0;
 		virtual void Reset() = 0;
 	};
 
@@ -20,6 +23,7 @@ namespace CR::Graphics {
 		CommandPool(const CommandPool&) = delete;
 		CommandPool& operator=(const CommandPool&) = delete;
 
+		// If the command pool is destroyed, any command buffers returned here will no longer work.
 		virtual std::unique_ptr<CommandBuffer> CreateCommandBuffer() = 0;
 	};
 

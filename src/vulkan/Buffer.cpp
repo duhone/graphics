@@ -13,6 +13,7 @@ namespace {
 		VKBuffer& operator=(VKBuffer&) = delete;
 		virtual ~VKBuffer();
 
+		void* GetHandle() override { return &m_Buffer; }
 		void* Map() override;
 		void UnMap() override;
 

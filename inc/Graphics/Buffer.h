@@ -9,8 +9,9 @@ namespace CR::Graphics {
 		Buffer& operator=(Buffer&) = delete;
 		virtual ~Buffer()          = default;
 
-		virtual void* Map()  = 0;
-		virtual void UnMap() = 0;
+		virtual void* GetHandle() = 0;
+		virtual void* Map()       = 0;
+		virtual void UnMap()      = 0;
 
 		template<typename T>
 		T* Map() {
