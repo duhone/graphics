@@ -1,10 +1,10 @@
 #pragma once
-#include "math/Types.h"
+#include <string>
 
 namespace CR::Graphics {
 	struct EngineSettings {
 		std::string ApplicationName;
-		uint ApplicationVersion{0};
+		uint32_t ApplicationVersion{0};
 		bool EnableDebug{false};
 	};
 

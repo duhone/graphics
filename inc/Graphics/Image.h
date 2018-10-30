@@ -1,5 +1,4 @@
 #pragma once
-#include "math/Types.h"
 #include <atomic>
 #include <memory>
 #include <vector>
@@ -23,5 +22,6 @@ namespace CR::Graphics {
 		sRGBACompressed       // BC7 on PC, ASTC on mobile
 	};
 
-	std::unique_ptr<Image> CreateImage(ImageType a_type, uint a_width, uint a_height, uint a_arrayLayers, uint a_mips);
+	std::unique_ptr<Image> CreateImage(ImageType a_type, uint32_t a_width, uint32_t a_height, uint32_t a_arrayLayers,
+	                                   uint32_t a_mips);
 }    // namespace CR::Graphics

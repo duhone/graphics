@@ -8,7 +8,7 @@ using namespace CR::Graphics;
 namespace {
 	class VKBuffer : public Buffer {
 	  public:
-		VKBuffer(BufferType a_type, uint a_bytes);
+		VKBuffer(BufferType a_type, uint32_t a_bytes);
 		VKBuffer(VKBuffer&) = delete;
 		VKBuffer& operator=(VKBuffer&) = delete;
 		virtual ~VKBuffer();
@@ -25,7 +25,7 @@ namespace {
 	};
 }    // namespace
 
-VKBuffer::VKBuffer(BufferType a_type, uint a_bytes) : m_type(a_type) {
+VKBuffer::VKBuffer(BufferType a_type, uint32_t a_bytes) : m_type(a_type) {
 	assert(a_bytes % 256 == 0);
 	vk::BufferCreateInfo createInfo;
 	createInfo.flags       = vk::BufferCreateFlags{};
@@ -88,6 +88,6 @@ void VKBuffer::UnMap() {
 	GetDevice().unmapMemory(m_StagingBufferMemory);
 }
 
-std::unique_ptr<Buffer> CR::Graphics::CreateBuffer(BufferType a_type, uint a_bytes) {
+std::unique_ptr<Buffer> CR::Graphics::CreateBuffer(BufferType a_type, uint32_t a_bytes) {
 	return make_unique<VKBuffer>(a_type, a_bytes);
 }

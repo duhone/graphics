@@ -11,10 +11,10 @@ using namespace std;
 using namespace std::string_literals;
 
 namespace {
-	constexpr uint MajorVersion = 0;    // 64K max
-	constexpr uint MinorVersion = 1;    // 256 max
-	constexpr uint PatchVersion = 1;    // 256 max
-	constexpr uint Version      = (MajorVersion << 16) || (MajorVersion << 8) || (PatchVersion);
+	constexpr uint32_t MajorVersion = 0;    // 64K max
+	constexpr uint32_t MinorVersion = 1;    // 256 max
+	constexpr uint32_t PatchVersion = 1;    // 256 max
+	constexpr uint32_t Version      = (MajorVersion << 16) || (MajorVersion << 8) || (PatchVersion);
 
 	class Engine {
 	  public:

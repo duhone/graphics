@@ -15,7 +15,7 @@ TEST_CASE("buffer creation/update/destruction", "") {
 
 	REQUIRE_NOTHROW(CreateEngine(settings));
 
-	auto buffer = CreateBuffer(BufferType::Uniform, (uint)1_Kb * sizeof(float));
+	auto buffer = CreateBuffer(BufferType::Uniform, (uint32_t)1_Kb * sizeof(float));
 	float* data = buffer->Map<float>();
 	REQUIRE(data != nullptr);
 	for(uint32_t i = 0; i < 1_Kb; ++i) { data[i] = 1.0f; }

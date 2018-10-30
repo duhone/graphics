@@ -1,5 +1,4 @@
 #pragma once
-#include "math/Types.h"
 #include <memory>
 
 namespace CR::Graphics {
@@ -25,5 +24,5 @@ namespace CR::Graphics {
 		Index,
 	};
 
-	std::unique_ptr<Buffer> CreateBuffer(BufferType a_type, uint a_bytes);
+	std::unique_ptr<Buffer> CreateBuffer(BufferType a_type, uint32_t a_bytes);
 }    // namespace CR::Graphics

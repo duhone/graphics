@@ -54,7 +54,6 @@ set(GRAPHICS_TEST_SRCS
 	
 	add_executable(graphics_tests  $<TARGET_OBJECTS:graphics>
 						$<TARGET_OBJECTS:core>
-						$<TARGET_OBJECTS:math>
 						${GRAPHICS_TEST_SRCS})
 	
 	target_link_libraries(

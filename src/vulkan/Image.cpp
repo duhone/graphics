@@ -9,7 +9,7 @@ using namespace CR::Graphics;
 namespace {
 	class VKImage : public Image {
 	  public:
-		VKImage(ImageType a_type, uint a_width, uint a_height, uint a_arrayLayers, uint a_mips);
+		VKImage(ImageType a_type, uint32_t a_width, uint32_t a_height, uint32_t a_arrayLayers, uint32_t a_mips);
 		VKImage(VKImage&) = delete;
 		VKImage& operator=(VKImage&) = delete;
 		virtual ~VKImage();
@@ -40,7 +40,7 @@ namespace {
 	};
 }    // namespace
 
-VKImage::VKImage(ImageType a_type, uint a_width, uint a_height, uint a_arrayLayers, uint a_mips) {
+VKImage::VKImage(ImageType a_type, uint32_t a_width, uint32_t a_height, uint32_t a_arrayLayers, uint32_t a_mips) {
 	vk::ImageCreateInfo createInfo;
 	createInfo.extent.width  = a_width;
 	createInfo.extent.height = a_height;
@@ -141,7 +141,7 @@ void VKImage::UnMap() {
 	GetDevice().unmapMemory(m_StagingBufferMemory);
 }
 
-std::unique_ptr<Image> CR::Graphics::CreateImage(ImageType a_type, uint a_width, uint a_height, uint a_arrayLayers,
-                                                 uint a_mips) {
+std::unique_ptr<Image> CR::Graphics::CreateImage(ImageType a_type, uint32_t a_width, uint32_t a_height,
+                                                 uint32_t a_arrayLayers, uint32_t a_mips) {
 	return make_unique<VKImage>(a_type, a_width, a_height, a_arrayLayers, a_mips);
 }
