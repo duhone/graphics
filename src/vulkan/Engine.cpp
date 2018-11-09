@@ -1,11 +1,13 @@
 #include "Graphics/Engine.h"
 #include "EngineInternal.h"
+#include "core/Log.h"
 #include "vulkan/vulkan.hpp"
 #include <exception>
 #include <iostream>
 #include <memory>
 #include <vector>
 
+using namespace CR::Core;
 using namespace CR::Graphics;
 using namespace std;
 using namespace std::string_literals;
@@ -75,15 +77,15 @@ Engine::Engine(const EngineSettings& a_settings) {
 	bool foundDevice = false;
 	for(auto& device : physicalDevices) {
 		auto props = device.getProperties();
-		cout << "Device Name: " << props.deviceName << endl;
+		Log::Info("Device Name : {}", props.deviceName);
 		auto memProps = device.getMemoryProperties();
-		cout << "  Device max allocations: " << props.limits.maxMemoryAllocationCount << endl;
-		cout << "  Device max array layers: " << props.limits.maxImageArrayLayers << endl;
-		cout << "  Device max 2D image dimensions: " << props.limits.maxImageDimension2D << endl;
+		Log::Info("  Device max allocations: {}", props.limits.maxMemoryAllocationCount);
+		Log::Info("  Device max array layers: {}", props.limits.maxImageArrayLayers);
+		Log::Info("  Device max 2D image dimensions: {}", props.limits.maxImageDimension2D);
 		for(uint32_t i = 0; i < memProps.memoryTypeCount; ++i) {
 			if(memProps.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) {
-				cout << "  Device Local Memory Amount: "
-				     << memProps.memoryHeaps[memProps.memoryTypes[i].heapIndex].size / (1024 * 1024) << "MB" << endl;
+				Log::Info("  Device Local Memory Amount: {}MB",
+				          memProps.memoryHeaps[memProps.memoryTypes[i].heapIndex].size / (1024 * 1024));
 			}
 		}
 
@@ -92,18 +94,18 @@ Engine::Engine(const EngineSettings& a_settings) {
 			bool supportsGraphics = false;
 			bool supportsTransfer = false;
 
-			cout << "Queue family: " << i << endl;
+			Log::Info("Queue family: {}", i);
 			// This one should only be false for tesla compute cards and similiar
 			if((queueProps[i].queueFlags & vk::QueueFlagBits::eGraphics) && queueProps[i].queueCount >= 1) {
 				supportsGraphics = true;
-				cout << "  supports graphics" << endl;
+				Log::Info("  supports graphics");
 			}
 			if((queueProps[i].queueFlags & vk::QueueFlagBits::eCompute) && queueProps[i].queueCount >= 1) {
-				cout << "  supports compute" << endl;
+				Log::Info("  supports compute");
 			}
 			if((queueProps[i].queueFlags & vk::QueueFlagBits::eTransfer) && queueProps[i].queueCount >= 1) {
 				supportsTransfer = true;
-				cout << "  supports transfer " << endl;
+				Log::Info("  supports transfer");
 			}
 			// for transfers, prefer a dedicated transfer queue(probably doesnt matter)
 			if(!supportsGraphics && supportsTransfer) { m_TransferQueueIndex = i; }
@@ -112,8 +114,7 @@ Engine::Engine(const EngineSettings& a_settings) {
 				if(supportsTransfer && (m_TransferQueueIndex == -1)) { m_TransferQueueIndex = i; }
 			}
 		}
-		cout << "graphics queue family: " << m_GraphicsQueueIndex << " transfer queue index: " << m_TransferQueueIndex
-		     << endl;
+		Log::Info("graphics queue family: {} transfer queue index: {}", m_GraphicsQueueIndex, m_TransferQueueIndex);
 		auto features = device.getFeatures();
 
 		// TODO: We dont have a good heuristic for selecting a device, for now just take first one that supports
@@ -132,20 +133,20 @@ Engine::Engine(const EngineSettings& a_settings) {
 		auto heapSize   = memProps.memoryHeaps[i].size / 1024 / 1024;
 		auto& heapFlags = memProps.memoryHeaps[i].flags;
 		if(heapFlags & vk::MemoryHeapFlagBits::eDeviceLocal) {
-			cout << "Device Heap. Size " << heapSize << "MB" << endl;
+			Log::Info("Device Heap. Size {}MB", heapSize);
 		} else {
-			cout << "Host Heap. Size " << heapSize << "MB" << endl;
+			Log::Info("Host Heap. Size {}MB", heapSize);
 		}
 	}
 	for(uint32_t i = 0; i < memProps.memoryTypeCount; ++i) {
 		auto& heapIndex    = memProps.memoryTypes[i].heapIndex;
 		auto& heapFlags    = memProps.memoryTypes[i].propertyFlags;
 		auto printHeapInfo = [&]() {
-			cout << "Device Heap: " << heapIndex << " Type Index: " << i << endl;
-			if(heapFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) { cout << "  Device local" << endl; }
-			if(heapFlags & vk::MemoryPropertyFlagBits::eHostVisible) { cout << "  Host visible" << endl; }
-			if(heapFlags & vk::MemoryPropertyFlagBits::eHostCached) { cout << "  Host cached" << endl; }
-			if(heapFlags & vk::MemoryPropertyFlagBits::eHostCoherent) { cout << "  Host coherent" << endl; }
+			Log::Info("Device Heap:  {} Type Index: {}", heapIndex, i);
+			if(heapFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) { Log::Info("  Device local"); }
+			if(heapFlags & vk::MemoryPropertyFlagBits::eHostVisible) { Log::Info("  Host visible"); }
+			if(heapFlags & vk::MemoryPropertyFlagBits::eHostCached) { Log::Info("  Host cached"); }
+			if(heapFlags & vk::MemoryPropertyFlagBits::eHostCoherent) { Log::Info("  Host coherent"); }
 		};
 
 		if((heapFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) &&
