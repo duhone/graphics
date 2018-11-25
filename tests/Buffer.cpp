@@ -1,6 +1,6 @@
 #include "catch.hpp"
 
-#include "Graphics/Buffer.h"
+#include "Buffer.h"
 #include "Graphics/Engine.h"
 #include "core/literals.h"
 

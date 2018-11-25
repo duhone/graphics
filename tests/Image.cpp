@@ -1,7 +1,7 @@
 #include "catch.hpp"
 
 #include "Graphics/Engine.h"
-#include "Graphics/Image.h"
+#include "Image.h"
 
 #include <vector>
 

@@ -1,6 +1,6 @@
 #pragma once
+#include "Buffer.h"
 #include "CommandPool.h"
-#include "Graphics/Buffer.h"
 
 namespace CR::Graphics {
 	void CopyBufferToBuffer(CommandBuffer& a_cmdBuffer, Buffer& a_from, Buffer& a_to, uint32_t a_offset,

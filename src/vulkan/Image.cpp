@@ -1,4 +1,4 @@
-#include "Graphics/Image.h"
+#include "Image.h"
 #include "EngineInternal.h"
 #include "vulkan/vulkan.hpp"
 #include <queue>
