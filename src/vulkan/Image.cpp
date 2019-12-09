@@ -51,8 +51,8 @@ VKImage::VKImage(ImageType a_type, uint32_t a_width, uint32_t a_height, uint32_t
 	createInfo.sharingMode   = vk::SharingMode::eExclusive;
 	createInfo.usage         = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
 	createInfo.initialLayout = vk::ImageLayout::eUndefined;
-	createInfo.imageType     = vk::ImageType::e2D;
-	createInfo.flags         = vk::ImageCreateFlagBits::e2DArrayCompatible;
+	createInfo.imageType     = a_arrayLayers > 1 ? vk::ImageType::e3D : vk::ImageType::e2D;
+	createInfo.flags = a_arrayLayers > 1 ? vk::ImageCreateFlagBits::e2DArrayCompatible : vk::ImageCreateFlags{0};
 	switch(a_type) {
 		case ImageType::sRGBAUncompressed:
 			createInfo.format = vk::Format::eA8B8G8R8SrgbPack32;
