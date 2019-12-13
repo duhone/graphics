@@ -1,70 +1,85 @@
-find_package(Vulkan REQUIRED)
+set(graphics_root "${CMAKE_CURRENT_LIST_DIR}/..")
 
-include_directories(
-	"${CMAKE_CURRENT_LIST_DIR}/../inc"
-)
-link_directories(
-	$ENV{VULKAN_SDK}/Lib
-)
+find_package(Vulkan REQUIRED)
 
 ###############################################
 #library
 ###############################################
 set(GRAPHICS_PUBLIC_HDRS
-    ${CMAKE_CURRENT_LIST_DIR}/../inc/Graphics/Engine.h
+    ${graphics_root}/inc/Graphics/Engine.h
 )
 
 set(GRAPHICS_SRCS
-    ${CMAKE_CURRENT_LIST_DIR}/../src/Commands.h
-    ${CMAKE_CURRENT_LIST_DIR}/../src/CommandPool.h
-    ${CMAKE_CURRENT_LIST_DIR}/../src/Buffer.h
-    ${CMAKE_CURRENT_LIST_DIR}/../src/Image.h
-    ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/EngineInternal.h
-    ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Engine.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Buffer.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Image.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/CommandPool.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/../src/vulkan/Commands.cpp
+    ${graphics_root}/src/Commands.h
+    ${graphics_root}/src/CommandPool.h
+    ${graphics_root}/src/Buffer.h
+    ${graphics_root}/src/Image.h
+    ${graphics_root}/src/vulkan/EngineInternal.h
+    ${graphics_root}/src/vulkan/Engine.cpp
+    ${graphics_root}/src/vulkan/Buffer.cpp
+    ${graphics_root}/src/vulkan/Image.cpp
+    ${graphics_root}/src/vulkan/CommandPool.cpp
+    ${graphics_root}/src/vulkan/Commands.cpp
 )
 
 set(GRAPHICS_BUILD
-    ${CMAKE_CURRENT_LIST_DIR}/../build/build.cmake
+    ${graphics_root}/build/build.cmake
 )
 
-add_library(graphics OBJECT  ${GRAPHICS_PUBLIC_HDRS} ${GRAPHICS_SRCS} ${GRAPHICS_BUILD})
-		
+add_library(graphics OBJECT  
+	${GRAPHICS_PUBLIC_HDRS} 
+	${GRAPHICS_SRCS} 
+	${GRAPHICS_BUILD}
+)
+	
 target_include_directories(graphics PUBLIC
-	"${CMAKE_CURRENT_LIST_DIR}/../src"
+	"${graphics_root}/inc"
+)		
+target_include_directories(graphics PRIVATE
+	"${graphics_root}/src"
 	$ENV{VULKAN_SDK}/include
-)				
+	Vulkan::Vulkan
+)		
+
+target_link_libraries(graphics 
+  core
+)
+
+#link_directories(
+#	$ENV{VULKAN_SDK}/Lib
+#)
+		
 
 source_group("Public Headers" FILES ${GRAPHICS_PUBLIC_HDRS})
 source_group("Source" FILES ${GRAPHICS_SRCS})
 source_group("Build" FILES ${GRAPHICS_BUILD})
 	
-target_include_directories(graphics PRIVATE Vulkan::Vulkan)
 				
 if(IncludeTests)  
 	###############################################
 	#unit tests
 	###############################################
 set(GRAPHICS_TEST_SRCS
-    ${CMAKE_CURRENT_LIST_DIR}/../tests/main.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/../tests/Engine.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/../tests/Buffer.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/../tests/Image.cpp
+    ${graphics_root}/tests/main.cpp
+    ${graphics_root}/tests/Engine.cpp
+    ${graphics_root}/tests/Buffer.cpp
+    ${graphics_root}/tests/Image.cpp
 )
 	
-	add_executable(graphics_tests  $<TARGET_OBJECTS:graphics>
-						$<TARGET_OBJECTS:core>
-						$<TARGET_OBJECTS:fmt>
-						${GRAPHICS_TEST_SRCS})
+	add_executable(graphics_tests
+						${GRAPHICS_TEST_SRCS}
+	)
 
-	target_include_directories(graphics_tests PUBLIC
-		"${CMAKE_CURRENT_LIST_DIR}/../src"
+	target_include_directories(graphics_tests PRIVATE
+		"${graphics_root}/src"
 	)	
-	target_link_libraries(
-		graphics_tests Vulkan::Vulkan
+	target_link_libraries(graphics_tests 
+		catch
+		fmt
+		core
+		graphics
+		Vulkan::Vulkan 
+		glfw
 	)
 
 	source_group("Source" FILES ${GRAPHICS_TEST_SRCS})
