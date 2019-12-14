@@ -1,10 +1,15 @@
 #include "Graphics/Engine.h"
+
 #include "EngineInternal.h"
 #include "core/Log.h"
+#include "core/algorithm.h"
+
 #include "vulkan/vulkan.hpp"
+
 #include <exception>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <vector>
 
 using namespace CR::Core;
@@ -30,8 +35,12 @@ namespace {
 		vk::Device m_Device;
 		int32_t m_GraphicsQueueIndex{-1};
 		int32_t m_TransferQueueIndex{-1};
+		int32_t m_PresentationQueueIndex{-1};
 		vk::Queue m_GraphicsQueue;
 		vk::Queue m_TransferQueue;
+		vk::Queue m_PresentationQueue;
+
+		vk::SurfaceKHR m_PrimarySurface;
 
 		uint32_t DeviceMemoryIndex{numeric_limits<uint32_t>::max()};
 		uint32_t HostMemoryIndex{numeric_limits<uint32_t>::max()};
@@ -66,10 +75,19 @@ Engine::Engine(const EngineSettings& a_settings) {
 	createInfo.pApplicationInfo        = &appInfo;
 	createInfo.enabledLayerCount       = (uint32_t)size(enabledLayersPtrs);
 	createInfo.ppEnabledLayerNames     = data(enabledLayersPtrs);
-	createInfo.enabledExtensionCount   = 0;
-	createInfo.ppEnabledExtensionNames = nullptr;
+	createInfo.enabledExtensionCount   = a_settings.ExtensionsToEnableCount;
+	createInfo.ppEnabledExtensionNames = a_settings.ExtensionsToEnable;
 
 	m_Instance = vk::createInstance(createInfo);
+
+	Log::Assert(a_settings.HInstance != nullptr, "Hinstance is required, headless mode not currently supported");
+	Log::Assert(a_settings.Hwnd != nullptr, "Hwnd is required, headless mode not currently supported");
+
+	vk::Win32SurfaceCreateInfoKHR win32Surface;
+	win32Surface.hinstance = (HINSTANCE)a_settings.HInstance;
+	win32Surface.hwnd      = (HWND)a_settings.Hwnd;
+
+	m_PrimarySurface = m_Instance.createWin32SurfaceKHR(win32Surface);
 
 	vector<vk::PhysicalDevice> physicalDevices = m_Instance.enumeratePhysicalDevices();
 
@@ -90,43 +108,86 @@ Engine::Engine(const EngineSettings& a_settings) {
 		}
 
 		vector<vk::QueueFamilyProperties> queueProps = device.getQueueFamilyProperties();
+		vector<uint32_t> graphicsQueues;
+		vector<uint32_t> transferQueues;
+		vector<uint32_t> presentationQueues;
+		optional<uint32_t> dedicatedTransfer;
+		optional<uint32_t> graphicsAndPresentation;
 		for(uint32_t i = 0; i < queueProps.size(); ++i) {
-			bool supportsGraphics = false;
-			bool supportsTransfer = false;
+			bool supportsGraphics     = false;
+			bool supportsCompute      = false;
+			bool supportsTransfer     = false;
+			bool supportsPresentation = false;
 
 			Log::Info("Queue family: {}", i);
 			// This one should only be false for tesla compute cards and similiar
 			if((queueProps[i].queueFlags & vk::QueueFlagBits::eGraphics) && queueProps[i].queueCount >= 1) {
 				supportsGraphics = true;
+				graphicsQueues.push_back(i);
 				Log::Info("  supports graphics");
 			}
 			if((queueProps[i].queueFlags & vk::QueueFlagBits::eCompute) && queueProps[i].queueCount >= 1) {
+				supportsCompute = true;
 				Log::Info("  supports compute");
 			}
 			if((queueProps[i].queueFlags & vk::QueueFlagBits::eTransfer) && queueProps[i].queueCount >= 1) {
 				supportsTransfer = true;
+				transferQueues.push_back(i);
 				Log::Info("  supports transfer");
 			}
-			// for transfers, prefer a dedicated transfer queue(probably doesnt matter)
-			if(!supportsGraphics && supportsTransfer) { m_TransferQueueIndex = i; }
-			if(supportsGraphics) {
-				m_GraphicsQueueIndex = i;
-				if(supportsTransfer && (m_TransferQueueIndex == -1)) { m_TransferQueueIndex = i; }
+			if(device.getSurfaceSupportKHR(i, m_PrimarySurface)) {
+				supportsPresentation = true;
+				presentationQueues.push_back(i);
+				Log::Info("  supports presentation");
+			}
+
+			// for transfers, prefer a dedicated transfer queue(probably doesnt matter). If more than one, grab first
+			if(!supportsGraphics && !supportsCompute && !supportsPresentation && supportsTransfer &&
+			   !dedicatedTransfer.has_value()) {
+				dedicatedTransfer = i;
+			}
+			// For graphics, we prefer one that does both graphics and presentation
+			if(supportsGraphics && supportsPresentation && !graphicsAndPresentation.has_value()) {
+				graphicsAndPresentation = i;
 			}
 		}
-		Log::Info("graphics queue family: {} transfer queue index: {}", m_GraphicsQueueIndex, m_TransferQueueIndex);
+
+		if(dedicatedTransfer.has_value()) {
+			m_TransferQueueIndex = dedicatedTransfer.value();
+		} else if(!transferQueues.empty()) {
+			m_TransferQueueIndex = transferQueues[0];
+		} else {
+			Log::Info("Could not find a valid vulkan transfer queue");
+		}
+
+		if(graphicsAndPresentation.has_value()) {
+			m_GraphicsQueueIndex = m_PresentationQueueIndex = graphicsAndPresentation.value();
+		} else if(!graphicsQueues.empty() && !presentationQueues.empty()) {
+			m_GraphicsQueueIndex     = graphicsQueues[0];
+			m_PresentationQueueIndex = presentationQueues[0];
+		} else {
+			if(graphicsQueues.empty()) { Log::Info("Could not find a valid vulkan graphics queue"); }
+			if(presentationQueues.empty()) { Log::Info("Could not find a valid presentation queue"); }
+		}
+
+		Log::Info("graphics queue family: {} transfer queue index: {} presentation queue index: {}",
+		          m_GraphicsQueueIndex, m_TransferQueueIndex, m_PresentationQueueIndex);
 		auto features = device.getFeatures();
 
 		// TODO: We dont have a good heuristic for selecting a device, for now just take first one that supports
 		// graphics and hope for the best.  My machine has only one, so cant test a better implementation.
-		if((m_GraphicsQueueIndex != -1) && (m_TransferQueueIndex != -1) && features.textureCompressionBC &&
-		   features.fullDrawIndexUint32) {
+		if((m_GraphicsQueueIndex != -1) && (m_TransferQueueIndex != -1) && (m_PresentationQueueIndex != -1) &&
+		   features.textureCompressionBC && features.fullDrawIndexUint32) {
 			foundDevice    = true;
 			selectedDevice = device;
 			break;
+		} else {
+			m_GraphicsQueueIndex     = -1;
+			m_TransferQueueIndex     = -1;
+			m_PresentationQueueIndex = -1;
 		}
 	}
-	if(!foundDevice) { throw runtime_error("Could not find a valid vulkan device"); }
+	if(!foundDevice) { Log::Fail("Could not find a valid vulkan graphics device"); }
 
 	auto memProps = selectedDevice.getMemoryProperties();
 	for(uint32_t i = 0; i < memProps.memoryHeapCount; ++i) {
@@ -166,19 +227,37 @@ Engine::Engine(const EngineSettings& a_settings) {
 	requiredFeatures.textureCompressionBC = true;
 	requiredFeatures.fullDrawIndexUint32  = true;
 
+	int32_t graphicsQueueIndex     = 0;
+	int32_t presentationQueueIndex = 0;
+	int32_t transferQueueIndex     = 0;
+	int32_t queueIndexMap[256]; //surely no more than 256 queue families for all time
+	fill(queueIndexMap, -1);
+
 	float graphicsPriority = 1.0f;
 	float transferPriority = 0.0f;
-	vk::DeviceQueueCreateInfo queueInfos[2];
-	queueInfos[0].queueFamilyIndex = m_GraphicsQueueIndex;
-	queueInfos[0].queueCount       = 1;
-	queueInfos[0].pQueuePriorities = &graphicsPriority;
-	queueInfos[1]                  = queueInfos[0];
-	queueInfos[1].queueFamilyIndex = m_TransferQueueIndex;
-	queueInfos[1].pQueuePriorities = &transferPriority;
+	vk::DeviceQueueCreateInfo queueInfo;
+	std::vector<vk::DeviceQueueCreateInfo> queueInfos;
+	queueInfo.queueFamilyIndex = m_GraphicsQueueIndex;
+	queueInfo.queueCount       = 1;
+	queueInfo.pQueuePriorities = &graphicsPriority;
+	queueInfos.push_back(queueInfo);
+	++queueIndexMap[m_GraphicsQueueIndex];
+	graphicsQueueIndex = queueIndexMap[m_GraphicsQueueIndex];
+	if(m_GraphicsQueueIndex != m_PresentationQueueIndex) {
+		queueInfo.queueFamilyIndex = m_PresentationQueueIndex;
+		queueInfos.push_back(queueInfo);
+		++queueIndexMap[m_PresentationQueueIndex];
+	}
+	presentationQueueIndex     = queueIndexMap[m_PresentationQueueIndex];
+	queueInfo.queueFamilyIndex = m_TransferQueueIndex;
+	queueInfo.pQueuePriorities = &transferPriority;
+	queueInfos.push_back(queueInfo);
+	++queueIndexMap[m_TransferQueueIndex];
+	transferQueueIndex = queueIndexMap[m_TransferQueueIndex];
 
 	vk::DeviceCreateInfo createLogDevInfo;
 	createLogDevInfo.queueCreateInfoCount    = (int)size(queueInfos);
-	createLogDevInfo.pQueueCreateInfos       = queueInfos;
+	createLogDevInfo.pQueueCreateInfos       = data(queueInfos);
 	createLogDevInfo.pEnabledFeatures        = &requiredFeatures;
 	createLogDevInfo.enabledLayerCount       = 0;
 	createLogDevInfo.ppEnabledLayerNames     = nullptr;
@@ -187,12 +266,14 @@ Engine::Engine(const EngineSettings& a_settings) {
 
 	m_Device = selectedDevice.createDevice(createLogDevInfo);
 
-	m_GraphicsQueue = m_Device.getQueue(m_GraphicsQueueIndex, 0);
-	m_TransferQueue = m_Device.getQueue(m_TransferQueueIndex, m_GraphicsQueueIndex == m_TransferQueueIndex ? 1 : 0);
+	m_GraphicsQueue     = m_Device.getQueue(m_GraphicsQueueIndex, graphicsQueueIndex);
+	m_PresentationQueue = m_Device.getQueue(m_PresentationQueueIndex, presentationQueueIndex);
+	m_TransferQueue     = m_Device.getQueue(m_TransferQueueIndex, transferQueueIndex);
 }
 
 Engine::~Engine() {
 	m_Device.destroy();
+	m_Instance.destroySurfaceKHR(m_PrimarySurface);
 	m_Instance.destroy();
 }
 

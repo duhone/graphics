@@ -34,7 +34,8 @@ add_library(graphics OBJECT
 	
 target_include_directories(graphics PUBLIC
 	"${graphics_root}/inc"
-)		
+)
+target_compile_definitions(graphics PRIVATE VK_USE_PLATFORM_WIN32_KHR)
 target_include_directories(graphics PRIVATE
 	"${graphics_root}/src"
 	$ENV{VULKAN_SDK}/include
@@ -44,11 +45,6 @@ target_include_directories(graphics PRIVATE
 target_link_libraries(graphics 
   core
 )
-
-#link_directories(
-#	$ENV{VULKAN_SDK}/Lib
-#)
-		
 
 source_group("Public Headers" FILES ${GRAPHICS_PUBLIC_HDRS})
 source_group("Source" FILES ${GRAPHICS_SRCS})
@@ -60,10 +56,12 @@ if(IncludeTests)
 	#unit tests
 	###############################################
 set(GRAPHICS_TEST_SRCS
+    ${graphics_root}/tests/TestFixture.h
     ${graphics_root}/tests/main.cpp
     ${graphics_root}/tests/Engine.cpp
     ${graphics_root}/tests/Buffer.cpp
     ${graphics_root}/tests/Image.cpp
+    ${graphics_root}/tests/FrameBuffer.cpp
 )
 	
 	add_executable(graphics_tests
@@ -85,5 +83,10 @@ set(GRAPHICS_TEST_SRCS
 	source_group("Source" FILES ${GRAPHICS_TEST_SRCS})
 						
 	set_property(TARGET graphics_tests APPEND PROPERTY FOLDER tests)
+	
+	add_custom_command(TARGET graphics_tests POST_BUILD        
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different  
+        "${glfw_root}/lib-vc2019/glfw3.dll"
+        $<TARGET_FILE_DIR:graphics_tests>)
 
 endif()
