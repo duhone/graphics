@@ -44,6 +44,7 @@ target_include_directories(graphics PRIVATE
 
 target_link_libraries(graphics 
   core
+	glm
 )
 
 source_group("Public Headers" FILES ${GRAPHICS_PUBLIC_HDRS})

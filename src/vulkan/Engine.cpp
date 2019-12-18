@@ -5,6 +5,7 @@
 #include "core/algorithm.h"
 
 #include "vulkan/vulkan.hpp"
+#include "glm/vec2.hpp"
 
 #include <exception>
 #include <iostream>
@@ -16,6 +17,7 @@ using namespace CR::Core;
 using namespace CR::Graphics;
 using namespace std;
 using namespace std::string_literals;
+using namespace glm;
 
 namespace {
 	constexpr uint32_t MajorVersion = 0;    // 64K max
@@ -41,9 +43,13 @@ namespace {
 		vk::Queue m_PresentationQueue;
 
 		vk::SurfaceKHR m_PrimarySurface;
+		vk::SwapchainKHR m_PrimarySwapChain;
+		std::vector<vk::Image> m_PrimarySwapChainImages;
 
 		uint32_t DeviceMemoryIndex{numeric_limits<uint32_t>::max()};
 		uint32_t HostMemoryIndex{numeric_limits<uint32_t>::max()};
+
+		vec2 m_WindowSize{0, 0};
 	};
 
 	unique_ptr<Engine>& GetEngine() {
@@ -255,23 +261,71 @@ Engine::Engine(const EngineSettings& a_settings) {
 	++queueIndexMap[m_TransferQueueIndex];
 	transferQueueIndex = queueIndexMap[m_TransferQueueIndex];
 
+	vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
 	vk::DeviceCreateInfo createLogDevInfo;
 	createLogDevInfo.queueCreateInfoCount    = (int)size(queueInfos);
 	createLogDevInfo.pQueueCreateInfos       = data(queueInfos);
 	createLogDevInfo.pEnabledFeatures        = &requiredFeatures;
 	createLogDevInfo.enabledLayerCount       = 0;
 	createLogDevInfo.ppEnabledLayerNames     = nullptr;
-	createLogDevInfo.enabledExtensionCount   = 0;
-	createLogDevInfo.ppEnabledExtensionNames = nullptr;
+	createLogDevInfo.enabledExtensionCount   = (uint32_t)size(deviceExtensions);
+	createLogDevInfo.ppEnabledExtensionNames = data(deviceExtensions);
 
 	m_Device = selectedDevice.createDevice(createLogDevInfo);
 
 	m_GraphicsQueue     = m_Device.getQueue(m_GraphicsQueueIndex, graphicsQueueIndex);
 	m_PresentationQueue = m_Device.getQueue(m_PresentationQueueIndex, presentationQueueIndex);
 	m_TransferQueue     = m_Device.getQueue(m_TransferQueueIndex, transferQueueIndex);
-}
+
+	auto surfaceCaps = selectedDevice.getSurfaceCapabilitiesKHR(m_PrimarySurface);
+	Log::Info("current surface resolution: {}x{}", surfaceCaps.maxImageExtent.width, surfaceCaps.maxImageExtent.height);
+	Log::Info("Min image count: {} Max image count: {}", surfaceCaps.minImageCount, surfaceCaps.maxImageCount);
+
+	auto surfaceFormats = selectedDevice.getSurfaceFormatsKHR(m_PrimarySurface);
+	Log::Info("Supported surface formats:");
+	for (const auto& format : surfaceFormats) { 
+		Log::Info("    Format: {} ColorSpace {}", to_string(format.format), to_string(format.colorSpace));
+	}
+
+	auto presentModes = selectedDevice.getSurfacePresentModesKHR(m_PrimarySurface);
+	Log::Info("Presentation modes:");
+	for(const auto& mode : presentModes) {
+		Log::Info("    Presentation Mode: {}", to_string(mode));
+	}
+
+	vk::SwapchainCreateInfoKHR swapCreateInfo;
+	swapCreateInfo.setClipped(true);
+	swapCreateInfo.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
+	swapCreateInfo.setImageColorSpace(vk::ColorSpaceKHR::eSrgbNonlinear);
+	swapCreateInfo.setImageExtent(surfaceCaps.maxImageExtent);
+	swapCreateInfo.setImageFormat(vk::Format::eB8G8R8A8Srgb);
+	if(m_GraphicsQueueIndex == m_PresentationQueueIndex) {
+		swapCreateInfo.setImageSharingMode(vk::SharingMode::eExclusive);
+		swapCreateInfo.setQueueFamilyIndexCount(0);
+		swapCreateInfo.setPQueueFamilyIndices(nullptr);
+
+	} else {
+		swapCreateInfo.setImageSharingMode(vk::SharingMode::eConcurrent);
+		uint32_t queueFamilyIndices[] = {(uint32_t)m_GraphicsQueueIndex, (uint32_t)m_PresentationQueueIndex};
+		swapCreateInfo.setQueueFamilyIndexCount((uint32_t)size(queueFamilyIndices));
+		swapCreateInfo.setPQueueFamilyIndices(data(queueFamilyIndices));
+	}
+	swapCreateInfo.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment);
+	swapCreateInfo.setMinImageCount(2);
+	swapCreateInfo.setPresentMode(vk::PresentModeKHR::eFifo);
+	swapCreateInfo.setPreTransform(vk::SurfaceTransformFlagBitsKHR::eIdentity);
+	swapCreateInfo.setSurface(m_PrimarySurface);
+	swapCreateInfo.setImageArrayLayers(1);
+
+	m_PrimarySwapChain = m_Device.createSwapchainKHR(swapCreateInfo);
+	m_PrimarySwapChainImages = m_Device.getSwapchainImagesKHR(m_PrimarySwapChain);
+
+	m_WindowSize = vec2(surfaceCaps.maxImageExtent.width, surfaceCaps.maxImageExtent.height);
+ }
 
 Engine::~Engine() {
+	 m_Device.destroySwapchainKHR(m_PrimarySwapChain);
 	m_Device.destroy();
 	m_Instance.destroySurfaceKHR(m_PrimarySurface);
 	m_Instance.destroy();
