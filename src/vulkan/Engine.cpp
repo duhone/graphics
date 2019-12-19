@@ -4,8 +4,8 @@
 #include "core/Log.h"
 #include "core/algorithm.h"
 
-#include "vulkan/vulkan.hpp"
 #include "glm/vec2.hpp"
+#include "vulkan/vulkan.hpp"
 
 #include <exception>
 #include <iostream>
@@ -45,6 +45,7 @@ namespace {
 		vk::SurfaceKHR m_PrimarySurface;
 		vk::SwapchainKHR m_PrimarySwapChain;
 		std::vector<vk::Image> m_PrimarySwapChainImages;
+		std::vector<vk::ImageView> m_primarySwapChainImageViews;
 
 		uint32_t DeviceMemoryIndex{numeric_limits<uint32_t>::max()};
 		uint32_t HostMemoryIndex{numeric_limits<uint32_t>::max()};
@@ -236,7 +237,7 @@ Engine::Engine(const EngineSettings& a_settings) {
 	int32_t graphicsQueueIndex     = 0;
 	int32_t presentationQueueIndex = 0;
 	int32_t transferQueueIndex     = 0;
-	int32_t queueIndexMap[256]; //surely no more than 256 queue families for all time
+	int32_t queueIndexMap[256];    // surely no more than 256 queue families for all time
 	fill(queueIndexMap, -1);
 
 	float graphicsPriority = 1.0f;
@@ -284,15 +285,13 @@ Engine::Engine(const EngineSettings& a_settings) {
 
 	auto surfaceFormats = selectedDevice.getSurfaceFormatsKHR(m_PrimarySurface);
 	Log::Info("Supported surface formats:");
-	for (const auto& format : surfaceFormats) { 
+	for(const auto& format : surfaceFormats) {
 		Log::Info("    Format: {} ColorSpace {}", to_string(format.format), to_string(format.colorSpace));
 	}
 
 	auto presentModes = selectedDevice.getSurfacePresentModesKHR(m_PrimarySurface);
 	Log::Info("Presentation modes:");
-	for(const auto& mode : presentModes) {
-		Log::Info("    Presentation Mode: {}", to_string(mode));
-	}
+	for(const auto& mode : presentModes) { Log::Info("    Presentation Mode: {}", to_string(mode)); }
 
 	vk::SwapchainCreateInfoKHR swapCreateInfo;
 	swapCreateInfo.setClipped(true);
@@ -318,14 +317,27 @@ Engine::Engine(const EngineSettings& a_settings) {
 	swapCreateInfo.setSurface(m_PrimarySurface);
 	swapCreateInfo.setImageArrayLayers(1);
 
-	m_PrimarySwapChain = m_Device.createSwapchainKHR(swapCreateInfo);
+	m_PrimarySwapChain       = m_Device.createSwapchainKHR(swapCreateInfo);
 	m_PrimarySwapChainImages = m_Device.getSwapchainImagesKHR(m_PrimarySwapChain);
-
+	for(const auto& image : m_PrimarySwapChainImages) {
+		vk::ImageViewCreateInfo viewInfo;
+		viewInfo.setFormat(vk::Format::eB8G8R8A8Srgb);
+		viewInfo.setImage(image);
+		viewInfo.setViewType(vk::ImageViewType::e2D);
+		viewInfo.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
+		viewInfo.subresourceRange.baseArrayLayer = 0;
+		viewInfo.subresourceRange.layerCount     = 1;
+		viewInfo.subresourceRange.baseMipLevel   = 0;
+		viewInfo.subresourceRange.levelCount     = 1;
+		m_primarySwapChainImageViews.push_back(m_Device.createImageView(viewInfo));
+	}
 	m_WindowSize = vec2(surfaceCaps.maxImageExtent.width, surfaceCaps.maxImageExtent.height);
- }
+}
 
 Engine::~Engine() {
-	 m_Device.destroySwapchainKHR(m_PrimarySwapChain);
+	for(auto& imageView : m_primarySwapChainImageViews) { m_Device.destroyImageView(imageView); }
+	m_primarySwapChainImageViews.clear();
+	m_Device.destroySwapchainKHR(m_PrimarySwapChain);
 	m_Device.destroy();
 	m_Instance.destroySurfaceKHR(m_PrimarySurface);
 	m_Instance.destroy();
