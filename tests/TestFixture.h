@@ -26,13 +26,13 @@ class TestFixture {
 		settings.HInstance          = GetModuleHandle(nullptr);
 
 		REQUIRE_NOTHROW(CR::Graphics::CreateEngine(settings));
-  }
+	}
 
-    ~TestFixture() {
-	  REQUIRE_NOTHROW(CR::Graphics::ShutdownEngine());
+	~TestFixture() {
+		REQUIRE_NOTHROW(CR::Graphics::ShutdownEngine());
 
-	  glfwDestroyWindow(Window);
+		glfwDestroyWindow(Window);
 
-	  glfwTerminate();
-    }
+		glfwTerminate();
+	}
 };

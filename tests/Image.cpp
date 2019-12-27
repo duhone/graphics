@@ -18,7 +18,7 @@ TEST_CASE_METHOD(TestFixture, "image creation/destruction", "") {
 			imageData.push_back(255);
 		}
 	}
-	
+
 	auto image = CreateImage(ImageType::sRGBAUncompressed, 256, 256, 1, 1);
 	image->UpdateImage(move(imageData), 0);
 	image.reset();

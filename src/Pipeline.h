@@ -1,5 +1,7 @@
 #pragma once
+#include <cstddef>
 #include <memory>
+#include <vector>
 
 namespace CR::Graphics {
 	struct Pipeline {

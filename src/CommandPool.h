@@ -9,9 +9,9 @@ namespace CR::Graphics {
 		CommandBuffer& operator=(const CommandBuffer&) = delete;
 
 		virtual void* GetHandle() = 0;
-		virtual void Begin() = 0;
-		virtual void End()   = 0;
-		virtual void Reset() = 0;
+		virtual void Begin()      = 0;
+		virtual void End()        = 0;
+		virtual void Reset()      = 0;
 	};
 
 	struct CommandPool {

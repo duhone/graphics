@@ -1,4 +1,5 @@
 #include "catch.hpp"
+
 #include "TestFixture.h"
 
 #include "Buffer.h"

@@ -2,8 +2,8 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOCOMM
 #define NOMINMAX
-#include <windows.h>
 #include "vulkan/vulkan.hpp"
+#include <windows.h>
 
 namespace CR::Graphics {
 	vk::Device& GetDevice();
