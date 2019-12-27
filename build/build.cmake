@@ -20,6 +20,8 @@ set(GRAPHICS_SRCS
     ${graphics_root}/src/vulkan/Image.cpp
     ${graphics_root}/src/vulkan/CommandPool.cpp
     ${graphics_root}/src/vulkan/Commands.cpp
+    ${graphics_root}/src/Pipeline.h
+    ${graphics_root}/src/vulkan/Pipeline.cpp
 )
 
 set(GRAPHICS_BUILD
@@ -42,8 +44,9 @@ target_include_directories(graphics PRIVATE
 	Vulkan::Vulkan
 )		
 
-target_link_libraries(graphics 
+target_link_libraries(graphics PUBLIC
   core
+	datacompression
 	glm
 )
 
@@ -63,6 +66,7 @@ set(GRAPHICS_TEST_SRCS
     ${graphics_root}/tests/Buffer.cpp
     ${graphics_root}/tests/Image.cpp
     ${graphics_root}/tests/FrameBuffer.cpp
+    ${graphics_root}/tests/Pipeline.cpp
 )
 	
 	add_executable(graphics_tests
