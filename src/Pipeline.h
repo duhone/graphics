@@ -1,4 +1,7 @@
 #pragma once
+
+#include "core/Span.h"
+
 #include <cstddef>
 #include <memory>
 #include <vector>
@@ -11,5 +14,8 @@ namespace CR::Graphics {
 		Pipeline& operator=(const Pipeline&) = delete;
 	};
 
-	std::unique_ptr<Pipeline> CreatePipeline();
+	struct CreatePipelineArgs {
+		Core::Span<std::byte> ShaderModule;    // crsm file
+	};
+	std::unique_ptr<Pipeline> CreatePipeline(const CreatePipelineArgs& a_args);
 }    // namespace CR::Graphics

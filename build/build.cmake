@@ -87,6 +87,7 @@ if(IncludeTests)
 		catch
 		fmt
 		core
+    platform
 		graphics
 		Vulkan::Vulkan 
 		glfw
