@@ -59,18 +59,25 @@ if(IncludeTests)
 	###############################################
 	#unit tests
 	###############################################
-set(GRAPHICS_TEST_SRCS
-    ${graphics_root}/tests/TestFixture.h
-    ${graphics_root}/tests/main.cpp
-    ${graphics_root}/tests/Engine.cpp
-    ${graphics_root}/tests/Buffer.cpp
-    ${graphics_root}/tests/Image.cpp
-    ${graphics_root}/tests/FrameBuffer.cpp
-    ${graphics_root}/tests/Pipeline.cpp
-)
+  set(GRAPHICS_TEST_SRCS
+      ${graphics_root}/tests/TestFixture.h
+      ${graphics_root}/tests/main.cpp
+      ${graphics_root}/tests/Engine.cpp
+      ${graphics_root}/tests/Buffer.cpp
+      ${graphics_root}/tests/Image.cpp
+      ${graphics_root}/tests/FrameBuffer.cpp
+      ${graphics_root}/tests/Pipeline.cpp
+  )
+
+  set(GRAPHICS_TEST_DATA
+      ${graphics_root}/tests/data/simple.vert
+      ${graphics_root}/tests/data/simple.frag
+      ${graphics_root}/tests/data/simple.crsm
+  )
 	
 	add_executable(graphics_tests
 						${GRAPHICS_TEST_SRCS}
+						${GRAPHICS_TEST_DATA}
 	)
 
 	target_include_directories(graphics_tests PRIVATE
@@ -86,12 +93,18 @@ set(GRAPHICS_TEST_SRCS
 	)
 
 	source_group("Source" FILES ${GRAPHICS_TEST_SRCS})
+	source_group("Data" FILES ${GRAPHICS_TEST_DATA})
 						
 	set_property(TARGET graphics_tests APPEND PROPERTY FOLDER tests)
 	
 	add_custom_command(TARGET graphics_tests POST_BUILD        
     COMMAND ${CMAKE_COMMAND} -E copy_if_different  
         "${glfw_root}/lib-vc2019/glfw3.dll"
+        $<TARGET_FILE_DIR:graphics_tests>)
+        
+	add_custom_command(TARGET graphics_tests POST_BUILD        
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different  
+        ${GRAPHICS_TEST_DATA}
         $<TARGET_FILE_DIR:graphics_tests>)
 
 endif()
