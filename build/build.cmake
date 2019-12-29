@@ -86,7 +86,9 @@ if(IncludeTests)
 	target_link_libraries(graphics_tests 
 		catch
 		fmt
+    zstd
 		core
+    datacompression
     platform
 		graphics
 		Vulkan::Vulkan 
