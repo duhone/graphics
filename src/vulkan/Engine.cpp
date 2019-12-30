@@ -4,7 +4,6 @@
 #include "core/Log.h"
 #include "core/algorithm.h"
 
-#include "glm/vec2.hpp"
 #include "vulkan/vulkan.hpp"
 
 #include <exception>
@@ -50,7 +49,7 @@ namespace {
 		uint32_t DeviceMemoryIndex{numeric_limits<uint32_t>::max()};
 		uint32_t HostMemoryIndex{numeric_limits<uint32_t>::max()};
 
-		vec2 m_WindowSize{0, 0};
+		ivec2 m_WindowSize{0, 0};
 	};
 
 	unique_ptr<Engine>& GetEngine() {
@@ -331,7 +330,7 @@ Engine::Engine(const EngineSettings& a_settings) {
 		viewInfo.subresourceRange.levelCount     = 1;
 		m_primarySwapChainImageViews.push_back(m_Device.createImageView(viewInfo));
 	}
-	m_WindowSize = vec2(surfaceCaps.maxImageExtent.width, surfaceCaps.maxImageExtent.height);
+	m_WindowSize = ivec2(surfaceCaps.maxImageExtent.width, surfaceCaps.maxImageExtent.height);
 }
 
 Engine::~Engine() {
@@ -392,4 +391,9 @@ void CR::Graphics::SubmitTransferCommands(const std::vector<vk::CommandBuffer>& 
 	submit.commandBufferCount = (uint32_t)cmds.size();
 	submit.pCommandBuffers    = cmds.data();
 	GetEngine()->m_TransferQueue.submit(1, &submit, vk::Fence{});
+}
+
+const glm::ivec2& CR::Graphics::GetWindowSize() {
+	assert(GetEngine().get());
+	return GetEngine()->m_WindowSize;
 }

@@ -5,6 +5,8 @@
 #include "vulkan/vulkan.hpp"
 #include <windows.h>
 
+#include "glm/vec2.hpp"
+
 namespace CR::Graphics {
 	vk::Device& GetDevice();
 	uint32_t GetDeviceMemoryIndex();
@@ -14,4 +16,6 @@ namespace CR::Graphics {
 	uint32_t GetTransferQueueIndex();
 	void SubmitGraphicsCommands(const std::vector<vk::CommandBuffer>& cmds);
 	void SubmitTransferCommands(const std::vector<vk::CommandBuffer>& cmds);
+
+	const glm::ivec2& GetWindowSize();
 }    // namespace CR::Graphics
