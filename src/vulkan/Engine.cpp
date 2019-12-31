@@ -45,6 +45,7 @@ namespace {
 		vk::SwapchainKHR m_PrimarySwapChain;
 		std::vector<vk::Image> m_PrimarySwapChainImages;
 		std::vector<vk::ImageView> m_primarySwapChainImageViews;
+		std::vector<vk::Framebuffer> m_frameBuffers;
 		vk::RenderPass m_RenderPass;    // only 1 currently, and only 1 subpass to go with it
 
 		uint32_t DeviceMemoryIndex{numeric_limits<uint32_t>::max()};
@@ -359,9 +360,22 @@ Engine::Engine(const EngineSettings& a_settings) {
 	renderPassInfo.pSubpasses      = &subpassDesc;
 
 	m_RenderPass = m_Device.createRenderPass(renderPassInfo);
+
+	for(auto& imageView : m_primarySwapChainImageViews) {
+		vk::FramebufferCreateInfo framebufferInfo;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments    = &imageView;
+		framebufferInfo.width           = m_WindowSize.x;
+		framebufferInfo.height          = m_WindowSize.y;
+		framebufferInfo.renderPass      = m_RenderPass;
+		framebufferInfo.layers          = 1;
+
+		m_frameBuffers.push_back(m_Device.createFramebuffer(framebufferInfo));
+	}
 }
 
 Engine::~Engine() {
+	for(auto& framebuffer : m_frameBuffers) { m_Device.destroyFramebuffer(framebuffer); }
 	m_Device.destroyRenderPass(m_RenderPass);
 	for(auto& imageView : m_primarySwapChainImageViews) { m_Device.destroyImageView(imageView); }
 	m_primarySwapChainImageViews.clear();
