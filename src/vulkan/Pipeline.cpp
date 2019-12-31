@@ -21,6 +21,7 @@ namespace {
 
 	  private:
 		vk::UniquePipelineLayout m_pipeLineLayout;
+		vk::UniquePipeline m_pipeline;
 	};
 }    // namespace
 
@@ -48,14 +49,13 @@ PipelineImpl::PipelineImpl(const CreatePipelineArgs& a_args) {
 	vk::UniqueShaderModule vertModule = GetDevice().createShaderModuleUnique(vertInfo);
 	vk::UniqueShaderModule fragModule = GetDevice().createShaderModuleUnique(fragInfo);
 
-	vk::PipelineShaderStageCreateInfo vertPipeInfo;
-	vertPipeInfo.module = vertModule.get();
-	vertPipeInfo.pName  = "main";
-	vertPipeInfo.stage  = vk::ShaderStageFlagBits::eVertex;
-	vk::PipelineShaderStageCreateInfo fragPipeInfo;
-	fragPipeInfo.module = fragModule.get();
-	fragPipeInfo.pName  = "main";
-	fragPipeInfo.stage  = vk::ShaderStageFlagBits::eFragment;
+	vk::PipelineShaderStageCreateInfo shaderPipeInfo[2];
+	shaderPipeInfo[0].module = vertModule.get();
+	shaderPipeInfo[0].pName  = "main";
+	shaderPipeInfo[0].stage  = vk::ShaderStageFlagBits::eVertex;
+	shaderPipeInfo[1].module = fragModule.get();
+	shaderPipeInfo[1].pName  = "main";
+	shaderPipeInfo[1].stage  = vk::ShaderStageFlagBits::eFragment;
 
 	// defaults are fine for this one. we dont have a vertex buffer
 	vk::PipelineVertexInputStateCreateInfo vertInputInfo;
@@ -79,7 +79,8 @@ PipelineImpl::PipelineImpl(const CreatePipelineArgs& a_args) {
 	viewPortInfo.scissorCount  = 1;
 
 	vk::PipelineRasterizationStateCreateInfo rasterInfo;
-	rasterInfo.cullMode = vk::CullModeFlagBits::eNone;
+	rasterInfo.cullMode  = vk::CullModeFlagBits::eNone;
+	rasterInfo.lineWidth = 1.0f;
 
 	vk::PipelineMultisampleStateCreateInfo multisampleInfo;
 	multisampleInfo.alphaToCoverageEnable = true;
@@ -95,6 +96,20 @@ PipelineImpl::PipelineImpl(const CreatePipelineArgs& a_args) {
 	vk::PipelineLayoutCreateInfo layoutInfo;
 
 	m_pipeLineLayout = GetDevice().createPipelineLayoutUnique(layoutInfo);
+
+	vk::GraphicsPipelineCreateInfo pipeInfo;
+	pipeInfo.layout              = m_pipeLineLayout.get();
+	pipeInfo.pColorBlendState    = &blendStateInfo;
+	pipeInfo.pInputAssemblyState = &vertAssemblyInfo;
+	pipeInfo.pMultisampleState   = &multisampleInfo;
+	pipeInfo.pRasterizationState = &rasterInfo;
+	pipeInfo.pVertexInputState   = &vertInputInfo;
+	pipeInfo.pViewportState      = &viewPortInfo;
+	pipeInfo.stageCount          = 2;
+	pipeInfo.pStages             = shaderPipeInfo;
+	pipeInfo.renderPass          = GetRenderPass();
+
+	m_pipeline = GetDevice().createGraphicsPipelineUnique(vk::PipelineCache{}, pipeInfo);
 }
 
 std::unique_ptr<Pipeline> CR::Graphics::CreatePipeline(const CreatePipelineArgs& a_args) {

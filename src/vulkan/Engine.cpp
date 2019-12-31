@@ -426,3 +426,8 @@ const glm::ivec2& CR::Graphics::GetWindowSize() {
 	assert(GetEngine().get());
 	return GetEngine()->m_WindowSize;
 }
+
+const vk::RenderPass& CR::Graphics::GetRenderPass() {
+	assert(GetEngine().get());
+	return GetEngine()->m_RenderPass;
+}

@@ -11,6 +11,7 @@ namespace CR::Graphics {
 	vk::Device& GetDevice();
 	uint32_t GetDeviceMemoryIndex();
 	uint32_t GetHostMemoryIndex();
+	const vk::RenderPass& GetRenderPass();
 
 	uint32_t GetGraphicsQueueIndex();
 	uint32_t GetTransferQueueIndex();
