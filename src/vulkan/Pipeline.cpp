@@ -83,7 +83,7 @@ PipelineImpl::PipelineImpl(const CreatePipelineArgs& a_args) {
 
 	vk::PipelineMultisampleStateCreateInfo multisampleInfo;
 	multisampleInfo.alphaToCoverageEnable = true;
-	multisampleInfo.rasterizationSamples  = vk::SampleCountFlagBits::e4;
+	multisampleInfo.rasterizationSamples  = vk::SampleCountFlagBits::e1;
 
 	vk::PipelineColorBlendAttachmentState blendAttachState;
 	blendAttachState.blendEnable = false;

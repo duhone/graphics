@@ -45,6 +45,7 @@ namespace {
 		vk::SwapchainKHR m_PrimarySwapChain;
 		std::vector<vk::Image> m_PrimarySwapChainImages;
 		std::vector<vk::ImageView> m_primarySwapChainImageViews;
+		vk::RenderPass m_RenderPass;    // only 1 currently, and only 1 subpass to go with it
 
 		uint32_t DeviceMemoryIndex{numeric_limits<uint32_t>::max()};
 		uint32_t HostMemoryIndex{numeric_limits<uint32_t>::max()};
@@ -331,9 +332,37 @@ Engine::Engine(const EngineSettings& a_settings) {
 		m_primarySwapChainImageViews.push_back(m_Device.createImageView(viewInfo));
 	}
 	m_WindowSize = ivec2(surfaceCaps.maxImageExtent.width, surfaceCaps.maxImageExtent.height);
+
+	vk::AttachmentDescription attatchDesc;
+	attatchDesc.initialLayout  = vk::ImageLayout::eUndefined;
+	attatchDesc.finalLayout    = vk::ImageLayout::ePresentSrcKHR;
+	attatchDesc.format         = vk::Format::eB8G8R8A8Srgb;
+	attatchDesc.loadOp         = vk::AttachmentLoadOp::eDontCare;
+	attatchDesc.storeOp        = vk::AttachmentStoreOp::eStore;
+	attatchDesc.samples        = vk::SampleCountFlagBits::e1;
+	attatchDesc.stencilLoadOp  = vk::AttachmentLoadOp::eDontCare;
+	attatchDesc.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+
+	vk::AttachmentReference attachRef;
+	attachRef.attachment = 0;
+	attachRef.layout     = vk::ImageLayout::eColorAttachmentOptimal;
+
+	vk::SubpassDescription subpassDesc;
+	subpassDesc.pipelineBindPoint    = vk::PipelineBindPoint::eGraphics;
+	subpassDesc.colorAttachmentCount = 1;
+	subpassDesc.pColorAttachments    = &attachRef;
+
+	vk::RenderPassCreateInfo renderPassInfo;
+	renderPassInfo.attachmentCount = 1;
+	renderPassInfo.pAttachments    = &attatchDesc;
+	renderPassInfo.subpassCount    = 1;
+	renderPassInfo.pSubpasses      = &subpassDesc;
+
+	m_RenderPass = m_Device.createRenderPass(renderPassInfo);
 }
 
 Engine::~Engine() {
+	m_Device.destroyRenderPass(m_RenderPass);
 	for(auto& imageView : m_primarySwapChainImageViews) { m_Device.destroyImageView(imageView); }
 	m_primarySwapChainImageViews.clear();
 	m_Device.destroySwapchainKHR(m_PrimarySwapChain);
