@@ -1,4 +1,7 @@
 #include "Commands.h"
+
+#include "EngineInternal.h"
+
 #define WIN32_LEAN_AND_MEAN
 #define NOCOMM
 #define NOMINMAX
@@ -8,8 +11,8 @@
 using namespace CR::Graphics;
 using namespace std;
 
-void CR::Graphics::CopyBufferToBuffer(CommandBuffer& a_cmdBuffer, Buffer& a_from, Buffer& a_to, uint32_t a_offset,
-                                      uint32_t a_size) {
+void Commands::CopyBufferToBuffer(CommandBuffer& a_cmdBuffer, Buffer& a_from, Buffer& a_to, uint32_t a_offset,
+                                  uint32_t a_size) {
 	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
 	vk::Buffer* vkfrom       = (vk::Buffer*)a_from.GetHandle();
 	vk::Buffer* vkto         = (vk::Buffer*)a_to.GetHandle();
@@ -18,4 +21,31 @@ void CR::Graphics::CopyBufferToBuffer(CommandBuffer& a_cmdBuffer, Buffer& a_from
 	cpy.srcOffset = cpy.dstOffset = a_offset;
 	cpy.size                      = a_size;
 	vkcmd->copyBuffer(*vkfrom, *vkto, 1, &cpy);
+}
+
+void Commands::RenderPassBegin(CommandBuffer& a_cmdBuffer) {
+	vk::RenderPassBeginInfo renderPassInfo;
+	renderPassInfo.renderPass               = GetRenderPass();
+	renderPassInfo.clearValueCount          = 0;
+	renderPassInfo.renderArea.extent.width  = GetWindowSize().x;
+	renderPassInfo.renderArea.extent.height = GetWindowSize().y;
+	renderPassInfo.framebuffer              = GetFrameBuffer();
+
+	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
+	vkcmd->beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+}
+
+void Commands::RenderPassEnd(CommandBuffer& a_cmdBuffer) {
+	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
+	vkcmd->endRenderPass();
+}
+
+void Commands::BindPipeline(CommandBuffer& a_cmdBuffer, Pipeline& a_pipeline) {
+	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
+	vkcmd->bindPipeline(vk::PipelineBindPoint::eGraphics, *(const vk::Pipeline*)a_pipeline.GetHandle());
+}
+
+void Commands::Draw(CommandBuffer& a_cmdBuffer, uint32_t a_vertexCount, uint32_t a_instanceCount) {
+	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
+	vkcmd->draw(a_vertexCount, a_instanceCount, 0, 0);
 }

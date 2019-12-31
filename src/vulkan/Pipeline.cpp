@@ -19,6 +19,8 @@ namespace {
 		PipelineImpl(const PipelineImpl&) = delete;
 		PipelineImpl& operator=(const PipelineImpl&) = delete;
 
+		const std::uintptr_t GetHandle() const override;
+
 	  private:
 		vk::UniquePipelineLayout m_pipeLineLayout;
 		vk::UniquePipeline m_pipeline;
@@ -110,6 +112,10 @@ PipelineImpl::PipelineImpl(const CreatePipelineArgs& a_args) {
 	pipeInfo.renderPass          = GetRenderPass();
 
 	m_pipeline = GetDevice().createGraphicsPipelineUnique(vk::PipelineCache{}, pipeInfo);
+}
+
+const std::uintptr_t PipelineImpl::GetHandle() const {
+	return (uintptr_t)&m_pipeline.get();
 }
 
 std::unique_ptr<Pipeline> CR::Graphics::CreatePipeline(const CreatePipelineArgs& a_args) {

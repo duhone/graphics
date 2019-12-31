@@ -52,6 +52,7 @@ namespace {
 		uint32_t HostMemoryIndex{numeric_limits<uint32_t>::max()};
 
 		ivec2 m_WindowSize{0, 0};
+		uint32_t m_currentFrameBuffer{0};
 	};
 
 	unique_ptr<Engine>& GetEngine() {
@@ -444,4 +445,9 @@ const glm::ivec2& CR::Graphics::GetWindowSize() {
 const vk::RenderPass& CR::Graphics::GetRenderPass() {
 	assert(GetEngine().get());
 	return GetEngine()->m_RenderPass;
+}
+
+const vk::Framebuffer& CR::Graphics::GetFrameBuffer() {
+	assert(GetEngine().get());
+	return GetEngine()->m_frameBuffers[GetEngine()->m_currentFrameBuffer];
 }
