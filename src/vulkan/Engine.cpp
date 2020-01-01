@@ -53,6 +53,7 @@ namespace {
 
 		ivec2 m_WindowSize{0, 0};
 		uint32_t m_currentFrameBuffer{0};
+		std::optional<glm::vec4> m_clearColor;
 	};
 
 	unique_ptr<Engine>& GetEngine() {
@@ -61,7 +62,7 @@ namespace {
 	}
 }    // namespace
 
-Engine::Engine(const EngineSettings& a_settings) {
+Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.ClearColor) {
 	vector<string> enabledLayers;
 	if(a_settings.EnableDebug) {
 		vector<vk::LayerProperties> layers = vk::enumerateInstanceLayerProperties();
@@ -336,10 +337,14 @@ Engine::Engine(const EngineSettings& a_settings) {
 	m_WindowSize = ivec2(surfaceCaps.maxImageExtent.width, surfaceCaps.maxImageExtent.height);
 
 	vk::AttachmentDescription attatchDesc;
-	attatchDesc.initialLayout  = vk::ImageLayout::eUndefined;
-	attatchDesc.finalLayout    = vk::ImageLayout::ePresentSrcKHR;
-	attatchDesc.format         = vk::Format::eB8G8R8A8Srgb;
-	attatchDesc.loadOp         = vk::AttachmentLoadOp::eDontCare;
+	attatchDesc.initialLayout = vk::ImageLayout::eUndefined;
+	attatchDesc.finalLayout   = vk::ImageLayout::ePresentSrcKHR;
+	attatchDesc.format        = vk::Format::eB8G8R8A8Srgb;
+	if(a_settings.ClearColor.has_value()) {
+		attatchDesc.loadOp = vk::AttachmentLoadOp::eClear;
+	} else {
+		attatchDesc.loadOp = vk::AttachmentLoadOp::eDontCare;
+	}
 	attatchDesc.storeOp        = vk::AttachmentStoreOp::eStore;
 	attatchDesc.samples        = vk::SampleCountFlagBits::e1;
 	attatchDesc.stencilLoadOp  = vk::AttachmentLoadOp::eDontCare;

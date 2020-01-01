@@ -1,5 +1,9 @@
 #pragma once
+
+#include "glm/vec4.hpp"
+
 #include <functional>
+#include <optional>
 #include <string>
 
 namespace CR::Graphics {
@@ -7,6 +11,8 @@ namespace CR::Graphics {
 		std::string ApplicationName;
 		uint32_t ApplicationVersion{0};
 		bool EnableDebug{false};
+		// only set ClearColor if you actually need to clear the screen
+		std::optional<glm::vec4> ClearColor;
 
 		// Platform specific required extensions for windowing system. change to span in c++20.
 		const char** ExtensionsToEnable{nullptr};

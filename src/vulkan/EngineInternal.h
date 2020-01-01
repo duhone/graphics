@@ -20,4 +20,5 @@ namespace CR::Graphics {
 	void SubmitTransferCommands(const std::vector<vk::CommandBuffer>& cmds);
 
 	const glm::ivec2& GetWindowSize();
+
 }    // namespace CR::Graphics

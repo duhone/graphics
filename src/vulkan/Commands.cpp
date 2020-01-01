@@ -23,13 +23,22 @@ void Commands::CopyBufferToBuffer(CommandBuffer& a_cmdBuffer, Buffer& a_from, Bu
 	vkcmd->copyBuffer(*vkfrom, *vkto, 1, &cpy);
 }
 
-void Commands::RenderPassBegin(CommandBuffer& a_cmdBuffer) {
+void Commands::RenderPassBegin(CommandBuffer& a_cmdBuffer, std::optional<glm::vec4> a_clearColor) {
 	vk::RenderPassBeginInfo renderPassInfo;
 	renderPassInfo.renderPass               = GetRenderPass();
-	renderPassInfo.clearValueCount          = 0;
 	renderPassInfo.renderArea.extent.width  = GetWindowSize().x;
 	renderPassInfo.renderArea.extent.height = GetWindowSize().y;
 	renderPassInfo.framebuffer              = GetFrameBuffer();
+	if(a_clearColor.has_value()) {
+		vk::ClearValue clearValue;
+		clearValue.color.setFloat32(
+		    {a_clearColor.value().r, a_clearColor.value().g, a_clearColor.value().b, a_clearColor.value().a});
+		renderPassInfo.clearValueCount = 1;
+		renderPassInfo.pClearValues    = &clearValue;
+
+	} else {
+		renderPassInfo.clearValueCount = 0;
+	}
 
 	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
 	vkcmd->beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
