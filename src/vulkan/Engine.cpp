@@ -1,6 +1,9 @@
 #include "Graphics/Engine.h"
 
+#include "CommandPool.h"
+#include "Commands.h"
 #include "EngineInternal.h"
+
 #include "core/Log.h"
 #include "core/algorithm.h"
 
@@ -12,6 +15,7 @@
 #include <optional>
 #include <vector>
 
+using namespace CR;
 using namespace CR::Core;
 using namespace CR::Graphics;
 using namespace std;
@@ -46,14 +50,21 @@ namespace {
 		std::vector<vk::Image> m_PrimarySwapChainImages;
 		std::vector<vk::ImageView> m_primarySwapChainImageViews;
 		std::vector<vk::Framebuffer> m_frameBuffers;
-		vk::RenderPass m_RenderPass;    // only 1 currently, and only 1 subpass to go with it
+		vk::RenderPass m_RenderPass;          // only 1 currently, and only 1 subpass to go with it
+		vk::Semaphore m_renderingFinished;    // need to block presenting until all rendering has completed
+		vk::Fence m_frameFence;
 
 		uint32_t DeviceMemoryIndex{numeric_limits<uint32_t>::max()};
 		uint32_t HostMemoryIndex{numeric_limits<uint32_t>::max()};
 
 		ivec2 m_WindowSize{0, 0};
-		uint32_t m_currentFrameBuffer{0};
 		std::optional<glm::vec4> m_clearColor;
+
+		std::unique_ptr<CommandPool> m_commandPool;
+
+		// Per frame members
+		uint32_t m_currentFrameBuffer{0};
+		std::unique_ptr<CommandBuffer> m_commandBuffer;
 	};
 
 	unique_ptr<Engine>& GetEngine() {
@@ -378,9 +389,17 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 
 		m_frameBuffers.push_back(m_Device.createFramebuffer(framebufferInfo));
 	}
+
+	vk::SemaphoreCreateInfo semInfo;
+	m_renderingFinished = m_Device.createSemaphore(semInfo);
+
+	vk::FenceCreateInfo fenceInfo;
+	m_frameFence = m_Device.createFence(fenceInfo);
 }
 
 Engine::~Engine() {
+	m_Device.destroyFence(m_frameFence);
+	m_Device.destroySemaphore(m_renderingFinished);
 	for(auto& framebuffer : m_frameBuffers) { m_Device.destroyFramebuffer(framebuffer); }
 	m_Device.destroyRenderPass(m_RenderPass);
 	for(auto& imageView : m_primarySwapChainImageViews) { m_Device.destroyImageView(imageView); }
@@ -391,42 +410,89 @@ Engine::~Engine() {
 	m_Instance.destroy();
 }
 
-void CR::Graphics::CreateEngine(const EngineSettings& a_settings) {
+void Graphics::CreateEngine(const EngineSettings& a_settings) {
 	assert(!GetEngine().get());
-	GetEngine() = make_unique<Engine>(a_settings);
+	GetEngine()                = make_unique<Engine>(a_settings);
+	GetEngine()->m_commandPool = CreateCommandPool(CommandPool::PoolType::Primary);
 }
 
-void CR::Graphics::ShutdownEngine() {
+void Graphics::BeginFrame() {
 	assert(GetEngine().get());
+	auto engine = GetEngine().get();
+
+	engine->m_Device.waitIdle();
+
+	engine->m_currentFrameBuffer =
+	    engine->m_Device
+	        .acquireNextImageKHR(engine->m_PrimarySwapChain, UINT64_MAX, vk::Semaphore{}, engine->m_frameFence)
+	        .value;
+
+	engine->m_Device.waitForFences(1, &engine->m_frameFence, true, UINT64_MAX);
+	engine->m_Device.resetFences(1, &engine->m_frameFence);
+
+	engine->m_commandBuffer = engine->m_commandPool->CreateCommandBuffer();
+}
+
+void Graphics::EndFrame() {
+	assert(GetEngine().get());
+	auto engine = GetEngine().get();
+
+	engine->m_commandBuffer->Begin();
+	Commands::RenderPassBegin(*engine->m_commandBuffer.get(), engine->m_clearColor);
+	Commands::RenderPassEnd(*engine->m_commandBuffer.get());
+	engine->m_commandBuffer->End();
+
+	vk::SubmitInfo subInfo;
+	subInfo.commandBufferCount   = 1;
+	subInfo.pCommandBuffers      = (vk::CommandBuffer*)engine->m_commandBuffer->GetHandle();
+	subInfo.waitSemaphoreCount   = 0;
+	subInfo.signalSemaphoreCount = 1;
+	subInfo.pSignalSemaphores    = &engine->m_renderingFinished;
+	engine->m_GraphicsQueue.submit(subInfo, vk::Fence{});
+
+	vk::PresentInfoKHR presInfo;
+	presInfo.waitSemaphoreCount = 1;
+	presInfo.pWaitSemaphores    = &engine->m_renderingFinished;
+	presInfo.swapchainCount     = 1;
+	presInfo.pSwapchains        = &engine->m_PrimarySwapChain;
+	presInfo.pImageIndices      = &engine->m_currentFrameBuffer;
+	engine->m_PresentationQueue.presentKHR(presInfo);
+}
+
+void Graphics::ShutdownEngine() {
+	assert(GetEngine().get());
+	GetEngine()->m_Device.waitIdle();
+	GetEngine()->m_commandBuffer.reset();
+	GetEngine()->m_commandPool.reset();
 	GetEngine().reset();
 }
 
-vk::Device& CR::Graphics::GetDevice() {
+vk::Device& Graphics::GetDevice() {
 	assert(GetEngine().get());
 	return GetEngine()->m_Device;
 }
 
-uint32_t CR::Graphics::GetDeviceMemoryIndex() {
+uint32_t Graphics::GetDeviceMemoryIndex() {
 	assert(GetEngine().get());
 	return GetEngine()->DeviceMemoryIndex;
 }
 
-uint32_t CR::Graphics::GetHostMemoryIndex() {
+uint32_t Graphics::GetHostMemoryIndex() {
 	assert(GetEngine().get());
 	return GetEngine()->HostMemoryIndex;
 }
 
-uint32_t CR::Graphics::GetGraphicsQueueIndex() {
+uint32_t Graphics::GetGraphicsQueueIndex() {
 	assert(GetEngine().get());
 	return GetEngine()->m_GraphicsQueueIndex;
 }
 
-uint32_t CR::Graphics::GetTransferQueueIndex() {
+uint32_t Graphics::GetTransferQueueIndex() {
 	assert(GetEngine().get());
 	return GetEngine()->m_TransferQueueIndex;
 }
 
-void CR::Graphics::SubmitGraphicsCommands(const std::vector<vk::CommandBuffer>& cmds) {
+void Graphics::SubmitGraphicsCommands(const std::vector<vk::CommandBuffer>& cmds) {
 	assert(GetEngine().get());
 	vk::SubmitInfo submit;
 	submit.commandBufferCount = (uint32_t)cmds.size();
@@ -434,7 +500,7 @@ void CR::Graphics::SubmitGraphicsCommands(const std::vector<vk::CommandBuffer>& 
 	GetEngine()->m_GraphicsQueue.submit(1, &submit, vk::Fence{});
 }
 
-void CR::Graphics::SubmitTransferCommands(const std::vector<vk::CommandBuffer>& cmds) {
+void Graphics::SubmitTransferCommands(const std::vector<vk::CommandBuffer>& cmds) {
 	assert(GetEngine().get());
 	vk::SubmitInfo submit;
 	submit.commandBufferCount = (uint32_t)cmds.size();
@@ -442,17 +508,17 @@ void CR::Graphics::SubmitTransferCommands(const std::vector<vk::CommandBuffer>& 
 	GetEngine()->m_TransferQueue.submit(1, &submit, vk::Fence{});
 }
 
-const glm::ivec2& CR::Graphics::GetWindowSize() {
+const glm::ivec2& Graphics::GetWindowSize() {
 	assert(GetEngine().get());
 	return GetEngine()->m_WindowSize;
 }
 
-const vk::RenderPass& CR::Graphics::GetRenderPass() {
+const vk::RenderPass& Graphics::GetRenderPass() {
 	assert(GetEngine().get());
 	return GetEngine()->m_RenderPass;
 }
 
-const vk::Framebuffer& CR::Graphics::GetFrameBuffer() {
+const vk::Framebuffer& Graphics::GetFrameBuffer() {
 	assert(GetEngine().get());
 	return GetEngine()->m_frameBuffers[GetEngine()->m_currentFrameBuffer];
 }

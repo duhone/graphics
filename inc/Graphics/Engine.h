@@ -27,5 +27,14 @@ namespace CR::Graphics {
 	};
 
 	void CreateEngine(const EngineSettings& a_settings);
+	// Designed this way to reduce latency as much as possible.
+	// You should call BeginFrame at the begining of your frame.
+	// Then perform your game logic, including sampling input.
+	// Then call EndFrame on the graphics engine.
+	// BeginFrame will probably block for a while, don't include its cost in any perf analysis
+	// BeginFrame blocks until all graphics processing is done, and vsync has happened.
+	// This style does cost a lot of performance, but it gives the lowest possible latency in exchange.
+	void BeginFrame();
+	void EndFrame();
 	void ShutdownEngine();
 }    // namespace CR::Graphics

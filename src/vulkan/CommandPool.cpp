@@ -92,6 +92,6 @@ void CommandBufferImpl::Reset() {
 	m_Buffer.reset(vk::CommandBufferResetFlags{});
 }
 
-std::unique_ptr<CommandPool> CR::Graphics::CreateCommandBuffer(CommandPool::PoolType a_type) {
+std::unique_ptr<CommandPool> CR::Graphics::CreateCommandPool(CommandPool::PoolType a_type) {
 	return make_unique<CommandPoolImpl>(a_type);
 }

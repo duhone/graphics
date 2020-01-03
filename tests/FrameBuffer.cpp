@@ -6,5 +6,10 @@ using namespace CR::Graphics;
 using namespace std;
 
 TEST_CASE_METHOD(TestFixture, "framebuffer creation/destruction", "") {
-	// while(!glfwWindowShouldClose(Window)) { glfwPollEvents(); }
+	constexpr bool loop = false;
+	while(loop && !glfwWindowShouldClose(Window)) {
+		glfwPollEvents();
+		BeginFrame();
+		EndFrame();
+	}
 }

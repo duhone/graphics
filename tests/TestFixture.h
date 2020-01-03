@@ -24,6 +24,7 @@ class TestFixture {
 		settings.ExtensionsToEnable = glfwGetRequiredInstanceExtensions(&settings.ExtensionsToEnableCount);
 		settings.Hwnd               = glfwGetWin32Window(Window);
 		settings.HInstance          = GetModuleHandle(nullptr);
+		// settings.ClearColor         = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
 
 		REQUIRE_NOTHROW(CR::Graphics::CreateEngine(settings));
 	}

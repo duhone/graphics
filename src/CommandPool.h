@@ -27,5 +27,5 @@ namespace CR::Graphics {
 		virtual std::unique_ptr<CommandBuffer> CreateCommandBuffer() = 0;
 	};
 
-	std::unique_ptr<CommandPool> CreateCommandBuffer(CommandPool::PoolType a_type);
+	std::unique_ptr<CommandPool> CreateCommandPool(CommandPool::PoolType a_type);
 }    // namespace CR::Graphics
