@@ -7,6 +7,7 @@ find_package(Vulkan REQUIRED)
 ###############################################
 set(GRAPHICS_PUBLIC_HDRS
     ${graphics_root}/inc/Graphics/Engine.h
+    ${graphics_root}/inc/Graphics/Sprite.h
 )
 
 set(GRAPHICS_SRCS
@@ -14,6 +15,9 @@ set(GRAPHICS_SRCS
     ${graphics_root}/src/CommandPool.h
     ${graphics_root}/src/Buffer.h
     ${graphics_root}/src/Image.h
+    ${graphics_root}/src/Sprite.cpp
+    ${graphics_root}/src/SpriteManager.h
+    ${graphics_root}/src/SpriteManager.cpp
     ${graphics_root}/src/vulkan/EngineInternal.h
     ${graphics_root}/src/vulkan/Engine.cpp
     ${graphics_root}/src/vulkan/Buffer.cpp
@@ -67,6 +71,7 @@ if(IncludeTests)
       ${graphics_root}/tests/Image.cpp
       ${graphics_root}/tests/FrameBuffer.cpp
       ${graphics_root}/tests/Pipeline.cpp
+      ${graphics_root}/tests/Sprite.cpp
   )
 
   set(GRAPHICS_TEST_DATA
