@@ -15,9 +15,14 @@ using namespace std;
 TEST_CASE_METHOD(TestFixture, "sprite_template_basic", "") {
 	auto crsm = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "simple.crsm");
 	SpriteTypeCreateInfo info;
+	info.Name         = "sprite type";
 	info.TextureSize  = glm::uvec2{256, 256};
 	info.ShaderModule = Core::Span<byte>{crsm->data(), crsm->size()};
 
-	auto spriteType     = CreateSpriteType(info);
-	auto spriteTemplate = CreateSpriteTemplate();
+	auto spriteType = CreateSpriteType(info);
+
+	SpriteTemplateCreateInfo templateInfo;
+	templateInfo.Name   = "test template";
+	templateInfo.Type   = spriteType;
+	auto spriteTemplate = CreateSpriteTemplate(templateInfo);
 }

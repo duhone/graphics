@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Graphics/SpriteType.h"
+
 #include <memory>
 
 namespace CR::Graphics {
@@ -11,5 +13,9 @@ namespace CR::Graphics {
 		SpriteTemplate& operator=(const SpriteTemplate&) = delete;
 	};
 
-	std::unique_ptr<SpriteTemplate> CreateSpriteTemplate();
+	struct SpriteTemplateCreateInfo {
+		std::string Name;
+		std::shared_ptr<SpriteType> Type;
+	};
+	std::shared_ptr<SpriteTemplate> CreateSpriteTemplate(const SpriteTemplateCreateInfo& a_info);
 }    // namespace CR::Graphics
