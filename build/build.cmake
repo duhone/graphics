@@ -17,6 +17,7 @@ set(GRAPHICS_SRCS
     ${graphics_root}/src/Buffer.h
     ${graphics_root}/src/Image.h
     ${graphics_root}/src/Sprite.cpp
+    ${graphics_root}/src/SpriteTypeImpl.h
     ${graphics_root}/src/SpriteType.cpp
     ${graphics_root}/src/SpriteManager.h
     ${graphics_root}/src/SpriteManager.cpp
