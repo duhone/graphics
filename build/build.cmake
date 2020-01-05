@@ -9,6 +9,7 @@ set(GRAPHICS_PUBLIC_HDRS
     ${graphics_root}/inc/Graphics/Engine.h
     ${graphics_root}/inc/Graphics/Sprite.h
     ${graphics_root}/inc/Graphics/SpriteType.h
+    ${graphics_root}/inc/Graphics/SpriteTemplate.h
 )
 
 set(GRAPHICS_SRCS
@@ -19,6 +20,8 @@ set(GRAPHICS_SRCS
     ${graphics_root}/src/Sprite.cpp
     ${graphics_root}/src/SpriteTypeImpl.h
     ${graphics_root}/src/SpriteType.cpp
+    ${graphics_root}/src/SpriteTemplateImpl.h
+    ${graphics_root}/src/SpriteTemplate.cpp
     ${graphics_root}/src/SpriteManager.h
     ${graphics_root}/src/SpriteManager.cpp
     ${graphics_root}/src/vulkan/EngineInternal.h
@@ -76,6 +79,7 @@ if(IncludeTests)
       ${graphics_root}/tests/Pipeline.cpp
       ${graphics_root}/tests/Sprite.cpp
       ${graphics_root}/tests/SpriteType.cpp
+      ${graphics_root}/tests/SpriteTemplate.cpp
   )
 
   set(GRAPHICS_TEST_DATA
