@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #define WIN32_LEAN_AND_MEAN
 #define NOCOMM
 #define NOMINMAX
@@ -8,6 +8,8 @@
 #include "glm/vec2.hpp"
 
 namespace CR::Graphics {
+	class SpriteManager;
+
 	vk::Device& GetDevice();
 	uint32_t GetDeviceMemoryIndex();
 	uint32_t GetHostMemoryIndex();
@@ -20,5 +22,6 @@ namespace CR::Graphics {
 	void SubmitTransferCommands(const std::vector<vk::CommandBuffer>& cmds);
 
 	const glm::ivec2& GetWindowSize();
+	SpriteManager& GetSpriteManager();
 
 }    // namespace CR::Graphics

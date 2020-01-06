@@ -1,8 +1,9 @@
-#include "Graphics/Engine.h"
+﻿#include "Graphics/Engine.h"
 
 #include "CommandPool.h"
 #include "Commands.h"
 #include "EngineInternal.h"
+#include "SpriteManager.h"
 
 #include "core/Log.h"
 #include "core/algorithm.h"
@@ -61,6 +62,8 @@ namespace {
 		std::optional<glm::vec4> m_clearColor;
 
 		std::unique_ptr<CommandPool> m_commandPool;
+
+		SpriteManager m_spriteManager;
 
 		// Per frame members
 		uint32_t m_currentFrameBuffer{0};
@@ -521,4 +524,9 @@ const vk::RenderPass& Graphics::GetRenderPass() {
 const vk::Framebuffer& Graphics::GetFrameBuffer() {
 	assert(GetEngine().get());
 	return GetEngine()->m_frameBuffers[GetEngine()->m_currentFrameBuffer];
+}
+
+SpriteManager& Graphics::GetSpriteManager() {
+	assert(GetEngine().get());
+	return GetEngine()->m_spriteManager;
 }
