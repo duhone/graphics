@@ -2,6 +2,6 @@
 
 using namespace CR;
 
-std::unique_ptr<Graphics::Sprite> Graphics::CreateSprite() {
+std::shared_ptr<Graphics::Sprite> Graphics::CreateSprite(const SpriteCreateInfo& a_info) {
 	return nullptr;
 }
