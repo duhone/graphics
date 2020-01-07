@@ -13,6 +13,8 @@ namespace CR::Graphics {
 		SpriteTypeImpl(const SpriteTypeImpl&) = delete;
 		SpriteTypeImpl& operator=(const SpriteTypeImpl&) = delete;
 
+		uint8_t GetIndex() const { return m_index; }
+
 	  private:
 		uint8_t m_index;
 	};

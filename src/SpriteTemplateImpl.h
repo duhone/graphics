@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Graphics/SpriteTemplate.h"
 #include "Pipeline.h"
@@ -8,13 +8,14 @@
 namespace CR::Graphics {
 	class SpriteTemplateImpl : public SpriteTemplate {
 	  public:
-		SpriteTemplateImpl(const SpriteTemplateCreateInfo& a_info);
-		virtual ~SpriteTemplateImpl()                 = default;
+		SpriteTemplateImpl(uint8_t a_index);
+		virtual ~SpriteTemplateImpl();
 		SpriteTemplateImpl(const SpriteTemplateImpl&) = delete;
 		SpriteTemplateImpl& operator=(const SpriteTemplateImpl&) = delete;
 
+		uint8_t GetIndex() const { return m_index; }
+
 	  private:
-		std::string m_name;
-		std::shared_ptr<SpriteType> m_type;
+		uint8_t m_index;
 	};
 }    // namespace CR::Graphics

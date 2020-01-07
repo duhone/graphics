@@ -1,4 +1,5 @@
 ﻿#include "SpriteManager.h"
+#include "SpriteTypeImpl.h"
 
 #include "core/Log.h"
 
@@ -33,7 +34,31 @@ uint8_t SpriteManager::CreateType(const std::string_view a_name, std::unique_ptr
 
 void SpriteManager::FreeType(uint8_t a_index) {
 	m_spriteTypes.Pipelines[a_index].reset();
-	m_spriteTypes.Used[a_index] = false;
 	m_spriteTypes.Names[a_index].clear();
 	m_spriteTypes.Names[a_index].shrink_to_fit();
+	m_spriteTypes.Used[a_index] = false;
+}
+
+uint8_t SpriteManager::CreateTemplate(const std::string_view a_name, std::shared_ptr<SpriteType> a_type) {
+	size_t result = 0;
+	for(size_t i = 0; i < m_spriteTemplates.Used.size(); ++i) {
+		if(m_spriteTemplates.Used[i]) {
+			result = i;
+			break;
+		}
+	}
+	if(result == m_spriteTemplates.Used.size()) { Core::Log::Fail("Ran out of available sprite templates"); }
+	m_spriteTemplates.Used[result]        = true;
+	m_spriteTemplates.Names[result]       = a_name;
+	m_spriteTemplates.TypeIndices[result] = ((SpriteTypeImpl*)a_type.get())->GetIndex();
+	m_spriteTemplates.Types[result]       = move(a_type);
+
+	return (uint8_t)result;
+}
+
+void SpriteManager::FreeTemplate(uint8_t a_index) {
+	m_spriteTemplates.Names[a_index].clear();
+	m_spriteTemplates.Names[a_index].shrink_to_fit();
+	m_spriteTemplates.Types[a_index].reset();
+	m_spriteTemplates.Used[a_index] = false;
 }

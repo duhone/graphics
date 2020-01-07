@@ -1,16 +1,20 @@
 ﻿#pragma once
 
+#include "Graphics/SpriteType.h"
 #include "Pipeline.h"
 
 #include "glm/vec2.hpp"
 
 #include <bitset>
+#include <limits>
 #include <memory>
 #include <string>
 
 namespace CR::Graphics {
-	inline constexpr uint32_t MaxSpriteTypes = 64;
-	static_assert(MaxSpriteTypes <= 256);    // index is a uint8_t
+	inline constexpr uint32_t MaxSpriteTypes     = 16;
+	inline constexpr uint32_t MaxSpriteTemplates = 64;
+	static_assert(MaxSpriteTypes <= std::numeric_limits<uint8_t>::max());        // index is a uint8_t
+	static_assert(MaxSpriteTemplates <= std::numeric_limits<uint8_t>::max());    // index is a uint8_t
 
 	struct SpriteTypes {
 		std::bitset<MaxSpriteTypes> Used;
@@ -19,6 +23,12 @@ namespace CR::Graphics {
 		glm::uvec2 TextureSizes[MaxSpriteTypes];
 	};
 
+	struct SpriteTemplates {
+		std::bitset<MaxSpriteTemplates> Used;
+		std::string Names[MaxSpriteTemplates];
+		std::shared_ptr<SpriteType> Types[MaxSpriteTemplates];
+		uint8_t TypeIndices[MaxSpriteTemplates];
+	};
 	class SpriteManager {
 	  public:
 		SpriteManager();
@@ -29,7 +39,11 @@ namespace CR::Graphics {
 		uint8_t CreateType(const std::string_view a_name, std::unique_ptr<Pipeline> a_pipeline);
 		void FreeType(uint8_t a_index);
 
+		uint8_t CreateTemplate(const std::string_view a_name, std::shared_ptr<SpriteType> a_type);
+		void FreeTemplate(uint8_t a_index);
+
 	  private:
 		SpriteTypes m_spriteTypes;
+		SpriteTemplates m_spriteTemplates;
 	};
 }    // namespace CR::Graphics
