@@ -1,4 +1,5 @@
 ﻿#include "SpriteManager.h"
+#include "SpriteTemplateImpl.h"
 #include "SpriteTypeImpl.h"
 
 #include "core/Log.h"
@@ -61,4 +62,28 @@ void SpriteManager::FreeTemplate(uint8_t a_index) {
 	m_spriteTemplates.Names[a_index].shrink_to_fit();
 	m_spriteTemplates.Types[a_index].reset();
 	m_spriteTemplates.Used[a_index] = false;
+}
+
+uint16_t SpriteManager::CreateSprite(const std::string_view a_name, std::shared_ptr<SpriteTemplate> a_template) {
+	size_t result = 0;
+	for(size_t i = 0; i < m_sprites.Used.size(); ++i) {
+		if(m_sprites.Used[i]) {
+			result = i;
+			break;
+		}
+	}
+	if(result == m_sprites.Used.size()) { Core::Log::Fail("Ran out of available sprites"); }
+	m_sprites.Used[result]            = true;
+	m_sprites.Names[result]           = a_name;
+	m_sprites.TemplateIndices[result] = ((SpriteTemplateImpl*)a_template.get())->GetIndex();
+	m_sprites.Templates[result]       = move(a_template);
+
+	return (uint16_t)result;
+}
+
+void SpriteManager::FreeSprite(uint16_t a_index) {
+	m_sprites.Names[a_index].clear();
+	m_sprites.Names[a_index].shrink_to_fit();
+	m_sprites.Templates[a_index].reset();
+	m_sprites.Used[a_index] = false;
 }

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Graphics/SpriteTemplate.h"
 
@@ -17,5 +17,5 @@ namespace CR::Graphics {
 		std::string Name;
 		std::shared_ptr<SpriteTemplate> Template;
 	};
-	std::shared_ptr<Sprite> CreateSprite(const SpriteCreateInfo& a_info);
+	std::unique_ptr<Sprite> CreateSprite(const SpriteCreateInfo& a_info);
 }    // namespace CR::Graphics
