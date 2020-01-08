@@ -36,6 +36,8 @@ namespace {
 		Engine(const Engine&) = delete;
 		Engine& operator=(const Engine&) = delete;
 
+		void ExecutePending();
+
 		// private: internal so private anyway
 		vk::Instance m_Instance;
 		vk::Device m_Device;
@@ -68,6 +70,8 @@ namespace {
 		// Per frame members
 		uint32_t m_currentFrameBuffer{0};
 		std::unique_ptr<CommandBuffer> m_commandBuffer;
+
+		std::vector<std::function<void()>> m_nextFrameFuncs;
 	};
 
 	unique_ptr<Engine>& GetEngine() {
@@ -413,6 +417,10 @@ Engine::~Engine() {
 	m_Instance.destroy();
 }
 
+void Engine::ExecutePending() {
+	for(auto& func : m_nextFrameFuncs) { func(); }
+}
+
 void Graphics::CreateEngine(const EngineSettings& a_settings) {
 	assert(!GetEngine().get());
 	GetEngine()                = make_unique<Engine>(a_settings);
@@ -433,6 +441,8 @@ void Graphics::BeginFrame() {
 	engine->m_Device.waitForFences(1, &engine->m_frameFence, true, UINT64_MAX);
 	engine->m_Device.resetFences(1, &engine->m_frameFence);
 
+	engine->ExecutePending();
+
 	engine->m_commandBuffer = engine->m_commandPool->CreateCommandBuffer();
 }
 
@@ -442,6 +452,7 @@ void Graphics::EndFrame() {
 
 	engine->m_commandBuffer->Begin();
 	Commands::RenderPassBegin(*engine->m_commandBuffer.get(), engine->m_clearColor);
+	engine->m_spriteManager.Draw(*engine->m_commandBuffer.get());
 	Commands::RenderPassEnd(*engine->m_commandBuffer.get());
 	engine->m_commandBuffer->End();
 
@@ -465,6 +476,7 @@ void Graphics::EndFrame() {
 void Graphics::ShutdownEngine() {
 	assert(GetEngine().get());
 	GetEngine()->m_Device.waitIdle();
+	GetEngine()->ExecutePending();
 	GetEngine()->m_commandBuffer.reset();
 	GetEngine()->m_commandPool.reset();
 	GetEngine().reset();
@@ -495,22 +507,6 @@ uint32_t Graphics::GetTransferQueueIndex() {
 	return GetEngine()->m_TransferQueueIndex;
 }
 
-void Graphics::SubmitGraphicsCommands(const std::vector<vk::CommandBuffer>& cmds) {
-	assert(GetEngine().get());
-	vk::SubmitInfo submit;
-	submit.commandBufferCount = (uint32_t)cmds.size();
-	submit.pCommandBuffers    = cmds.data();
-	GetEngine()->m_GraphicsQueue.submit(1, &submit, vk::Fence{});
-}
-
-void Graphics::SubmitTransferCommands(const std::vector<vk::CommandBuffer>& cmds) {
-	assert(GetEngine().get());
-	vk::SubmitInfo submit;
-	submit.commandBufferCount = (uint32_t)cmds.size();
-	submit.pCommandBuffers    = cmds.data();
-	GetEngine()->m_TransferQueue.submit(1, &submit, vk::Fence{});
-}
-
 const glm::ivec2& Graphics::GetWindowSize() {
 	assert(GetEngine().get());
 	return GetEngine()->m_WindowSize;
@@ -529,4 +525,9 @@ const vk::Framebuffer& Graphics::GetFrameBuffer() {
 SpriteManager& Graphics::GetSpriteManager() {
 	assert(GetEngine().get());
 	return GetEngine()->m_spriteManager;
+}
+
+void Graphics::ExecuteNextFrame(std::function<void()> a_func) {
+	assert(GetEngine().get());
+	GetEngine()->m_nextFrameFuncs.push_back(move(a_func));
 }

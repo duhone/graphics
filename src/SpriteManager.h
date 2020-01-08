@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "CommandPool.h"
 #include "Graphics/SpriteTemplate.h"
 #include "Graphics/SpriteType.h"
 #include "Pipeline.h"
@@ -55,6 +56,8 @@ namespace CR::Graphics {
 
 		uint16_t CreateSprite(const std::string_view a_name, std::shared_ptr<SpriteTemplate> a_template);
 		void FreeSprite(uint16_t a_index);
+
+		void Draw(CommandBuffer& a_commandBuffer);
 
 	  private:
 		SpriteTypes m_spriteTypes;

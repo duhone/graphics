@@ -1,4 +1,6 @@
 ﻿#include "SpriteManager.h"
+
+#include "Commands.h"
 #include "SpriteTemplateImpl.h"
 #include "SpriteTypeImpl.h"
 
@@ -86,4 +88,22 @@ void SpriteManager::FreeSprite(uint16_t a_index) {
 	m_sprites.Names[a_index].shrink_to_fit();
 	m_sprites.Templates[a_index].reset();
 	m_sprites.Used[a_index] = false;
+}
+
+void SpriteManager::Draw(CommandBuffer& a_commandBuffer) {
+	for(uint8_t type = 0; type < MaxSpriteTypes; ++type) {
+		if(m_spriteTypes.Used[type]) {
+			Core::Log::Assert(m_spriteTypes.Pipelines[type].get(), "Sprite type didn't have a pipeline");
+			Commands::BindPipeline(a_commandBuffer, *m_spriteTypes.Pipelines[type].get());
+			for(uint8_t templ = 0; templ < MaxSpriteTemplates; ++templ) {
+				if(m_spriteTemplates.Used[templ] && m_spriteTemplates.TypeIndices[templ] == type) {
+					uint32_t numSprites = 0;
+					for(uint16_t sprite = 0; sprite < MaxSprites; ++sprite) {
+						if(m_sprites.Used[sprite] && m_sprites.TemplateIndices[sprite] == templ) { ++numSprites; }
+					}
+					Commands::Draw(a_commandBuffer, 4, numSprites);
+				}
+			}
+		}
+	}
 }

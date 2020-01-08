@@ -7,6 +7,8 @@
 
 #include "glm/vec2.hpp"
 
+#include <functional>
+
 namespace CR::Graphics {
 	class SpriteManager;
 
@@ -18,10 +20,9 @@ namespace CR::Graphics {
 
 	uint32_t GetGraphicsQueueIndex();
 	uint32_t GetTransferQueueIndex();
-	void SubmitGraphicsCommands(const std::vector<vk::CommandBuffer>& cmds);
-	void SubmitTransferCommands(const std::vector<vk::CommandBuffer>& cmds);
 
 	const glm::ivec2& GetWindowSize();
 	SpriteManager& GetSpriteManager();
 
+	void ExecuteNextFrame(std::function<void()> a_func);
 }    // namespace CR::Graphics

@@ -1,4 +1,4 @@
-#include "Pipeline.h"
+﻿#include "Pipeline.h"
 
 #include "EngineInternal.h"
 
@@ -15,15 +15,15 @@ namespace {
 	class PipelineImpl : public Pipeline {
 	  public:
 		PipelineImpl(const CreatePipelineArgs& a_args);
-		~PipelineImpl()                   = default;
+		~PipelineImpl();
 		PipelineImpl(const PipelineImpl&) = delete;
 		PipelineImpl& operator=(const PipelineImpl&) = delete;
 
 		const std::uintptr_t GetHandle() const override;
 
 	  private:
-		vk::UniquePipelineLayout m_pipeLineLayout;
-		vk::UniquePipeline m_pipeline;
+		vk::PipelineLayout m_pipeLineLayout;
+		vk::Pipeline m_pipeline;
 	};
 }    // namespace
 
@@ -81,15 +81,18 @@ PipelineImpl::PipelineImpl(const CreatePipelineArgs& a_args) {
 	viewPortInfo.scissorCount  = 1;
 
 	vk::PipelineRasterizationStateCreateInfo rasterInfo;
-	rasterInfo.cullMode  = vk::CullModeFlagBits::eNone;
-	rasterInfo.lineWidth = 1.0f;
+	rasterInfo.cullMode         = vk::CullModeFlagBits::eNone;
+	rasterInfo.lineWidth        = 1.0f;
+	rasterInfo.depthClampEnable = false;
 
 	vk::PipelineMultisampleStateCreateInfo multisampleInfo;
 	multisampleInfo.alphaToCoverageEnable = true;
 	multisampleInfo.rasterizationSamples  = vk::SampleCountFlagBits::e1;
 
 	vk::PipelineColorBlendAttachmentState blendAttachState;
-	blendAttachState.blendEnable = false;
+	blendAttachState.blendEnable    = false;
+	blendAttachState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+	                                  vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 
 	vk::PipelineColorBlendStateCreateInfo blendStateInfo;
 	blendStateInfo.pAttachments    = &blendAttachState;
@@ -97,10 +100,10 @@ PipelineImpl::PipelineImpl(const CreatePipelineArgs& a_args) {
 
 	vk::PipelineLayoutCreateInfo layoutInfo;
 
-	m_pipeLineLayout = GetDevice().createPipelineLayoutUnique(layoutInfo);
+	m_pipeLineLayout = GetDevice().createPipelineLayout(layoutInfo);
 
 	vk::GraphicsPipelineCreateInfo pipeInfo;
-	pipeInfo.layout              = m_pipeLineLayout.get();
+	pipeInfo.layout              = m_pipeLineLayout;
 	pipeInfo.pColorBlendState    = &blendStateInfo;
 	pipeInfo.pInputAssemblyState = &vertAssemblyInfo;
 	pipeInfo.pMultisampleState   = &multisampleInfo;
@@ -111,11 +114,18 @@ PipelineImpl::PipelineImpl(const CreatePipelineArgs& a_args) {
 	pipeInfo.pStages             = shaderPipeInfo;
 	pipeInfo.renderPass          = GetRenderPass();
 
-	m_pipeline = GetDevice().createGraphicsPipelineUnique(vk::PipelineCache{}, pipeInfo);
+	m_pipeline = GetDevice().createGraphicsPipeline(vk::PipelineCache{}, pipeInfo);
+}
+
+PipelineImpl::~PipelineImpl() {
+	ExecuteNextFrame([pipeline = m_pipeline, pipeLineLayout = m_pipeLineLayout]() {
+		GetDevice().destroyPipeline(pipeline);
+		GetDevice().destroyPipelineLayout(pipeLineLayout);
+	});
 }
 
 const std::uintptr_t PipelineImpl::GetHandle() const {
-	return (uintptr_t)&m_pipeline.get();
+	return (uintptr_t)&m_pipeline;
 }
 
 std::unique_ptr<Pipeline> CR::Graphics::CreatePipeline(const CreatePipelineArgs& a_args) {

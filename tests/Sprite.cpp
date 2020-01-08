@@ -10,7 +10,7 @@ using namespace CR;
 using namespace CR::Graphics;
 using namespace std;
 
-TEST_CASE_METHOD(TestFixture, "sprites basic", "") {
+TEST_CASE_METHOD(TestFixture, "sprites_basic", "") {
 	auto crsm = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "simple.crsm");
 	SpriteTypeCreateInfo info;
 	info.Name         = "sprite type";
@@ -27,4 +27,11 @@ TEST_CASE_METHOD(TestFixture, "sprites basic", "") {
 	spriteInfo.Name     = "test sprite";
 	spriteInfo.Template = spriteTemplate;
 	auto sprite         = CreateSprite(spriteInfo);
+
+	constexpr bool loop = false;
+	while(loop && !glfwWindowShouldClose(Window)) {
+		glfwPollEvents();
+		BeginFrame();
+		EndFrame();
+	}
 }

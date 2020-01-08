@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Graphics/Engine.h"
 
@@ -15,7 +15,7 @@ class TestFixture {
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-		Window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
+		Window = glfwCreateWindow(1280, 720, "Vulkan window", nullptr, nullptr);
 
 		CR::Graphics::EngineSettings settings;
 		settings.ApplicationName    = "Unit Test";
@@ -24,7 +24,7 @@ class TestFixture {
 		settings.ExtensionsToEnable = glfwGetRequiredInstanceExtensions(&settings.ExtensionsToEnableCount);
 		settings.Hwnd               = glfwGetWin32Window(Window);
 		settings.HInstance          = GetModuleHandle(nullptr);
-		// settings.ClearColor         = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+		settings.ClearColor         = glm::vec4(0.0f, 0.0f, 0.75f, 1.0f);
 
 		REQUIRE_NOTHROW(CR::Graphics::CreateEngine(settings));
 	}
