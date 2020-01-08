@@ -1,4 +1,4 @@
-#include "catch.hpp"
+﻿#include "catch.hpp"
 
 #include "TestFixture.h"
 
@@ -9,7 +9,6 @@ TEST_CASE_METHOD(TestFixture, "framebuffer creation/destruction", "") {
 	constexpr bool loop = false;
 	while(loop && !glfwWindowShouldClose(Window)) {
 		glfwPollEvents();
-		BeginFrame();
-		EndFrame();
+		Frame();
 	}
 }

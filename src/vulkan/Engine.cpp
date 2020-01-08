@@ -427,11 +427,11 @@ void Graphics::CreateEngine(const EngineSettings& a_settings) {
 	GetEngine()->m_commandPool = CreateCommandPool(CommandPool::PoolType::Primary);
 }
 
-void Graphics::BeginFrame() {
+void Graphics::Frame() {
 	assert(GetEngine().get());
 	auto engine = GetEngine().get();
 
-	engine->m_Device.waitIdle();
+	engine->ExecutePending();
 
 	engine->m_currentFrameBuffer =
 	    engine->m_Device
@@ -441,14 +441,7 @@ void Graphics::BeginFrame() {
 	engine->m_Device.waitForFences(1, &engine->m_frameFence, true, UINT64_MAX);
 	engine->m_Device.resetFences(1, &engine->m_frameFence);
 
-	engine->ExecutePending();
-
 	engine->m_commandBuffer = engine->m_commandPool->CreateCommandBuffer();
-}
-
-void Graphics::EndFrame() {
-	assert(GetEngine().get());
-	auto engine = GetEngine().get();
 
 	engine->m_commandBuffer->Begin();
 	Commands::RenderPassBegin(*engine->m_commandBuffer.get(), engine->m_clearColor);
@@ -471,6 +464,9 @@ void Graphics::EndFrame() {
 	presInfo.pSwapchains        = &engine->m_PrimarySwapChain;
 	presInfo.pImageIndices      = &engine->m_currentFrameBuffer;
 	engine->m_PresentationQueue.presentKHR(presInfo);
+
+	// Don't allow gpu to get behind, sacrifice performance for minimal latency.
+	engine->m_Device.waitIdle();
 }
 
 void Graphics::ShutdownEngine() {

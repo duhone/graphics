@@ -31,7 +31,6 @@ TEST_CASE_METHOD(TestFixture, "sprites_basic", "") {
 	constexpr bool loop = false;
 	while(loop && !glfwWindowShouldClose(Window)) {
 		glfwPollEvents();
-		BeginFrame();
-		EndFrame();
+		Frame();
 	}
 }
