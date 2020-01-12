@@ -1,31 +1,9 @@
-#include "Buffer.h"
-#include "EngineInternal.h"
-#include "vulkan/vulkan.hpp"
+﻿#include "Buffer.h"
 
 using namespace std;
 using namespace CR::Graphics;
 
-namespace {
-	class VKBuffer : public Buffer {
-	  public:
-		VKBuffer(BufferType a_type, uint32_t a_bytes);
-		VKBuffer(VKBuffer&) = delete;
-		VKBuffer& operator=(VKBuffer&) = delete;
-		virtual ~VKBuffer();
-
-		void* GetHandle() override { return &m_Buffer; }
-		void* Map() override;
-		void UnMap() override;
-
-		BufferType m_type;
-		vk::Buffer m_Buffer;
-		vk::Buffer m_StagingBuffer;
-		vk::DeviceMemory m_BufferMemory;
-		vk::DeviceMemory m_StagingBufferMemory;
-	};
-}    // namespace
-
-VKBuffer::VKBuffer(BufferType a_type, uint32_t a_bytes) : m_type(a_type) {
+Buffer::Buffer(BufferType a_type, uint32_t a_bytes) : m_type(a_type) {
 	assert(a_bytes % 256 == 0);
 	vk::BufferCreateInfo createInfo;
 	createInfo.flags       = vk::BufferCreateFlags{};
@@ -73,21 +51,45 @@ VKBuffer::VKBuffer(BufferType a_type, uint32_t a_bytes) : m_type(a_type) {
 	GetDevice().bindBufferMemory(m_StagingBuffer, m_StagingBufferMemory, 0);
 }
 
-VKBuffer::~VKBuffer() {
-	GetDevice().destroyBuffer(m_Buffer);
-	GetDevice().freeMemory(m_BufferMemory);
-	GetDevice().destroyBuffer(m_StagingBuffer);
-	GetDevice().freeMemory(m_StagingBufferMemory);
+Buffer::~Buffer() {
+	Free();
 }
 
-void* VKBuffer::Map() {
-	return GetDevice().mapMemory(m_StagingBufferMemory, 0, VK_WHOLE_SIZE);
+Buffer::Buffer(Buffer&& a_other) {
+	*this = move(a_other);
 }
 
-void VKBuffer::UnMap() {
+Buffer& Buffer::operator=(Buffer&& a_other) {
+	Free();
+	m_Buffer              = a_other.m_Buffer;
+	m_BufferMemory        = a_other.m_BufferMemory;
+	m_StagingBuffer       = a_other.m_StagingBuffer;
+	m_StagingBufferMemory = a_other.m_StagingBufferMemory;
+	m_type                = a_other.m_type;
+
+	a_other.m_Buffer              = vk::Buffer{};
+	a_other.m_BufferMemory        = vk::DeviceMemory{};
+	a_other.m_StagingBuffer       = vk::Buffer{};
+	a_other.m_StagingBufferMemory = vk::DeviceMemory{};
+
+	return *this;
+}
+
+void Buffer::Free() {
+	if(m_Buffer) {
+		GetDevice().destroyBuffer(m_Buffer);
+		GetDevice().freeMemory(m_BufferMemory);
+	}
+	if(m_StagingBuffer) {
+		GetDevice().destroyBuffer(m_StagingBuffer);
+		GetDevice().freeMemory(m_StagingBufferMemory);
+	}
+}
+
+std::byte* Buffer::Map() {
+	return (std::byte*)GetDevice().mapMemory(m_StagingBufferMemory, 0, VK_WHOLE_SIZE);
+}
+
+void Buffer::UnMap() {
 	GetDevice().unmapMemory(m_StagingBufferMemory);
-}
-
-std::unique_ptr<Buffer> CR::Graphics::CreateBuffer(BufferType a_type, uint32_t a_bytes) {
-	return make_unique<VKBuffer>(a_type, a_bytes);
 }

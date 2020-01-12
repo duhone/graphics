@@ -1,28 +1,43 @@
-#pragma once
+﻿#pragma once
+
+#include "vulkan/EngineInternal.h"
+#include "vulkan/vulkan.hpp"
+
 #include <memory>
 
 namespace CR::Graphics {
-	struct Buffer {
-		Buffer()        = default;
-		Buffer(Buffer&) = delete;
-		Buffer& operator=(Buffer&) = delete;
-		virtual ~Buffer()          = default;
-
-		virtual void* GetHandle() = 0;
-		virtual void* Map()       = 0;
-		virtual void UnMap()      = 0;
-
-		template<typename T>
-		T* Map() {
-			return (T*)Map();
-		}
-	};
-
 	enum class BufferType {
 		Uniform,
 		Vertex,
 		Index,
 	};
 
-	std::unique_ptr<Buffer> CreateBuffer(BufferType a_type, uint32_t a_bytes);
+	class Buffer {
+	  public:
+		Buffer() = default;
+		Buffer(BufferType a_type, uint32_t a_bytes);
+		~Buffer();
+		Buffer(Buffer&) = delete;
+		Buffer(Buffer&& a_other);
+		Buffer& operator=(Buffer&) = delete;
+		Buffer& operator           =(Buffer&& a_other);
+
+		const vk::Buffer& GetHandle() const { return m_Buffer; }
+		std::byte* Map();
+		void UnMap();
+
+		template<typename T>
+		T* Map() {
+			return (T*)Map();
+		}
+
+	  private:
+		void Free();
+
+		BufferType m_type;
+		vk::Buffer m_Buffer;
+		vk::Buffer m_StagingBuffer;
+		vk::DeviceMemory m_BufferMemory;
+		vk::DeviceMemory m_StagingBufferMemory;
+	};
 }    // namespace CR::Graphics
