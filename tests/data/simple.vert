@@ -11,7 +11,7 @@ const vec2 Vertices[4] = vec2[4](vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 1.0),
 layout (constant_id = 0) const float InvScreenSizeX = 1.0/1280.0;
 layout (constant_id = 1) const float InvScreenSizeY = 1.0/720.0;
 
-layout(push_constant) uniform SpriteTemplateData
+layout(std430, push_constant) uniform SpriteTemplateData
 {
     vec2 FrameSize;
 } templateData;

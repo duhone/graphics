@@ -8,6 +8,7 @@
 
 using namespace std;
 using namespace CR;
+using namespace CR::Core;
 using namespace CR::Graphics;
 
 SpriteManager::SpriteManager() {
@@ -104,6 +105,10 @@ void SpriteManager::Draw(CommandBuffer& a_commandBuffer) {
 					for(uint16_t sprite = 0; sprite < MaxSprites; ++sprite) {
 						if(m_sprites.Used[sprite] && m_sprites.TemplateIndices[sprite] == templ) { ++numSprites; }
 					}
+					// shader will take framesize as float for perf reasons.
+					glm::vec2 frameSize = m_spriteTemplates.FrameSizes[templ];
+					Commands::PushConstants(a_commandBuffer, m_spriteTypes.Pipelines[type],
+					                        Span<std::byte>{(byte*)&frameSize, sizeof(frameSize)});
 					Commands::Draw(a_commandBuffer, 4, numSprites);
 				}
 			}

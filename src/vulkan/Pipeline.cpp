@@ -38,9 +38,9 @@ Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
 	specInfoEntrys[0].constantID = 0;
 	specInfoEntrys[0].offset     = offsetof(glm::vec2, x);
 	specInfoEntrys[0].size       = sizeof(float);
-	specInfoEntrys[0].constantID = 1;
-	specInfoEntrys[0].offset     = offsetof(glm::vec2, y);
-	specInfoEntrys[0].size       = sizeof(float);
+	specInfoEntrys[1].constantID = 1;
+	specInfoEntrys[1].offset     = offsetof(glm::vec2, y);
+	specInfoEntrys[1].size       = sizeof(float);
 
 	vk::SpecializationInfo specInfo;
 	specInfo.dataSize      = sizeof(invScreenSize);
@@ -151,8 +151,4 @@ void Pipeline::Free() {
 	}
 	m_pipeline       = vk::Pipeline{};
 	m_pipeLineLayout = vk::PipelineLayout{};
-}
-
-const vk::Pipeline& Pipeline::GetHandle() const {
-	return m_pipeline;
 }

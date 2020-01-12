@@ -24,7 +24,8 @@ namespace CR::Graphics {
 
 		operator bool() const { return m_pipeline; }
 
-		const vk::Pipeline& GetHandle() const;
+		const vk::Pipeline& GetHandle() const { return m_pipeline; }
+		const vk::PipelineLayout& GetLayout() const { return m_pipeLineLayout; }
 
 	  private:
 		void Free();
