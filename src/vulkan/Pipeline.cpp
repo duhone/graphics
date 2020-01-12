@@ -51,13 +51,29 @@ PipelineImpl::PipelineImpl(const CreatePipelineArgs& a_args) {
 	vk::UniqueShaderModule vertModule = GetDevice().createShaderModuleUnique(vertInfo);
 	vk::UniqueShaderModule fragModule = GetDevice().createShaderModuleUnique(fragInfo);
 
+	glm::vec2 invScreenSize{1.0f / GetWindowSize().x, 1.0f / GetWindowSize().y};
+	vk::SpecializationMapEntry specInfoEntrys[2];
+	specInfoEntrys[0].constantID = 0;
+	specInfoEntrys[0].offset     = offsetof(glm::vec2, x);
+	specInfoEntrys[0].size       = sizeof(float);
+	specInfoEntrys[0].constantID = 1;
+	specInfoEntrys[0].offset     = offsetof(glm::vec2, y);
+	specInfoEntrys[0].size       = sizeof(float);
+
+	vk::SpecializationInfo specInfo;
+	specInfo.dataSize      = sizeof(invScreenSize);
+	specInfo.pData         = &invScreenSize;
+	specInfo.mapEntryCount = (uint32_t)size(specInfoEntrys);
+	specInfo.pMapEntries   = specInfoEntrys;
+
 	vk::PipelineShaderStageCreateInfo shaderPipeInfo[2];
-	shaderPipeInfo[0].module = vertModule.get();
-	shaderPipeInfo[0].pName  = "main";
-	shaderPipeInfo[0].stage  = vk::ShaderStageFlagBits::eVertex;
-	shaderPipeInfo[1].module = fragModule.get();
-	shaderPipeInfo[1].pName  = "main";
-	shaderPipeInfo[1].stage  = vk::ShaderStageFlagBits::eFragment;
+	shaderPipeInfo[0].module              = vertModule.get();
+	shaderPipeInfo[0].pName               = "main";
+	shaderPipeInfo[0].stage               = vk::ShaderStageFlagBits::eVertex;
+	shaderPipeInfo[0].pSpecializationInfo = &specInfo;
+	shaderPipeInfo[1].module              = fragModule.get();
+	shaderPipeInfo[1].pName               = "main";
+	shaderPipeInfo[1].stage               = vk::ShaderStageFlagBits::eFragment;
 
 	// defaults are fine for this one. we dont have a vertex buffer
 	vk::PipelineVertexInputStateCreateInfo vertInputInfo;
