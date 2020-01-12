@@ -21,7 +21,7 @@ std::shared_ptr<Graphics::SpriteType> Graphics::CreateSpriteType(const SpriteTyp
 	CreatePipelineArgs info;
 	info.ShaderModule = a_info.ShaderModule;
 
-	auto pipeline  = CreatePipeline(info);
+	Pipeline pipeline{info};
 	auto typeIndex = GetSpriteManager().CreateType(a_info.Name, move(pipeline));
 	return make_shared<Graphics::SpriteTypeImpl>(typeIndex);
 }

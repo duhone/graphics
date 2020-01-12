@@ -13,7 +13,7 @@ layout (constant_id = 1) const float InvScreenSizeY = 1.0/720.0;
 
 layout(push_constant) uniform SpriteTemplateData
 {
-    vec2 Size;
+    vec2 FrameSize;
 } templateData;
 
 /*layout(set=0, binding = 0) uniform SpriteData{
@@ -25,7 +25,7 @@ layout(push_constant) uniform SpriteTemplateData
 void main() {
   vec2 position = Vertices[gl_VertexIndex];
 
-  position *= templateData.Size;
+  position *= templateData.FrameSize;
   //position += data.Offsets[gl_InstanceIndex].xy;
 
   // from pixel coords to -1to1

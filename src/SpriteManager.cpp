@@ -6,6 +6,7 @@
 
 #include "core/Log.h"
 
+using namespace std;
 using namespace CR;
 using namespace CR::Graphics;
 
@@ -19,7 +20,7 @@ SpriteManager::~SpriteManager() {
 	}
 }
 
-uint8_t SpriteManager::CreateType(const std::string_view a_name, std::unique_ptr<Pipeline> a_pipeline) {
+uint8_t SpriteManager::CreateType(const std::string_view a_name, Pipeline&& a_pipeline) {
 	size_t result = 0;
 	for(size_t i = 0; i < m_spriteTypes.Used.size(); ++i) {
 		if(m_spriteTypes.Used[i]) {
@@ -36,13 +37,14 @@ uint8_t SpriteManager::CreateType(const std::string_view a_name, std::unique_ptr
 }
 
 void SpriteManager::FreeType(uint8_t a_index) {
-	m_spriteTypes.Pipelines[a_index].reset();
+	m_spriteTypes.Pipelines[a_index] = Pipeline{};
 	m_spriteTypes.Names[a_index].clear();
 	m_spriteTypes.Names[a_index].shrink_to_fit();
 	m_spriteTypes.Used[a_index] = false;
 }
 
-uint8_t SpriteManager::CreateTemplate(const std::string_view a_name, std::shared_ptr<SpriteType> a_type) {
+uint8_t SpriteManager::CreateTemplate(const std::string_view a_name, std::shared_ptr<SpriteType> a_type,
+                                      const glm::uvec2& a_frameSize) {
 	size_t result = 0;
 	for(size_t i = 0; i < m_spriteTemplates.Used.size(); ++i) {
 		if(m_spriteTemplates.Used[i]) {
@@ -55,6 +57,7 @@ uint8_t SpriteManager::CreateTemplate(const std::string_view a_name, std::shared
 	m_spriteTemplates.Names[result]       = a_name;
 	m_spriteTemplates.TypeIndices[result] = ((SpriteTypeImpl*)a_type.get())->GetIndex();
 	m_spriteTemplates.Types[result]       = move(a_type);
+	m_spriteTemplates.FrameSizes[result]  = a_frameSize;
 
 	return (uint8_t)result;
 }
@@ -93,8 +96,8 @@ void SpriteManager::FreeSprite(uint16_t a_index) {
 void SpriteManager::Draw(CommandBuffer& a_commandBuffer) {
 	for(uint8_t type = 0; type < MaxSpriteTypes; ++type) {
 		if(m_spriteTypes.Used[type]) {
-			Core::Log::Assert(m_spriteTypes.Pipelines[type].get(), "Sprite type didn't have a pipeline");
-			Commands::BindPipeline(a_commandBuffer, *m_spriteTypes.Pipelines[type].get());
+			Core::Log::Assert(m_spriteTypes.Pipelines[type], "Sprite type didn't have a pipeline");
+			Commands::BindPipeline(a_commandBuffer, m_spriteTypes.Pipelines[type]);
 			for(uint8_t templ = 0; templ < MaxSpriteTemplates; ++templ) {
 				if(m_spriteTemplates.Used[templ] && m_spriteTemplates.TypeIndices[templ] == type) {
 					uint32_t numSprites = 0;

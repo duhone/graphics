@@ -21,7 +21,8 @@ TEST_CASE_METHOD(TestFixture, "sprite_template_basic", "") {
 	auto spriteType = CreateSpriteType(info);
 
 	SpriteTemplateCreateInfo templateInfo;
-	templateInfo.Name   = "test template";
-	templateInfo.Type   = spriteType;
-	auto spriteTemplate = CreateSpriteTemplate(templateInfo);
+	templateInfo.Name      = "test template";
+	templateInfo.Type      = spriteType;
+	templateInfo.FrameSize = {64, 64};
+	auto spriteTemplate    = CreateSpriteTemplate(templateInfo);
 }

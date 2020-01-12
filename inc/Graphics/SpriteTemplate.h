@@ -1,6 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Graphics/SpriteType.h"
+
+#include "glm/vec2.hpp"
 
 #include <memory>
 
@@ -16,6 +18,7 @@ namespace CR::Graphics {
 	struct SpriteTemplateCreateInfo {
 		std::string Name;
 		std::shared_ptr<SpriteType> Type;
+		glm::uvec2 FrameSize;
 	};
 	std::shared_ptr<SpriteTemplate> CreateSpriteTemplate(const SpriteTemplateCreateInfo& a_info);
 }    // namespace CR::Graphics

@@ -76,7 +76,6 @@ if(IncludeTests)
       ${graphics_root}/tests/Buffer.cpp
       ${graphics_root}/tests/Image.cpp
       ${graphics_root}/tests/FrameBuffer.cpp
-      ${graphics_root}/tests/Pipeline.cpp
       ${graphics_root}/tests/Sprite.cpp
       ${graphics_root}/tests/SpriteType.cpp
       ${graphics_root}/tests/SpriteTemplate.cpp

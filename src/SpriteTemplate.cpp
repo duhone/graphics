@@ -14,6 +14,6 @@ SpriteTemplateImpl::~SpriteTemplateImpl() {
 }
 
 std::shared_ptr<Graphics::SpriteTemplate> Graphics::CreateSpriteTemplate(const SpriteTemplateCreateInfo& a_info) {
-	uint8_t index = GetSpriteManager().CreateTemplate(a_info.Name, a_info.Type);
+	uint8_t index = GetSpriteManager().CreateTemplate(a_info.Name, a_info.Type, a_info.FrameSize);
 	return make_shared<Graphics::SpriteTemplateImpl>(index);
 }

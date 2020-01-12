@@ -23,7 +23,7 @@ namespace CR::Graphics {
 	struct SpriteTypes {
 		std::bitset<MaxSpriteTypes> Used;
 		std::string Names[MaxSpriteTypes];
-		std::unique_ptr<Pipeline> Pipelines[MaxSpriteTypes];
+		Pipeline Pipelines[MaxSpriteTypes];
 		glm::uvec2 TextureSizes[MaxSpriteTypes];
 	};
 
@@ -32,6 +32,7 @@ namespace CR::Graphics {
 		std::string Names[MaxSpriteTemplates];
 		std::shared_ptr<SpriteType> Types[MaxSpriteTemplates];
 		uint8_t TypeIndices[MaxSpriteTemplates];
+		glm::uvec2 FrameSizes[MaxSpriteTemplates];
 	};
 
 	struct Sprites {
@@ -48,10 +49,11 @@ namespace CR::Graphics {
 		SpriteManager(const SpriteManager&) = delete;
 		SpriteManager& operator=(const SpriteManager&) = delete;
 
-		uint8_t CreateType(const std::string_view a_name, std::unique_ptr<Pipeline> a_pipeline);
+		uint8_t CreateType(const std::string_view a_name, Pipeline&& a_pipeline);
 		void FreeType(uint8_t a_index);
 
-		uint8_t CreateTemplate(const std::string_view a_name, std::shared_ptr<SpriteType> a_type);
+		uint8_t CreateTemplate(const std::string_view a_name, std::shared_ptr<SpriteType> a_type,
+		                       const glm::uvec2& a_frameSize);
 		void FreeTemplate(uint8_t a_index);
 
 		uint16_t CreateSprite(const std::string_view a_name, std::shared_ptr<SpriteTemplate> a_template);

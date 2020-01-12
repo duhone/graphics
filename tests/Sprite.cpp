@@ -28,7 +28,7 @@ TEST_CASE_METHOD(TestFixture, "sprites_basic", "") {
 	spriteInfo.Template = spriteTemplate;
 	auto sprite         = CreateSprite(spriteInfo);
 
-	constexpr bool loop = false;
+	constexpr bool loop = true;
 	while(loop && !glfwWindowShouldClose(Window)) {
 		glfwPollEvents();
 		Frame();

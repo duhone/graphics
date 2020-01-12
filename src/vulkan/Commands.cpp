@@ -51,7 +51,7 @@ void Commands::RenderPassEnd(CommandBuffer& a_cmdBuffer) {
 
 void Commands::BindPipeline(CommandBuffer& a_cmdBuffer, Pipeline& a_pipeline) {
 	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
-	vkcmd->bindPipeline(vk::PipelineBindPoint::eGraphics, *(const vk::Pipeline*)a_pipeline.GetHandle());
+	vkcmd->bindPipeline(vk::PipelineBindPoint::eGraphics, a_pipeline.GetHandle());
 }
 
 void Commands::Draw(CommandBuffer& a_cmdBuffer, uint32_t a_vertexCount, uint32_t a_instanceCount) {

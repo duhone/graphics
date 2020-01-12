@@ -5,29 +5,11 @@
 #include "DataCompression/LosslessCompression.h"
 #include "core/Span.h"
 
-#include "vulkan/vulkan.hpp"
-
 using namespace std;
 using namespace CR;
 using namespace CR::Graphics;
 
-namespace {
-	class PipelineImpl : public Pipeline {
-	  public:
-		PipelineImpl(const CreatePipelineArgs& a_args);
-		~PipelineImpl();
-		PipelineImpl(const PipelineImpl&) = delete;
-		PipelineImpl& operator=(const PipelineImpl&) = delete;
-
-		const std::uintptr_t GetHandle() const override;
-
-	  private:
-		vk::PipelineLayout m_pipeLineLayout;
-		vk::Pipeline m_pipeline;
-	};
-}    // namespace
-
-PipelineImpl::PipelineImpl(const CreatePipelineArgs& a_args) {
+Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
 	auto crsm = DataCompression::Decompress(a_args.ShaderModule.data(), (uint32_t)a_args.ShaderModule.size());
 
 	struct Header {
@@ -114,7 +96,14 @@ PipelineImpl::PipelineImpl(const CreatePipelineArgs& a_args) {
 	blendStateInfo.pAttachments    = &blendAttachState;
 	blendStateInfo.attachmentCount = 1;
 
+	vk::PushConstantRange pushRange;
+	pushRange.offset     = 0;
+	pushRange.size       = sizeof(glm::vec2);
+	pushRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
+
 	vk::PipelineLayoutCreateInfo layoutInfo;
+	layoutInfo.pushConstantRangeCount = 1;
+	layoutInfo.pPushConstantRanges    = &pushRange;
 
 	m_pipeLineLayout = GetDevice().createPipelineLayout(layoutInfo);
 
@@ -133,17 +122,37 @@ PipelineImpl::PipelineImpl(const CreatePipelineArgs& a_args) {
 	m_pipeline = GetDevice().createGraphicsPipeline(vk::PipelineCache{}, pipeInfo);
 }
 
-PipelineImpl::~PipelineImpl() {
-	ExecuteNextFrame([pipeline = m_pipeline, pipeLineLayout = m_pipeLineLayout]() {
-		GetDevice().destroyPipeline(pipeline);
-		GetDevice().destroyPipelineLayout(pipeLineLayout);
-	});
+Pipeline::Pipeline(Pipeline&& a_other) {
+	*this = move(a_other);
 }
 
-const std::uintptr_t PipelineImpl::GetHandle() const {
-	return (uintptr_t)&m_pipeline;
+Pipeline& Pipeline::operator=(Pipeline&& a_other) {
+	Free();
+
+	m_pipeline       = a_other.m_pipeline;
+	m_pipeLineLayout = a_other.m_pipeLineLayout;
+
+	a_other.m_pipeline       = vk::Pipeline{};
+	a_other.m_pipeLineLayout = vk::PipelineLayout{};
+
+	return *this;
 }
 
-std::unique_ptr<Pipeline> CR::Graphics::CreatePipeline(const CreatePipelineArgs& a_args) {
-	return make_unique<PipelineImpl>(a_args);
+Pipeline::~Pipeline() {
+	Free();
+}
+
+void Pipeline::Free() {
+	if(m_pipeline) {
+		ExecuteNextFrame([pipeline = m_pipeline, pipeLineLayout = m_pipeLineLayout]() {
+			GetDevice().destroyPipeline(pipeline);
+			GetDevice().destroyPipelineLayout(pipeLineLayout);
+		});
+	}
+	m_pipeline       = vk::Pipeline{};
+	m_pipeLineLayout = vk::PipelineLayout{};
+}
+
+const vk::Pipeline& Pipeline::GetHandle() const {
+	return m_pipeline;
 }
