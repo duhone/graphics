@@ -15,7 +15,7 @@ set(GRAPHICS_PUBLIC_HDRS
 set(GRAPHICS_SRCS
     ${graphics_root}/src/Commands.h
     ${graphics_root}/src/CommandPool.h
-    ${graphics_root}/src/Buffer.h
+    ${graphics_root}/src/UniformBufferDynamic.h
     ${graphics_root}/src/Image.h
     ${graphics_root}/src/Sprite.cpp
     ${graphics_root}/src/SpriteTypeImpl.h
@@ -26,7 +26,7 @@ set(GRAPHICS_SRCS
     ${graphics_root}/src/SpriteManager.cpp
     ${graphics_root}/src/vulkan/EngineInternal.h
     ${graphics_root}/src/vulkan/Engine.cpp
-    ${graphics_root}/src/vulkan/Buffer.cpp
+    ${graphics_root}/src/vulkan/UniformBufferDynamic.cpp
     ${graphics_root}/src/vulkan/Image.cpp
     ${graphics_root}/src/vulkan/CommandPool.cpp
     ${graphics_root}/src/vulkan/Commands.cpp
@@ -73,7 +73,7 @@ if(IncludeTests)
       ${graphics_root}/tests/TestFixture.h
       ${graphics_root}/tests/main.cpp
       ${graphics_root}/tests/Engine.cpp
-      ${graphics_root}/tests/Buffer.cpp
+      ${graphics_root}/tests/UniformBufferDynamic.cpp
       ${graphics_root}/tests/Image.cpp
       ${graphics_root}/tests/FrameBuffer.cpp
       ${graphics_root}/tests/Sprite.cpp

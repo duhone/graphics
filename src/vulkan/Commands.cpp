@@ -11,18 +11,6 @@
 using namespace CR::Graphics;
 using namespace std;
 
-void Commands::CopyBufferToBuffer(CommandBuffer& a_cmdBuffer, Buffer& a_from, Buffer& a_to, uint32_t a_offset,
-                                  uint32_t a_size) {
-	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
-	const vk::Buffer& vkfrom = a_from.GetHandle();
-	const vk::Buffer& vkto   = a_to.GetHandle();
-
-	vk::BufferCopy cpy;
-	cpy.srcOffset = cpy.dstOffset = a_offset;
-	cpy.size                      = a_size;
-	vkcmd->copyBuffer(vkfrom, vkto, 1, &cpy);
-}
-
 void Commands::RenderPassBegin(CommandBuffer& a_cmdBuffer, std::optional<glm::vec4> a_clearColor) {
 	vk::RenderPassBeginInfo renderPassInfo;
 	renderPassInfo.renderPass               = GetRenderPass();

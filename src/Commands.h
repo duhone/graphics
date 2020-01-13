@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include "Buffer.h"
 #include "CommandPool.h"
 #include "Pipeline.h"
 
@@ -10,8 +9,6 @@
 #include <optional>
 
 namespace CR::Graphics::Commands {
-	void CopyBufferToBuffer(CommandBuffer& a_cmdBuffer, Buffer& a_from, Buffer& a_to, uint32_t a_offset,
-	                        uint32_t a_size);
 	void RenderPassBegin(CommandBuffer& a_cmdBuffer, std::optional<glm::vec4> a_clearColor);
 	void RenderPassEnd(CommandBuffer& a_cmdBuffer);
 	void BindPipeline(CommandBuffer& a_cmdBuffer, Pipeline& a_pipeline);

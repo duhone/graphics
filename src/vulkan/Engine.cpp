@@ -244,7 +244,8 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 			printHeapInfo();
 		}
 
-		if((heapFlags & vk::MemoryPropertyFlagBits::eHostVisible) &&
+		if(((heapFlags & vk::MemoryPropertyFlagBits::eHostVisible) &&
+		    (heapFlags & vk::MemoryPropertyFlagBits::eHostCoherent)) &&
 		   (HostMemoryIndex == numeric_limits<uint32_t>::max())) {
 			HostMemoryIndex = i;
 			printHeapInfo();
