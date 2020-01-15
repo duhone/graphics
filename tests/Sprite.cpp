@@ -29,7 +29,12 @@ TEST_CASE_METHOD(TestFixture, "sprites_basic", "") {
 	spriteInfo.Template = spriteTemplate;
 	auto sprite         = CreateSprite(spriteInfo);
 
-	constexpr bool loop = false;
+	Sprite::Props props;
+	props.Position = glm::vec2{256.0f, 64.0f};
+	props.Color    = glm::vec4{1.0f, 1.0f, 0.0f, 1.0f};
+	sprite->SetProps(props);
+
+	constexpr bool loop = true;
 	while(loop && !glfwWindowShouldClose(Window)) {
 		glfwPollEvents();
 		Frame();

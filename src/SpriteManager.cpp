@@ -13,6 +13,9 @@ using namespace CR::Graphics;
 
 SpriteManager::SpriteManager() {
 	m_spriteTypes.Used.reset();
+	m_spriteTemplates.Used.reset();
+	m_sprites.Used.reset();
+	m_sprites.UniformBuffer = UniformBufferDynamic{sizeof(SpriteUniformData) * MaxSprites};
 }
 
 SpriteManager::~SpriteManager() {
@@ -46,17 +49,19 @@ void SpriteManager::FreeType(uint8_t a_index) {
 
 uint8_t SpriteManager::CreateTemplate(const std::string_view a_name, std::shared_ptr<SpriteType> a_type,
                                       const glm::uvec2& a_frameSize) {
+	uint32_t typeIndex = ((SpriteTypeImpl*)a_type.get())->GetIndex();
+
 	size_t result = 0;
-	for(size_t i = 0; i < m_spriteTemplates.Used.size(); ++i) {
-		if(m_spriteTemplates.Used[i]) {
+	for(size_t i = typeIndex * SpriteTemplatesPerType; i < (typeIndex + 1) * SpriteTemplatesPerType; ++i) {
+		if(!m_spriteTemplates.Used[i]) {
 			result = i;
 			break;
 		}
 	}
-	if(result == m_spriteTemplates.Used.size()) { Core::Log::Fail("Ran out of available sprite templates"); }
+	if(result == (typeIndex + 1) * SpriteTemplatesPerType) { Core::Log::Fail("Ran out of available sprite templates"); }
 	m_spriteTemplates.Used[result]        = true;
 	m_spriteTemplates.Names[result]       = a_name;
-	m_spriteTemplates.TypeIndices[result] = ((SpriteTypeImpl*)a_type.get())->GetIndex();
+	m_spriteTemplates.TypeIndices[result] = (uint8_t)typeIndex;
 	m_spriteTemplates.Types[result]       = move(a_type);
 	m_spriteTemplates.FrameSizes[result]  = a_frameSize;
 
@@ -71,17 +76,19 @@ void SpriteManager::FreeTemplate(uint8_t a_index) {
 }
 
 uint16_t SpriteManager::CreateSprite(const std::string_view a_name, std::shared_ptr<SpriteTemplate> a_template) {
-	size_t result = 0;
-	for(size_t i = 0; i < m_sprites.Used.size(); ++i) {
-		if(m_sprites.Used[i]) {
+	uint32_t templateIndex = ((SpriteTemplateImpl*)a_template.get())->GetIndex();
+
+	uint32_t result = 0;
+	for(uint32_t i = templateIndex * SpritesPerTemplate; i < (templateIndex + 1) * SpritesPerTemplate; ++i) {
+		if(!m_sprites.Used[i]) {
 			result = i;
 			break;
 		}
 	}
-	if(result == m_sprites.Used.size()) { Core::Log::Fail("Ran out of available sprites"); }
+	if(result == (templateIndex + 1) * SpritesPerTemplate) { Core::Log::Fail("Ran out of available sprites"); }
 	m_sprites.Used[result]            = true;
 	m_sprites.Names[result]           = a_name;
-	m_sprites.TemplateIndices[result] = ((SpriteTemplateImpl*)a_template.get())->GetIndex();
+	m_sprites.TemplateIndices[result] = (uint8_t)templateIndex;
 	m_sprites.Templates[result]       = move(a_template);
 
 	return (uint16_t)result;
@@ -95,15 +102,28 @@ void SpriteManager::FreeSprite(uint16_t a_index) {
 }
 
 void SpriteManager::Draw(CommandBuffer& a_commandBuffer) {
-	for(uint8_t type = 0; type < MaxSpriteTypes; ++type) {
+	SpriteUniformData* uniformData = m_sprites.UniformBuffer.GetData<SpriteUniformData>();
+	for(uint32_t sprite = 0; sprite < MaxSprites; ++sprite) {
+		if(m_sprites.Used[sprite]) {
+			uniformData[sprite].Position.x = m_sprites.Positions[sprite].x;
+			uniformData[sprite].Position.y = m_sprites.Positions[sprite].y;
+			uniformData[sprite].Position.z = 1.0f;
+			uniformData[sprite].Position.w = 1.0f;
+
+			uniformData[sprite].Color = m_sprites.Colors[sprite];
+		}
+	}
+
+	for(uint32_t type = 0; type < MaxSpriteTypes; ++type) {
 		if(m_spriteTypes.Used[type]) {
 			Core::Log::Assert(m_spriteTypes.Pipelines[type], "Sprite type didn't have a pipeline");
 			Commands::BindPipeline(a_commandBuffer, m_spriteTypes.Pipelines[type]);
-			for(uint8_t templ = 0; templ < MaxSpriteTemplates; ++templ) {
-				if(m_spriteTemplates.Used[templ] && m_spriteTemplates.TypeIndices[templ] == type) {
+			for(uint32_t templ = type * SpriteTemplatesPerType; templ < (type + 1) * SpriteTemplatesPerType; ++templ) {
+				if(m_spriteTemplates.Used[templ]) {
 					uint32_t numSprites = 0;
-					for(uint16_t sprite = 0; sprite < MaxSprites; ++sprite) {
-						if(m_sprites.Used[sprite] && m_sprites.TemplateIndices[sprite] == templ) { ++numSprites; }
+					for(uint32_t sprite = templ * SpritesPerTemplate; sprite < (templ + 1 * SpritesPerTemplate);
+					    ++sprite) {
+						if(m_sprites.Used[sprite]) { ++numSprites; }
 					}
 					// shader will take framesize as float for perf reasons.
 					glm::vec2 frameSize = m_spriteTemplates.FrameSizes[templ];

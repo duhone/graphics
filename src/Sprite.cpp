@@ -11,6 +11,8 @@ namespace {
 		SpriteImpl(const SpriteImpl&) = delete;
 		SpriteImpl& operator=(const SpriteImpl&) = delete;
 
+		void SetProps(const Props& a_props) override;
+
 		uint16_t GetIndex() const { return m_index; }
 
 	  private:
@@ -24,6 +26,10 @@ using namespace CR::Graphics;
 
 SpriteImpl::~SpriteImpl() {
 	GetSpriteManager().FreeSprite(m_index);
+}
+
+void SpriteImpl::SetProps(const Props& a_props) {
+	GetSpriteManager().SetSprite(m_index, a_props.Position, a_props.Color);
 }
 
 std::unique_ptr<Graphics::Sprite> Graphics::CreateSprite(const SpriteCreateInfo& a_info) {

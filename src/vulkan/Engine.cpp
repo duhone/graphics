@@ -65,7 +65,7 @@ namespace {
 
 		std::unique_ptr<CommandPool> m_commandPool;
 
-		SpriteManager m_spriteManager;
+		std::unique_ptr<SpriteManager> m_spriteManager;
 
 		// Per frame members
 		uint32_t m_currentFrameBuffer{0};
@@ -424,8 +424,9 @@ void Engine::ExecutePending() {
 
 void Graphics::CreateEngine(const EngineSettings& a_settings) {
 	assert(!GetEngine().get());
-	GetEngine()                = make_unique<Engine>(a_settings);
-	GetEngine()->m_commandPool = CreateCommandPool(CommandPool::PoolType::Primary);
+	GetEngine()                  = make_unique<Engine>(a_settings);
+	GetEngine()->m_commandPool   = CreateCommandPool(CommandPool::PoolType::Primary);
+	GetEngine()->m_spriteManager = make_unique<SpriteManager>();
 }
 
 void Graphics::Frame() {
@@ -446,7 +447,7 @@ void Graphics::Frame() {
 
 	engine->m_commandBuffer->Begin();
 	Commands::RenderPassBegin(*engine->m_commandBuffer.get(), engine->m_clearColor);
-	engine->m_spriteManager.Draw(*engine->m_commandBuffer.get());
+	engine->m_spriteManager->Draw(*engine->m_commandBuffer.get());
 	Commands::RenderPassEnd(*engine->m_commandBuffer.get());
 	engine->m_commandBuffer->End();
 
@@ -476,6 +477,7 @@ void Graphics::ShutdownEngine() {
 	GetEngine()->ExecutePending();
 	GetEngine()->m_commandBuffer.reset();
 	GetEngine()->m_commandPool.reset();
+	GetEngine()->m_spriteManager.reset();
 	GetEngine().reset();
 }
 
@@ -521,7 +523,7 @@ const vk::Framebuffer& Graphics::GetFrameBuffer() {
 
 SpriteManager& Graphics::GetSpriteManager() {
 	assert(GetEngine().get());
-	return GetEngine()->m_spriteManager;
+	return *GetEngine()->m_spriteManager.get();
 }
 
 void Graphics::ExecuteNextFrame(std::function<void()> a_func) {

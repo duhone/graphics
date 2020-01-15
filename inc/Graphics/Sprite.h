@@ -2,6 +2,9 @@
 
 #include "Graphics/SpriteTemplate.h"
 
+#include "glm/vec2.hpp"
+#include "glm/vec4.hpp"
+
 #include <memory>
 
 namespace CR::Graphics {
@@ -11,6 +14,12 @@ namespace CR::Graphics {
 		virtual ~Sprite()     = default;
 		Sprite(const Sprite&) = delete;
 		Sprite& operator=(const Sprite&) = delete;
+
+		struct Props {
+			glm::vec2 Position;
+			glm::vec4 Color;
+		};
+		virtual void SetProps(const Props& a_props) = 0;
 	};
 
 	struct SpriteCreateInfo {
