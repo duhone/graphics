@@ -34,9 +34,17 @@ TEST_CASE_METHOD(TestFixture, "sprites_basic", "") {
 	props.Color    = glm::vec4{1.0f, 1.0f, 0.0f, 1.0f};
 	sprite->SetProps(props);
 
+	glm::vec2 step{1.0f, 2.0f};
+
 	constexpr bool loop = true;
 	while(loop && !glfwWindowShouldClose(Window)) {
 		glfwPollEvents();
+		props.Position += step;
+		if(props.Position.x > 1280.0f) { step.x = -1.0f; }
+		if(props.Position.x < 0.0f) { step.x = 1.0f; }
+		if(props.Position.y > 720.0f) { step.y = -2.0f; }
+		if(props.Position.y < 0.0f) { step.y = 2.0f; }
+		sprite->SetProps(props);
 		Frame();
 	}
 }
