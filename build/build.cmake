@@ -13,6 +13,8 @@ set(GRAPHICS_PUBLIC_HDRS
 )
 
 set(GRAPHICS_SRCS
+    ${graphics_root}/src/AssetLoadingThread.h
+    ${graphics_root}/src/AssetLoadingThread.cpp
     ${graphics_root}/src/Commands.h
     ${graphics_root}/src/CommandPool.h
     ${graphics_root}/src/DescriptorPool.h
