@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CommandPool.h"
+#include "DescriptorPool.h"
 #include "Graphics/SpriteTemplate.h"
 #include "Graphics/SpriteType.h"
 #include "Pipeline.h"
@@ -17,7 +18,8 @@
 namespace CR::Graphics {
 	inline constexpr uint32_t MaxSpriteTypes         = 4;
 	inline constexpr uint32_t SpriteTemplatesPerType = 64;
-	inline constexpr uint32_t SpritesPerTemplate     = 256;
+	inline constexpr uint32_t SpritesPerTemplate     = 32;
+	inline constexpr uint32_t SpritesPerType         = SpriteTemplatesPerType * SpritesPerTemplate;
 	inline constexpr uint32_t MaxSpriteTemplates     = MaxSpriteTypes * SpriteTemplatesPerType;
 	inline constexpr uint32_t MaxSprites             = MaxSpriteTemplates * SpritesPerTemplate;
 	static_assert(MaxSpriteTypes - 1 <= std::numeric_limits<uint8_t>::max());        // index is a uint8_t
@@ -29,6 +31,8 @@ namespace CR::Graphics {
 		std::string Names[MaxSpriteTypes];
 		Pipeline Pipelines[MaxSpriteTypes];
 		glm::uvec2 TextureSizes[MaxSpriteTypes];
+		UniformBufferDynamic UniformBuffers[MaxSpriteTypes];
+		vk::DescriptorSet DescSets[MaxSpriteTypes];
 	};
 
 	struct SpriteTemplates {
@@ -52,7 +56,6 @@ namespace CR::Graphics {
 		uint8_t TemplateIndices[MaxSprites];
 		glm::vec2 Positions[MaxSprites];
 		glm::vec4 Colors[MaxSprites];
-		UniformBufferDynamic UniformBuffer;
 	};
 
 	class SpriteManager {

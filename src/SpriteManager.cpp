@@ -15,7 +15,6 @@ SpriteManager::SpriteManager() {
 	m_spriteTypes.Used.reset();
 	m_spriteTemplates.Used.reset();
 	m_sprites.Used.reset();
-	m_sprites.UniformBuffer = UniformBufferDynamic{sizeof(SpriteUniformData) * MaxSprites};
 }
 
 SpriteManager::~SpriteManager() {
@@ -33,15 +32,19 @@ uint8_t SpriteManager::CreateType(const std::string_view a_name, Pipeline&& a_pi
 		}
 	}
 	if(result == m_spriteTypes.Used.size()) { Core::Log::Fail("Ran out of available sprite types"); }
-	m_spriteTypes.Used[result]      = true;
-	m_spriteTypes.Names[result]     = a_name;
-	m_spriteTypes.Pipelines[result] = move(a_pipeline);
+	m_spriteTypes.Used[result]           = true;
+	m_spriteTypes.Names[result]          = a_name;
+	m_spriteTypes.Pipelines[result]      = move(a_pipeline);
+	m_spriteTypes.UniformBuffers[result] = UniformBufferDynamic{sizeof(SpriteUniformData) * SpritesPerType};
+	m_spriteTypes.DescSets[result] =
+	    CreateDescriptorSet(m_spriteTypes.Pipelines[result].GetDescLayout(), m_spriteTypes.UniformBuffers[result]);
 
 	return (uint8_t)result;
 }
 
 void SpriteManager::FreeType(uint8_t a_index) {
-	m_spriteTypes.Pipelines[a_index] = Pipeline{};
+	m_spriteTypes.UniformBuffers[a_index] = UniformBufferDynamic{};
+	m_spriteTypes.Pipelines[a_index]      = Pipeline{};
 	m_spriteTypes.Names[a_index].clear();
 	m_spriteTypes.Names[a_index].shrink_to_fit();
 	m_spriteTypes.Used[a_index] = false;
@@ -102,15 +105,17 @@ void SpriteManager::FreeSprite(uint16_t a_index) {
 }
 
 void SpriteManager::Draw(CommandBuffer& a_commandBuffer) {
-	SpriteUniformData* uniformData = m_sprites.UniformBuffer.GetData<SpriteUniformData>();
-	for(uint32_t sprite = 0; sprite < MaxSprites; ++sprite) {
-		if(m_sprites.Used[sprite]) {
-			uniformData[sprite].Position.x = m_sprites.Positions[sprite].x;
-			uniformData[sprite].Position.y = m_sprites.Positions[sprite].y;
-			uniformData[sprite].Position.z = 1.0f;
-			uniformData[sprite].Position.w = 1.0f;
+	for(uint32_t type = 0; type < MaxSpriteTypes; ++type) {
+		SpriteUniformData* uniformData = m_spriteTypes.UniformBuffers[type].GetData<SpriteUniformData>();
+		for(uint32_t sprite = type * SpritesPerType; sprite < (type + 1) * SpritesPerType; ++sprite) {
+			if(m_sprites.Used[sprite]) {
+				uniformData[sprite].Position.x = m_sprites.Positions[sprite].x;
+				uniformData[sprite].Position.y = m_sprites.Positions[sprite].y;
+				uniformData[sprite].Position.z = 1.0f;
+				uniformData[sprite].Position.w = 1.0f;
 
-			uniformData[sprite].Color = m_sprites.Colors[sprite];
+				uniformData[sprite].Color = m_sprites.Colors[sprite];
+			}
 		}
 	}
 
@@ -118,6 +123,7 @@ void SpriteManager::Draw(CommandBuffer& a_commandBuffer) {
 		if(m_spriteTypes.Used[type]) {
 			Core::Log::Assert(m_spriteTypes.Pipelines[type], "Sprite type didn't have a pipeline");
 			Commands::BindPipeline(a_commandBuffer, m_spriteTypes.Pipelines[type]);
+			uint32_t descOffset = 0;
 			for(uint32_t templ = type * SpriteTemplatesPerType; templ < (type + 1) * SpriteTemplatesPerType; ++templ) {
 				if(m_spriteTemplates.Used[templ]) {
 					uint32_t numSprites = 0;
@@ -129,6 +135,9 @@ void SpriteManager::Draw(CommandBuffer& a_commandBuffer) {
 					glm::vec2 frameSize = m_spriteTemplates.FrameSizes[templ];
 					Commands::PushConstants(a_commandBuffer, m_spriteTypes.Pipelines[type],
 					                        Span<std::byte>{(byte*)&frameSize, sizeof(frameSize)});
+					Commands::BindDescriptorSet(a_commandBuffer, m_spriteTypes.Pipelines[type],
+					                            m_spriteTypes.DescSets[type], descOffset);
+					descOffset += templ * SpritesPerTemplate * sizeof(SpriteUniformData);
 					Commands::Draw(a_commandBuffer, 4, numSprites);
 				}
 			}

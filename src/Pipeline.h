@@ -26,6 +26,7 @@ namespace CR::Graphics {
 
 		const vk::Pipeline& GetHandle() const { return m_pipeline; }
 		const vk::PipelineLayout& GetLayout() const { return m_pipeLineLayout; }
+		const vk::DescriptorSetLayout& GetDescLayout() const { return m_descriptorSetLayout; }
 
 	  private:
 		void Free();
