@@ -101,9 +101,23 @@ Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
 	pushRange.size       = sizeof(glm::vec2);
 	pushRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
+	vk::DescriptorSetLayoutBinding dslBinding;
+	dslBinding.binding         = 0;
+	dslBinding.descriptorCount = 1;
+	dslBinding.descriptorType  = vk::DescriptorType::eUniformBufferDynamic;
+	dslBinding.stageFlags      = vk::ShaderStageFlagBits::eVertex;
+
+	vk::DescriptorSetLayoutCreateInfo dslInfo;
+	dslInfo.bindingCount = 1;
+	dslInfo.pBindings    = &dslBinding;
+
+	m_descriptorSetLayout = GetDevice().createDescriptorSetLayout(dslInfo);
+
 	vk::PipelineLayoutCreateInfo layoutInfo;
 	layoutInfo.pushConstantRangeCount = 1;
 	layoutInfo.pPushConstantRanges    = &pushRange;
+	layoutInfo.setLayoutCount         = 1;
+	layoutInfo.pSetLayouts            = &m_descriptorSetLayout;
 
 	m_pipeLineLayout = GetDevice().createPipelineLayout(layoutInfo);
 
@@ -129,11 +143,13 @@ Pipeline::Pipeline(Pipeline&& a_other) {
 Pipeline& Pipeline::operator=(Pipeline&& a_other) {
 	Free();
 
-	m_pipeline       = a_other.m_pipeline;
-	m_pipeLineLayout = a_other.m_pipeLineLayout;
+	m_pipeline            = a_other.m_pipeline;
+	m_pipeLineLayout      = a_other.m_pipeLineLayout;
+	m_descriptorSetLayout = a_other.m_descriptorSetLayout;
 
-	a_other.m_pipeline       = vk::Pipeline{};
-	a_other.m_pipeLineLayout = vk::PipelineLayout{};
+	a_other.m_pipeline            = vk::Pipeline{};
+	a_other.m_pipeLineLayout      = vk::PipelineLayout{};
+	a_other.m_descriptorSetLayout = vk::DescriptorSetLayout{};
 
 	return *this;
 }
@@ -144,11 +160,14 @@ Pipeline::~Pipeline() {
 
 void Pipeline::Free() {
 	if(m_pipeline) {
-		ExecuteNextFrame([pipeline = m_pipeline, pipeLineLayout = m_pipeLineLayout]() {
-			GetDevice().destroyPipeline(pipeline);
-			GetDevice().destroyPipelineLayout(pipeLineLayout);
-		});
+		ExecuteNextFrame(
+		    [pipeline = m_pipeline, pipeLineLayout = m_pipeLineLayout, descriptorSetLayout = m_descriptorSetLayout]() {
+			    GetDevice().destroyPipeline(pipeline);
+			    GetDevice().destroyPipelineLayout(pipeLineLayout);
+			    GetDevice().destroyDescriptorSetLayout(descriptorSetLayout);
+		    });
 	}
-	m_pipeline       = vk::Pipeline{};
-	m_pipeLineLayout = vk::PipelineLayout{};
+	m_pipeline            = vk::Pipeline{};
+	m_pipeLineLayout      = vk::PipelineLayout{};
+	m_descriptorSetLayout = vk::DescriptorSetLayout{};
 }

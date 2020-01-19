@@ -15,6 +15,8 @@ set(GRAPHICS_PUBLIC_HDRS
 set(GRAPHICS_SRCS
     ${graphics_root}/src/Commands.h
     ${graphics_root}/src/CommandPool.h
+    ${graphics_root}/src/DescriptorPool.h
+    ${graphics_root}/src/DescriptorPool.cpp
     ${graphics_root}/src/UniformBufferDynamic.h
     ${graphics_root}/src/Image.h
     ${graphics_root}/src/Sprite.cpp

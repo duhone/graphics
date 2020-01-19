@@ -2,6 +2,7 @@
 
 #include "CommandPool.h"
 #include "Commands.h"
+#include "DescriptorPool.h"
 #include "EngineInternal.h"
 #include "SpriteManager.h"
 
@@ -424,8 +425,9 @@ void Engine::ExecutePending() {
 
 void Graphics::CreateEngine(const EngineSettings& a_settings) {
 	assert(!GetEngine().get());
-	GetEngine()                  = make_unique<Engine>(a_settings);
-	GetEngine()->m_commandPool   = CreateCommandPool(CommandPool::PoolType::Primary);
+	GetEngine()                = make_unique<Engine>(a_settings);
+	GetEngine()->m_commandPool = CreateCommandPool(CommandPool::PoolType::Primary);
+	DescriptorPoolInit();
 	GetEngine()->m_spriteManager = make_unique<SpriteManager>();
 }
 
@@ -478,6 +480,7 @@ void Graphics::ShutdownEngine() {
 	GetEngine()->m_commandBuffer.reset();
 	GetEngine()->m_commandPool.reset();
 	GetEngine()->m_spriteManager.reset();
+	DescriptorPoolDestroy();
 	GetEngine().reset();
 }
 
