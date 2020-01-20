@@ -59,9 +59,10 @@ target_include_directories(graphics PRIVATE
 )		
 
 target_link_libraries(graphics PUBLIC
-  core
-	datacompression
+    core
+    datacompression
 	glm
+    function2
 )
 
 source_group("Public Headers" FILES ${GRAPHICS_PUBLIC_HDRS})
@@ -102,10 +103,10 @@ if(IncludeTests)
 	target_link_libraries(graphics_tests 
 		catch
 		fmt
-    zstd
+        zstd
 		core
-    datacompression
-    platform
+        datacompression
+        platform
 		graphics
 		Vulkan::Vulkan 
 		glfw
