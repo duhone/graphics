@@ -512,6 +512,11 @@ uint32_t Graphics::GetTransferQueueIndex() {
 	return GetEngine()->m_TransferQueueIndex;
 }
 
+vk::Queue& Graphics::GetTransferQueue() {
+	assert(GetEngine().get());
+	return GetEngine()->m_TransferQueue;
+}
+
 const glm::ivec2& Graphics::GetWindowSize() {
 	assert(GetEngine().get());
 	return GetEngine()->m_WindowSize;

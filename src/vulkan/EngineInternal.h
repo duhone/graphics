@@ -21,6 +21,8 @@ namespace CR::Graphics {
 	uint32_t GetGraphicsQueueIndex();
 	uint32_t GetTransferQueueIndex();
 
+	vk::Queue& GetTransferQueue();
+
 	const glm::ivec2& GetWindowSize();
 	SpriteManager& GetSpriteManager();
 

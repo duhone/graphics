@@ -1,5 +1,6 @@
 ﻿#include "AssetLoadingThread.h"
 
+#include "CommandPool.h"
 #include "Image.h"
 #include "vulkan/EngineInternal.h"
 
@@ -19,6 +20,7 @@ namespace {
 	deque<AssetLoadingThread::task_t> m_requests;
 
 	void ThreadMain() {
+		unique_ptr<CommandPool> cmdPool = CreateCommandPool(CommandPool::PoolType::Transfer);
 		while(m_running.load()) {
 			AssetLoadingThread::task_t request;
 			{
@@ -30,13 +32,24 @@ namespace {
 					m_requests.pop_front();
 				}
 			}
-			if(request) { request(); }
+			if(request) {
+				unique_ptr<CommandBuffer> cmdBuffer = cmdPool->CreateCommandBuffer();
+
+				request(*cmdBuffer.get());
+
+				vk::SubmitInfo subInfo;
+				subInfo.commandBufferCount = 1;
+				subInfo.pCommandBuffers    = (vk::CommandBuffer*)cmdBuffer->GetHandle();
+				GetTransferQueue().submit(subInfo, vk::Fence{});
+				GetTransferQueue().waitIdle();
+			}
 		}
 		m_requests.clear();
 	}
 }    // namespace
 
 void AssetLoadingThread::Init() {
+	m_running.store(true);
 	m_thread = thread([]() { ThreadMain(); });
 }
 
@@ -48,9 +61,10 @@ void AssetLoadingThread::Shutdown() {
 
 std::shared_ptr<std::atomic_bool> AssetLoadingThread::LoadAsset(task_t&& a_task) {
 	std::shared_ptr<std::atomic_bool> result = make_shared<std::atomic_bool>(false);
-	task_t wrappedTask                       = [result = result, task = move(a_task)]() mutable {
-        task();
-        result->store(true);
+
+	task_t wrappedTask = [result = result, task = move(a_task)](CommandBuffer& a_cmdBuffer) mutable {
+		task(a_cmdBuffer);
+		result->store(true);
 	};
 	{
 		unique_lock<mutex> lock(m_requestMutex);

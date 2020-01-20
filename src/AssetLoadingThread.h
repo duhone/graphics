@@ -7,8 +7,12 @@
 #include <future>
 #include <memory>
 
+namespace CR::Graphics {
+	struct CommandBuffer;
+}
+
 namespace CR::Graphics::AssetLoadingThread {
-	using task_t = fu2::unique_function<void()>;
+	using task_t = fu2::unique_function<void(CommandBuffer&)>;
 
 	void Init();
 	void Shutdown();
