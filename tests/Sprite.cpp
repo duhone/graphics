@@ -11,6 +11,8 @@ using namespace CR::Graphics;
 using namespace std;
 
 TEST_CASE_METHOD(TestFixture, "sprites_basic", "") {
+	auto crtex = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "spencer_walk.crtexd");
+
 	auto crsm = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "simple.crsm");
 	SpriteTypeCreateInfo info;
 	info.Name         = "sprite type";
