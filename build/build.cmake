@@ -28,6 +28,8 @@ set(GRAPHICS_SRCS
     ${graphics_root}/src/SpriteTemplate.cpp
     ${graphics_root}/src/SpriteManager.h
     ${graphics_root}/src/SpriteManager.cpp
+    ${graphics_root}/src/TexturePool.h
+    ${graphics_root}/src/TexturePool.cpp
     ${graphics_root}/src/vulkan/EngineInternal.h
     ${graphics_root}/src/vulkan/Engine.cpp
     ${graphics_root}/src/vulkan/UniformBufferDynamic.cpp

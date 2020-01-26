@@ -6,6 +6,7 @@
 #include "DescriptorPool.h"
 #include "EngineInternal.h"
 #include "SpriteManager.h"
+#include "TexturePool.h"
 
 #include "core/Log.h"
 #include "core/algorithm.h"
@@ -430,6 +431,7 @@ void Graphics::CreateEngine(const EngineSettings& a_settings) {
 	GetEngine()->m_commandPool = CreateCommandPool(CommandPool::PoolType::Primary);
 	DescriptorPoolInit();
 	AssetLoadingThread::Init();
+	TexturePool::Init();
 	GetEngine()->m_spriteManager = make_unique<SpriteManager>();
 }
 
@@ -482,6 +484,7 @@ void Graphics::ShutdownEngine() {
 	GetEngine()->m_commandBuffer.reset();
 	GetEngine()->m_commandPool.reset();
 	GetEngine()->m_spriteManager.reset();
+	TexturePool::Shutdown();
 	AssetLoadingThread::Shutdown();
 	DescriptorPoolDestroy();
 	GetEngine().reset();
