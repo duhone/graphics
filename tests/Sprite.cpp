@@ -2,6 +2,7 @@
 
 #include "Graphics/Engine.h"
 #include "Graphics/Sprite.h"
+#include "Graphics/Texture.h"
 #include "Platform/MemoryMappedFile.h"
 #include "Platform/PathUtils.h"
 #include "TestFixture.h"
@@ -12,6 +13,10 @@ using namespace std;
 
 TEST_CASE_METHOD(TestFixture, "sprites_basic", "") {
 	auto crtex = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "spencer_walk.crtexd");
+	TextureCreateInfo texInfo;
+	texInfo.TextureData = Core::Span<byte>{crtex->data(), crtex->size()};
+	texInfo.Name        = "spencer_walk";
+	Texture tex         = CreateTexture(texInfo);
 
 	auto crsm = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "simple.crsm");
 	SpriteTypeCreateInfo info;

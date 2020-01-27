@@ -24,9 +24,9 @@ SpriteManager::~SpriteManager() {
 }
 
 uint8_t SpriteManager::CreateType(const std::string_view a_name, Pipeline&& a_pipeline) {
-	size_t result = 0;
+	size_t result = m_spriteTypes.Used.size();
 	for(size_t i = 0; i < m_spriteTypes.Used.size(); ++i) {
-		if(m_spriteTypes.Used[i]) {
+		if(!m_spriteTypes.Used[i]) {
 			result = i;
 			break;
 		}

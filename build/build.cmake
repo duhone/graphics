@@ -10,6 +10,7 @@ set(GRAPHICS_PUBLIC_HDRS
     ${graphics_root}/inc/Graphics/Sprite.h
     ${graphics_root}/inc/Graphics/SpriteType.h
     ${graphics_root}/inc/Graphics/SpriteTemplate.h
+    ${graphics_root}/inc/Graphics/Texture.h
 )
 
 set(GRAPHICS_SRCS
