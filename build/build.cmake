@@ -10,7 +10,7 @@ set(GRAPHICS_PUBLIC_HDRS
     ${graphics_root}/inc/Graphics/Sprite.h
     ${graphics_root}/inc/Graphics/SpriteType.h
     ${graphics_root}/inc/Graphics/SpriteTemplate.h
-    ${graphics_root}/inc/Graphics/Texture.h
+    ${graphics_root}/inc/Graphics/TextureSet.h
 )
 
 set(GRAPHICS_SRCS
@@ -29,8 +29,8 @@ set(GRAPHICS_SRCS
     ${graphics_root}/src/SpriteTemplate.cpp
     ${graphics_root}/src/SpriteManager.h
     ${graphics_root}/src/SpriteManager.cpp
-    ${graphics_root}/src/TexturePool.h
-    ${graphics_root}/src/TexturePool.cpp
+    ${graphics_root}/src/TextureSets.h
+    ${graphics_root}/src/TextureSets.cpp
     ${graphics_root}/src/vulkan/EngineInternal.h
     ${graphics_root}/src/vulkan/Engine.cpp
     ${graphics_root}/src/vulkan/UniformBufferDynamic.cpp
