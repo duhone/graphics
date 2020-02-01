@@ -62,6 +62,7 @@ target_include_directories(graphics PRIVATE
 )		
 
 target_link_libraries(graphics PUBLIC
+    robinmap
     core
     datacompression
 	glm

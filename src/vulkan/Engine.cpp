@@ -6,7 +6,7 @@
 #include "DescriptorPool.h"
 #include "EngineInternal.h"
 #include "SpriteManager.h"
-#include "TexturePool.h"
+#include "TextureSets.h"
 
 #include "core/Log.h"
 #include "core/algorithm.h"
