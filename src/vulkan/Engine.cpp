@@ -8,6 +8,7 @@
 #include "SpriteManager.h"
 #include "TextureSets.h"
 
+#include "core/Locked.h"
 #include "core/Log.h"
 #include "core/algorithm.h"
 
@@ -43,7 +44,7 @@ namespace {
 
 		// private: internal so private anyway
 		vk::Instance m_Instance;
-		vk::Device m_Device;
+		Locked<vk::Device> m_Device;
 		int32_t m_GraphicsQueueIndex{-1};
 		int32_t m_TransferQueueIndex{-1};
 		int32_t m_PresentationQueueIndex{-1};
@@ -298,11 +299,11 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	createLogDevInfo.enabledExtensionCount   = (uint32_t)size(deviceExtensions);
 	createLogDevInfo.ppEnabledExtensionNames = data(deviceExtensions);
 
-	m_Device = selectedDevice.createDevice(createLogDevInfo);
+	auto device = selectedDevice.createDevice(createLogDevInfo);
 
-	m_GraphicsQueue     = m_Device.getQueue(m_GraphicsQueueIndex, graphicsQueueIndex);
-	m_PresentationQueue = m_Device.getQueue(m_PresentationQueueIndex, presentationQueueIndex);
-	m_TransferQueue     = m_Device.getQueue(m_TransferQueueIndex, transferQueueIndex);
+	m_GraphicsQueue     = device.getQueue(m_GraphicsQueueIndex, graphicsQueueIndex);
+	m_PresentationQueue = device.getQueue(m_PresentationQueueIndex, presentationQueueIndex);
+	m_TransferQueue     = device.getQueue(m_TransferQueueIndex, transferQueueIndex);
 
 	auto surfaceCaps = selectedDevice.getSurfaceCapabilitiesKHR(m_PrimarySurface);
 	Log::Info("current surface resolution: {}x{}", surfaceCaps.maxImageExtent.width, surfaceCaps.maxImageExtent.height);
@@ -342,8 +343,8 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	swapCreateInfo.setSurface(m_PrimarySurface);
 	swapCreateInfo.setImageArrayLayers(1);
 
-	m_PrimarySwapChain       = m_Device.createSwapchainKHR(swapCreateInfo);
-	m_PrimarySwapChainImages = m_Device.getSwapchainImagesKHR(m_PrimarySwapChain);
+	m_PrimarySwapChain       = device.createSwapchainKHR(swapCreateInfo);
+	m_PrimarySwapChainImages = device.getSwapchainImagesKHR(m_PrimarySwapChain);
 	for(const auto& image : m_PrimarySwapChainImages) {
 		vk::ImageViewCreateInfo viewInfo;
 		viewInfo.setFormat(vk::Format::eB8G8R8A8Srgb);
@@ -354,7 +355,7 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 		viewInfo.subresourceRange.layerCount     = 1;
 		viewInfo.subresourceRange.baseMipLevel   = 0;
 		viewInfo.subresourceRange.levelCount     = 1;
-		m_primarySwapChainImageViews.push_back(m_Device.createImageView(viewInfo));
+		m_primarySwapChainImageViews.push_back(device.createImageView(viewInfo));
 	}
 	m_WindowSize = ivec2(surfaceCaps.maxImageExtent.width, surfaceCaps.maxImageExtent.height);
 
@@ -387,7 +388,7 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	renderPassInfo.subpassCount    = 1;
 	renderPassInfo.pSubpasses      = &subpassDesc;
 
-	m_RenderPass = m_Device.createRenderPass(renderPassInfo);
+	m_RenderPass = device.createRenderPass(renderPassInfo);
 
 	for(auto& imageView : m_primarySwapChainImageViews) {
 		vk::FramebufferCreateInfo framebufferInfo;
@@ -398,25 +399,29 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 		framebufferInfo.renderPass      = m_RenderPass;
 		framebufferInfo.layers          = 1;
 
-		m_frameBuffers.push_back(m_Device.createFramebuffer(framebufferInfo));
+		m_frameBuffers.push_back(device.createFramebuffer(framebufferInfo));
 	}
 
 	vk::SemaphoreCreateInfo semInfo;
-	m_renderingFinished = m_Device.createSemaphore(semInfo);
+	m_renderingFinished = device.createSemaphore(semInfo);
 
 	vk::FenceCreateInfo fenceInfo;
-	m_frameFence = m_Device.createFence(fenceInfo);
+	m_frameFence = device.createFence(fenceInfo);
+
+	m_Device([&](auto& a_device) { a_device = device; });
 }
 
 Engine::~Engine() {
-	m_Device.destroyFence(m_frameFence);
-	m_Device.destroySemaphore(m_renderingFinished);
-	for(auto& framebuffer : m_frameBuffers) { m_Device.destroyFramebuffer(framebuffer); }
-	m_Device.destroyRenderPass(m_RenderPass);
-	for(auto& imageView : m_primarySwapChainImageViews) { m_Device.destroyImageView(imageView); }
-	m_primarySwapChainImageViews.clear();
-	m_Device.destroySwapchainKHR(m_PrimarySwapChain);
-	m_Device.destroy();
+	m_Device([&](auto& a_device) {
+		a_device.destroyFence(m_frameFence);
+		a_device.destroySemaphore(m_renderingFinished);
+		for(auto& framebuffer : m_frameBuffers) { a_device.destroyFramebuffer(framebuffer); }
+		a_device.destroyRenderPass(m_RenderPass);
+		for(auto& imageView : m_primarySwapChainImageViews) { a_device.destroyImageView(imageView); }
+		m_primarySwapChainImageViews.clear();
+		a_device.destroySwapchainKHR(m_PrimarySwapChain);
+		a_device.destroy();
+	});
 	m_Instance.destroySurfaceKHR(m_PrimarySurface);
 	m_Instance.destroy();
 }
@@ -441,13 +446,14 @@ void Graphics::Frame() {
 
 	engine->ExecutePending();
 
-	engine->m_currentFrameBuffer =
-	    engine->m_Device
-	        .acquireNextImageKHR(engine->m_PrimarySwapChain, UINT64_MAX, vk::Semaphore{}, engine->m_frameFence)
-	        .value;
+	engine->m_Device([&](auto& a_device) {
+		engine->m_currentFrameBuffer =
+		    a_device.acquireNextImageKHR(engine->m_PrimarySwapChain, UINT64_MAX, vk::Semaphore{}, engine->m_frameFence)
+		        .value;
 
-	engine->m_Device.waitForFences(1, &engine->m_frameFence, true, UINT64_MAX);
-	engine->m_Device.resetFences(1, &engine->m_frameFence);
+		a_device.waitForFences(1, &engine->m_frameFence, true, UINT64_MAX);
+		a_device.resetFences(1, &engine->m_frameFence);
+	});
 
 	engine->m_commandBuffer = engine->m_commandPool->CreateCommandBuffer();
 
@@ -474,25 +480,26 @@ void Graphics::Frame() {
 	engine->m_PresentationQueue.presentKHR(presInfo);
 
 	// Don't allow gpu to get behind, sacrifice performance for minimal latency.
-	engine->m_Device.waitIdle();
+	engine->m_GraphicsQueue.waitIdle();
+	engine->m_PresentationQueue.waitIdle();
 }
 
 void Graphics::ShutdownEngine() {
+	AssetLoadingThread::Shutdown();
 	assert(GetEngine().get());
-	GetEngine()->m_Device.waitIdle();
+	GetEngine()->m_Device([](auto& a_device) { a_device.waitIdle(); });
 	GetEngine()->ExecutePending();
 	GetEngine()->m_commandBuffer.reset();
 	GetEngine()->m_commandPool.reset();
 	GetEngine()->m_spriteManager.reset();
 	TexturePool::Shutdown();
-	AssetLoadingThread::Shutdown();
 	DescriptorPoolDestroy();
 	GetEngine().reset();
 }
 
-vk::Device& Graphics::GetDevice() {
+void Graphics::GetDevice(std::function<void(vk::Device&)> a_func) {
 	assert(GetEngine().get());
-	return GetEngine()->m_Device;
+	GetEngine()->m_Device([&](auto& a_device) { a_func(a_device); });
 }
 
 uint32_t Graphics::GetDeviceMemoryIndex() {

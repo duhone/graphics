@@ -12,18 +12,20 @@ UniformBufferDynamic::UniformBufferDynamic(uint32_t a_bytes) {
 	createInfo.usage       = vk::BufferUsageFlagBits::eUniformBuffer;
 
 	// main buffer
-	m_Buffer                = GetDevice().createBuffer(createInfo);
-	auto bufferRequirements = GetDevice().getBufferMemoryRequirements(m_Buffer);
+	GetDevice([&](auto& a_device) {
+		m_Buffer                = a_device.createBuffer(createInfo);
+		auto bufferRequirements = a_device.getBufferMemoryRequirements(m_Buffer);
 
-	vk::MemoryAllocateInfo allocInfo;
-	allocInfo.memoryTypeIndex = GetHostMemoryIndex();
-	assert(bufferRequirements.alignment <= 256);
-	allocInfo.allocationSize = bufferRequirements.size;
-	m_BufferMemory           = GetDevice().allocateMemory(allocInfo);
+		vk::MemoryAllocateInfo allocInfo;
+		allocInfo.memoryTypeIndex = GetHostMemoryIndex();
+		assert(bufferRequirements.alignment <= 256);
+		allocInfo.allocationSize = bufferRequirements.size;
+		m_BufferMemory           = a_device.allocateMemory(allocInfo);
 
-	GetDevice().bindBufferMemory(m_Buffer, m_BufferMemory, 0);
+		a_device.bindBufferMemory(m_Buffer, m_BufferMemory, 0);
 
-	m_data = (std::byte*)GetDevice().mapMemory(m_BufferMemory, 0, VK_WHOLE_SIZE);
+		m_data = (std::byte*)a_device.mapMemory(m_BufferMemory, 0, VK_WHOLE_SIZE);
+	});
 }
 
 UniformBufferDynamic::~UniformBufferDynamic() {
@@ -49,8 +51,10 @@ UniformBufferDynamic& UniformBufferDynamic::operator=(UniformBufferDynamic&& a_o
 
 void UniformBufferDynamic::Free() {
 	if(m_Buffer) {
-		GetDevice().unmapMemory(m_BufferMemory);
-		GetDevice().destroyBuffer(m_Buffer);
-		GetDevice().freeMemory(m_BufferMemory);
+		GetDevice([&](auto& a_device) {
+			a_device.unmapMemory(m_BufferMemory);
+			a_device.destroyBuffer(m_Buffer);
+			a_device.freeMemory(m_BufferMemory);
+		});
 	}
 }

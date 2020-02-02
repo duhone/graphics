@@ -21,7 +21,6 @@ set(GRAPHICS_SRCS
     ${graphics_root}/src/DescriptorPool.h
     ${graphics_root}/src/DescriptorPool.cpp
     ${graphics_root}/src/UniformBufferDynamic.h
-    ${graphics_root}/src/Image.h
     ${graphics_root}/src/Sprite.cpp
     ${graphics_root}/src/SpriteTypeImpl.h
     ${graphics_root}/src/SpriteType.cpp
@@ -34,7 +33,6 @@ set(GRAPHICS_SRCS
     ${graphics_root}/src/vulkan/EngineInternal.h
     ${graphics_root}/src/vulkan/Engine.cpp
     ${graphics_root}/src/vulkan/UniformBufferDynamic.cpp
-    ${graphics_root}/src/vulkan/Image.cpp
     ${graphics_root}/src/vulkan/CommandPool.cpp
     ${graphics_root}/src/vulkan/Commands.cpp
     ${graphics_root}/src/Pipeline.h

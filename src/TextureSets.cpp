@@ -58,13 +58,15 @@ namespace {
 TextureSet ::~TextureSet() {
 	if(m_id != c_unused) {
 		uint16_t set = GetSet(m_id);
-		for(auto& view : g_textureSets[set].m_views) { GetDevice().destroyImageView(view); }
-		for(auto& img : g_textureSets[set].m_images) { GetDevice().destroyImage(img); }
-		for(auto& buf : g_textureSets[set].m_stagingBuffer) {
-			if(buf) { GetDevice().destroyBuffer(buf); }
-		}
-		GetDevice().freeMemory(g_textureSets[set].m_imageMemory);
-		if(g_textureSets[set].m_stagingMemory) { GetDevice().freeMemory(g_textureSets[set].m_stagingMemory); }
+		GetDevice([&](auto& a_device) {
+			for(auto& view : g_textureSets[set].m_views) { a_device.destroyImageView(view); }
+			for(auto& img : g_textureSets[set].m_images) { a_device.destroyImage(img); }
+			for(auto& buf : g_textureSets[set].m_stagingBuffer) {
+				if(buf) { a_device.destroyBuffer(buf); }
+			}
+			a_device.freeMemory(g_textureSets[set].m_imageMemory);
+			if(g_textureSets[set].m_stagingMemory) { a_device.freeMemory(g_textureSets[set].m_stagingMemory); }
+		});
 		g_used[m_id] = false;
 	}
 }
@@ -104,6 +106,12 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 	stagOffsets.reserve(a_textures.size());
 	uint32_t stagOffset{0};
 
+	g_textureSets[set].m_names.clear();
+	g_textureSets[set].m_headers.clear();
+	g_textureSets[set].m_images.clear();
+	g_textureSets[set].m_views.clear();
+	g_textureSets[set].m_stagingBuffer.clear();
+
 	g_textureSets[set].m_names.reserve(a_textures.size());
 	g_textureSets[set].m_headers.reserve(a_textures.size());
 	for(uint32_t slot = 0; slot < a_textures.size(); ++slot) {
@@ -130,53 +138,60 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 		createInfo.flags         = vk::ImageCreateFlags{0};
 		createInfo.format        = vk::Format::eBc7SrgbBlock;
 
-		g_textureSets[set].m_images.push_back(GetDevice().createImage(createInfo));
+		GetDevice([&](auto& a_device) {
+			g_textureSets[set].m_images.push_back(a_device.createImage(createInfo));
 
-		auto imageRequirements = GetDevice().getImageMemoryRequirements(g_textureSets[set].m_images.back());
-		memOffset = (uint32_t)((memOffset + (imageRequirements.alignment - 1)) & ~(imageRequirements.alignment - 1));
-		memOffsets.push_back(memOffset);
-		memOffset += (uint32_t)imageRequirements.size;
+			auto imageRequirements = a_device.getImageMemoryRequirements(g_textureSets[set].m_images.back());
+			memOffset =
+			    (uint32_t)((memOffset + (imageRequirements.alignment - 1)) & ~(imageRequirements.alignment - 1));
+			memOffsets.push_back(memOffset);
+			memOffset += (uint32_t)imageRequirements.size;
 
-		vk::BufferCreateInfo stagInfo;
-		stagInfo.flags       = vk::BufferCreateFlags{};
-		stagInfo.sharingMode = vk::SharingMode::eExclusive;
-		stagInfo.size        = a_textures[slot].TextureData.size() - sizeof(Header);
-		stagInfo.usage       = vk::BufferUsageFlagBits::eTransferSrc;
+			vk::BufferCreateInfo stagInfo;
+			stagInfo.flags       = vk::BufferCreateFlags{};
+			stagInfo.sharingMode = vk::SharingMode::eExclusive;
+			stagInfo.size        = a_textures[slot].TextureData.size() - sizeof(Header);
+			stagInfo.usage       = vk::BufferUsageFlagBits::eTransferSrc;
 
-		g_textureSets[set].m_stagingBuffer.push_back(GetDevice().createBuffer(stagInfo));
-		auto bufferRequirements = GetDevice().getBufferMemoryRequirements(g_textureSets[set].m_stagingBuffer.back());
-		stagOffset =
-		    (uint32_t)((stagOffset + (bufferRequirements.alignment - 1)) & ~(bufferRequirements.alignment - 1));
-		stagOffsets.push_back(stagOffset);
-		stagOffset += (uint32_t)bufferRequirements.size;
+			g_textureSets[set].m_stagingBuffer.push_back(a_device.createBuffer(stagInfo));
+			auto bufferRequirements = a_device.getBufferMemoryRequirements(g_textureSets[set].m_stagingBuffer.back());
+			stagOffset =
+			    (uint32_t)((stagOffset + (bufferRequirements.alignment - 1)) & ~(bufferRequirements.alignment - 1));
+			stagOffsets.push_back(stagOffset);
+			stagOffset += (uint32_t)bufferRequirements.size;
+		});
 	}
 
 	vk::MemoryAllocateInfo allocInfo;
-	allocInfo.memoryTypeIndex        = GetDeviceMemoryIndex();
-	allocInfo.allocationSize         = memOffset;
-	g_textureSets[set].m_imageMemory = GetDevice().allocateMemory(allocInfo);
+	GetDevice([&](auto& a_device) {
+		allocInfo.memoryTypeIndex        = GetDeviceMemoryIndex();
+		allocInfo.allocationSize         = memOffset;
+		g_textureSets[set].m_imageMemory = a_device.allocateMemory(allocInfo);
 
-	allocInfo.memoryTypeIndex          = GetHostMemoryIndex();
-	allocInfo.allocationSize           = stagOffset;
-	g_textureSets[set].m_stagingMemory = GetDevice().allocateMemory(allocInfo);
+		allocInfo.memoryTypeIndex          = GetHostMemoryIndex();
+		allocInfo.allocationSize           = stagOffset;
+		g_textureSets[set].m_stagingMemory = a_device.allocateMemory(allocInfo);
+	});
 
 	for(uint32_t slot = 0; slot < a_textures.size(); ++slot) {
-		GetDevice().bindImageMemory(g_textureSets[set].m_images[slot], g_textureSets[set].m_imageMemory,
-		                            memOffsets[slot]);
-		vk::ImageViewCreateInfo viewInfo;
-		viewInfo.image                           = g_textureSets[set].m_images[slot];
-		viewInfo.viewType                        = vk::ImageViewType::e2D;
-		viewInfo.format                          = vk::Format::eBc7SrgbBlock;
-		viewInfo.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
-		viewInfo.subresourceRange.baseMipLevel   = 0;
-		viewInfo.subresourceRange.levelCount     = 1;
-		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount     = 1;
+		GetDevice([&](auto& a_device) {
+			a_device.bindImageMemory(g_textureSets[set].m_images[slot], g_textureSets[set].m_imageMemory,
+			                         memOffsets[slot]);
+			vk::ImageViewCreateInfo viewInfo;
+			viewInfo.image                           = g_textureSets[set].m_images[slot];
+			viewInfo.viewType                        = vk::ImageViewType::e2D;
+			viewInfo.format                          = vk::Format::eBc7SrgbBlock;
+			viewInfo.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
+			viewInfo.subresourceRange.baseMipLevel   = 0;
+			viewInfo.subresourceRange.levelCount     = 1;
+			viewInfo.subresourceRange.baseArrayLayer = 0;
+			viewInfo.subresourceRange.layerCount     = 1;
 
-		g_textureSets[set].m_views.push_back(GetDevice().createImageView(viewInfo));
+			g_textureSets[set].m_views.push_back(a_device.createImageView(viewInfo));
 
-		GetDevice().bindBufferMemory(g_textureSets[set].m_stagingBuffer[slot], g_textureSets[set].m_stagingMemory,
-		                             stagOffsets[slot]);
+			a_device.bindBufferMemory(g_textureSets[set].m_stagingBuffer[slot], g_textureSets[set].m_stagingMemory,
+			                          stagOffsets[slot]);
+		});
 	}
 
 	TextureSet result{set};
