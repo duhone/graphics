@@ -1,7 +1,6 @@
 ﻿#include "AssetLoadingThread.h"
 
 #include "CommandPool.h"
-#include "Image.h"
 #include "vulkan/EngineInternal.h"
 
 #include <deque>
@@ -35,13 +34,14 @@ namespace {
 			if(request) {
 				unique_ptr<CommandBuffer> cmdBuffer = cmdPool->CreateCommandBuffer();
 
-				request(*cmdBuffer.get());
+				auto freeResources = request(*cmdBuffer.get());
 
 				vk::SubmitInfo subInfo;
 				subInfo.commandBufferCount = 1;
 				subInfo.pCommandBuffers    = (vk::CommandBuffer*)cmdBuffer->GetHandle();
 				GetTransferQueue().submit(subInfo, vk::Fence{});
 				GetTransferQueue().waitIdle();
+				freeResources();
 			}
 		}
 		m_requests.clear();
@@ -63,8 +63,9 @@ std::shared_ptr<std::atomic_bool> AssetLoadingThread::LoadAsset(task_t&& a_task)
 	std::shared_ptr<std::atomic_bool> result = make_shared<std::atomic_bool>(false);
 
 	task_t wrappedTask = [result = result, task = move(a_task)](CommandBuffer& a_cmdBuffer) mutable {
-		task(a_cmdBuffer);
+		auto freeResources = task(a_cmdBuffer);
 		result->store(true);
+		return freeResources;
 	};
 	{
 		unique_lock<mutex> lock(m_requestMutex);

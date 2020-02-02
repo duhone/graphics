@@ -1,5 +1,6 @@
 ﻿#include "Graphics/TextureSet.h"
 
+#include "AssetLoadingThread.h"
 #include "TextureSets.h"
 #include "vulkan/EngineInternal.h"
 
@@ -37,9 +38,8 @@ namespace {
 		vector<vk::Image> m_images;
 		vector<vk::ImageView> m_views;
 		vk::DeviceMemory m_imageMemory;
-
-		vector<vk::Buffer> m_stagingBuffer;
-		vk::DeviceMemory m_stagingMemory;
+		vector<std::shared_ptr<std::atomic_bool>> m_loadingTask;
+		vector<bool> m_ready;
 	};
 
 	bitset<c_maxTextureSets> g_used;
@@ -61,12 +61,14 @@ TextureSet ::~TextureSet() {
 		GetDevice([&](auto& a_device) {
 			for(auto& view : g_textureSets[set].m_views) { a_device.destroyImageView(view); }
 			for(auto& img : g_textureSets[set].m_images) { a_device.destroyImage(img); }
-			for(auto& buf : g_textureSets[set].m_stagingBuffer) {
-				if(buf) { a_device.destroyBuffer(buf); }
-			}
 			a_device.freeMemory(g_textureSets[set].m_imageMemory);
-			if(g_textureSets[set].m_stagingMemory) { a_device.freeMemory(g_textureSets[set].m_stagingMemory); }
 		});
+		g_textureSets[set].m_names.clear();
+		g_textureSets[set].m_headers.clear();
+		g_textureSets[set].m_images.clear();
+		g_textureSets[set].m_views.clear();
+		g_textureSets[set].m_loadingTask.clear();
+		g_textureSets[set].m_ready.clear();
 		g_used[m_id] = false;
 	}
 }
@@ -102,18 +104,13 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 	memOffsets.reserve(a_textures.size());
 	uint32_t memOffset{0};
 
-	vector<uint32_t> stagOffsets;
-	stagOffsets.reserve(a_textures.size());
-	uint32_t stagOffset{0};
-
-	g_textureSets[set].m_names.clear();
-	g_textureSets[set].m_headers.clear();
-	g_textureSets[set].m_images.clear();
-	g_textureSets[set].m_views.clear();
-	g_textureSets[set].m_stagingBuffer.clear();
-
 	g_textureSets[set].m_names.reserve(a_textures.size());
 	g_textureSets[set].m_headers.reserve(a_textures.size());
+	g_textureSets[set].m_images.reserve(a_textures.size());
+	g_textureSets[set].m_views.reserve(a_textures.size());
+	g_textureSets[set].m_loadingTask.reserve(a_textures.size());
+	g_textureSets[set].m_ready.reserve(a_textures.size());
+	vector<vector<byte>> textureDataList;
 	for(uint32_t slot = 0; slot < a_textures.size(); ++slot) {
 		vector<byte> textureData = DataCompression::Decompress(a_textures[slot].TextureData.data(),
 		                                                       (uint32_t)(a_textures[slot].TextureData.size()));
@@ -146,20 +143,8 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 			    (uint32_t)((memOffset + (imageRequirements.alignment - 1)) & ~(imageRequirements.alignment - 1));
 			memOffsets.push_back(memOffset);
 			memOffset += (uint32_t)imageRequirements.size;
-
-			vk::BufferCreateInfo stagInfo;
-			stagInfo.flags       = vk::BufferCreateFlags{};
-			stagInfo.sharingMode = vk::SharingMode::eExclusive;
-			stagInfo.size        = a_textures[slot].TextureData.size() - sizeof(Header);
-			stagInfo.usage       = vk::BufferUsageFlagBits::eTransferSrc;
-
-			g_textureSets[set].m_stagingBuffer.push_back(a_device.createBuffer(stagInfo));
-			auto bufferRequirements = a_device.getBufferMemoryRequirements(g_textureSets[set].m_stagingBuffer.back());
-			stagOffset =
-			    (uint32_t)((stagOffset + (bufferRequirements.alignment - 1)) & ~(bufferRequirements.alignment - 1));
-			stagOffsets.push_back(stagOffset);
-			stagOffset += (uint32_t)bufferRequirements.size;
 		});
+		textureDataList.push_back(move(textureData));
 	}
 
 	vk::MemoryAllocateInfo allocInfo;
@@ -167,10 +152,6 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 		allocInfo.memoryTypeIndex        = GetDeviceMemoryIndex();
 		allocInfo.allocationSize         = memOffset;
 		g_textureSets[set].m_imageMemory = a_device.allocateMemory(allocInfo);
-
-		allocInfo.memoryTypeIndex          = GetHostMemoryIndex();
-		allocInfo.allocationSize           = stagOffset;
-		g_textureSets[set].m_stagingMemory = a_device.allocateMemory(allocInfo);
 	});
 
 	for(uint32_t slot = 0; slot < a_textures.size(); ++slot) {
@@ -188,11 +169,46 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 			viewInfo.subresourceRange.layerCount     = 1;
 
 			g_textureSets[set].m_views.push_back(a_device.createImageView(viewInfo));
-
-			a_device.bindBufferMemory(g_textureSets[set].m_stagingBuffer[slot], g_textureSets[set].m_stagingMemory,
-			                          stagOffsets[slot]);
 		});
 	}
+	for(uint32_t slot = 0; slot < a_textures.size(); ++slot) {
+		g_textureSets[set].m_ready.push_back(false);
+		g_textureSets[set].m_loadingTask.push_back(
+		    AssetLoadingThread::LoadAsset([textureData = move(textureDataList[slot])](CommandBuffer& a_buffer) {
+			    vk::BufferCreateInfo stagInfo;
+			    stagInfo.flags       = vk::BufferCreateFlags{};
+			    stagInfo.sharingMode = vk::SharingMode::eExclusive;
+			    stagInfo.size        = textureData.size() - sizeof(Header);
+			    stagInfo.usage       = vk::BufferUsageFlagBits::eTransferSrc;
+
+			    vk::Buffer stagingBuffer;
+			    vk::DeviceMemory memory;
+			    void* memoryPtr;
+			    GetDevice([&stagInfo, &stagingBuffer, &memory, &memoryPtr](vk::Device& a_device) {
+				    stagingBuffer           = a_device.createBuffer(stagInfo);
+				    auto bufferRequirements = a_device.getBufferMemoryRequirements(stagingBuffer);
+
+				    vk::MemoryAllocateInfo allocInfo;
+				    allocInfo.memoryTypeIndex = GetHostMemoryIndex();
+				    allocInfo.allocationSize  = bufferRequirements.size;
+				    memory                    = a_device.allocateMemory(allocInfo);
+				    a_device.bindBufferMemory(stagingBuffer, memory, 0);
+
+				    memoryPtr = a_device.mapMemory(memory, 0, VK_WHOLE_SIZE);
+			    });
+
+			    memcpy(memoryPtr, textureData.data() + sizeof(Header), textureData.size() - sizeof(Header));
+
+			    return [stagInfo, stagingBuffer, memory]() {
+				    GetDevice([&stagInfo, &stagingBuffer, &memory](vk::Device& a_device) {
+					    a_device.unmapMemory(memory);
+					    a_device.freeMemory(memory);
+					    a_device.destroyBuffer(stagingBuffer);
+				    });
+			    };
+		    }));
+	}
+	textureDataList.clear();
 
 	TextureSet result{set};
 	return result;
