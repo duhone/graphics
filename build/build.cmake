@@ -83,7 +83,7 @@ if(IncludeTests)
       ${graphics_root}/tests/main.cpp
       ${graphics_root}/tests/Engine.cpp
       ${graphics_root}/tests/UniformBufferDynamic.cpp
-      ${graphics_root}/tests/Image.cpp
+      ${graphics_root}/tests/TextureSet.cpp
       ${graphics_root}/tests/FrameBuffer.cpp
       ${graphics_root}/tests/Sprite.cpp
       ${graphics_root}/tests/SpriteType.cpp
@@ -96,6 +96,8 @@ if(IncludeTests)
       ${graphics_root}/tests/data/simple.crsm
       ${graphics_root}/tests/data/spencer_walk_0001.tga
       ${graphics_root}/tests/data/spencer_walk.crtexd
+      ${graphics_root}/tests/data/CompletionScreen.tga
+      ${graphics_root}/tests/data/CompletionScreen.crtexd
   )
 	
 	add_executable(graphics_tests
