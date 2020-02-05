@@ -16,4 +16,6 @@ namespace CR::Graphics::Commands {
 	                       uint32_t a_offset);
 	void PushConstants(CommandBuffer& a_cmdBuffer, Pipeline& a_pipeline, CR::Core::Span<std::byte> a_data);
 	void Draw(CommandBuffer& a_cmdBuffer, uint32_t a_vertexCount, uint32_t a_instanceCount);
+
+	void TransitionToDst(CommandBuffer& a_cmdBuffer, const vk::Image& a_image, vk::Format a_format);
 }    // namespace CR::Graphics::Commands

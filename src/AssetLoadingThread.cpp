@@ -34,7 +34,9 @@ namespace {
 			if(request) {
 				unique_ptr<CommandBuffer> cmdBuffer = cmdPool->CreateCommandBuffer();
 
+				cmdBuffer->Begin();
 				auto freeResources = request(*cmdBuffer.get());
+				cmdBuffer->End();
 
 				vk::SubmitInfo subInfo;
 				subInfo.commandBufferCount = 1;

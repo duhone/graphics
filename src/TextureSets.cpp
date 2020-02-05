@@ -1,11 +1,13 @@
 ﻿#include "Graphics/TextureSet.h"
 
 #include "AssetLoadingThread.h"
+#include "Commands.h"
 #include "TextureSets.h"
 #include "vulkan/EngineInternal.h"
 
 #include "DataCompression/LosslessCompression.h"
 #include "core/Log.h"
+#include "core/algorithm.h"
 
 #include "tsl/robin_map.h"
 
@@ -58,6 +60,10 @@ namespace {
 TextureSet ::~TextureSet() {
 	if(m_id != c_unused) {
 		uint16_t set = GetSet(m_id);
+		while(!Core::all_of(g_textureSets[set].m_ready, [](const auto& a_rdy) { return a_rdy; })) {
+			TextureSets::CheckLoadingTasks();
+			this_thread::sleep_for(64ms);
+		}
 		GetDevice([&](auto& a_device) {
 			for(auto& view : g_textureSets[set].m_views) { a_device.destroyImageView(view); }
 			for(auto& img : g_textureSets[set].m_images) { a_device.destroyImage(img); }
@@ -82,6 +88,21 @@ TextureSet& TextureSet::operator=(TextureSet&& a_other) {
 
 	a_other.m_id = c_unused;
 	return *this;
+}
+
+void Graphics::TextureSets::CheckLoadingTasks() {
+	for(uint32_t set = 0; set < c_maxTextureSets; ++set) {
+		if(g_used[set]) {
+			for(uint32_t slot = 0; slot < g_textureSets[set].m_ready.size(); ++slot) {
+				if(!g_textureSets[set].m_ready[slot]) {
+					if(g_textureSets[set].m_loadingTask[slot]->load()) {
+						g_textureSets[set].m_ready[slot] = true;
+						g_textureSets[set].m_loadingTask[slot].reset();
+					}
+				}
+			}
+		}
+	}
 }
 
 TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_textures) {
@@ -173,8 +194,8 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 	}
 	for(uint32_t slot = 0; slot < a_textures.size(); ++slot) {
 		g_textureSets[set].m_ready.push_back(false);
-		g_textureSets[set].m_loadingTask.push_back(
-		    AssetLoadingThread::LoadAsset([textureData = move(textureDataList[slot])](CommandBuffer& a_buffer) {
+		g_textureSets[set].m_loadingTask.push_back(AssetLoadingThread::LoadAsset(
+		    [textureData = move(textureDataList[slot]), set, slot](CommandBuffer& a_buffer) {
 			    vk::BufferCreateInfo stagInfo;
 			    stagInfo.flags       = vk::BufferCreateFlags{};
 			    stagInfo.sharingMode = vk::SharingMode::eExclusive;
@@ -199,9 +220,12 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 
 			    memcpy(memoryPtr, textureData.data() + sizeof(Header), textureData.size() - sizeof(Header));
 
-			    return [stagInfo, stagingBuffer, memory]() {
-				    GetDevice([&stagInfo, &stagingBuffer, &memory](vk::Device& a_device) {
-					    a_device.unmapMemory(memory);
+			    GetDevice([&memory](vk::Device& a_device) { a_device.unmapMemory(memory); });
+
+			    Commands::TransitionToDst(a_buffer, g_textureSets[set].m_images[slot], vk::Format::eBc7SrgbBlock);
+
+			    return [stagingBuffer, memory]() {
+				    GetDevice([&stagingBuffer, &memory](vk::Device& a_device) {
 					    a_device.freeMemory(memory);
 					    a_device.destroyBuffer(stagingBuffer);
 				    });
@@ -214,8 +238,8 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 	return result;
 }
 
-void TexturePool::Init() {
+void TextureSets::Init() {
 	g_used.reset();
 }
 
-void TexturePool::Shutdown() {}
+void TextureSets::Shutdown() {}

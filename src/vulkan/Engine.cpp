@@ -436,7 +436,7 @@ void Graphics::CreateEngine(const EngineSettings& a_settings) {
 	GetEngine()->m_commandPool = CreateCommandPool(CommandPool::PoolType::Primary);
 	DescriptorPoolInit();
 	AssetLoadingThread::Init();
-	TexturePool::Init();
+	TextureSets::Init();
 	GetEngine()->m_spriteManager = make_unique<SpriteManager>();
 }
 
@@ -445,6 +445,7 @@ void Graphics::Frame() {
 	auto engine = GetEngine().get();
 
 	engine->ExecutePending();
+	TextureSets::CheckLoadingTasks();
 
 	engine->m_Device([&](auto& a_device) {
 		engine->m_currentFrameBuffer =
@@ -492,7 +493,7 @@ void Graphics::ShutdownEngine() {
 	GetEngine()->m_commandBuffer.reset();
 	GetEngine()->m_commandPool.reset();
 	GetEngine()->m_spriteManager.reset();
-	TexturePool::Shutdown();
+	TextureSets::Shutdown();
 	DescriptorPoolDestroy();
 	GetEngine().reset();
 }

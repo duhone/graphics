@@ -58,3 +58,27 @@ void Commands::BindDescriptorSet(CommandBuffer& a_cmdBuffer, const Pipeline& a_p
 	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
 	vkcmd->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, a_pipeline.GetLayout(), 0, 1, &a_set, 1, &a_offset);
 }
+
+void Commands::TransitionToDst(CommandBuffer& a_cmdBuffer, const vk::Image& a_image, vk::Format a_format) {
+	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
+
+	vk::ImageMemoryBarrier barrier;
+	barrier.image                           = a_image;
+	barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+	barrier.srcAccessMask                   = vk::AccessFlags{};
+	barrier.dstAccessMask                   = vk::AccessFlagBits::eTransferWrite;
+	barrier.oldLayout                       = vk::ImageLayout::eUndefined;
+	barrier.newLayout                       = vk::ImageLayout::eTransferDstOptimal;
+	barrier.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount     = 1;
+	barrier.subresourceRange.baseMipLevel   = 0;
+	barrier.subresourceRange.levelCount     = 1;
+
+	vk::PipelineStageFlags sourceStage      = vk::PipelineStageFlagBits::eTopOfPipe;
+	vk::PipelineStageFlags destinationStage = vk::PipelineStageFlagBits::eTransfer;
+
+	vkcmd->pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer,
+	                       vk::DependencyFlags{}, nullptr, nullptr, barrier);
+}
