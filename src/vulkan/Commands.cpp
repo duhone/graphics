@@ -82,3 +82,23 @@ void Commands::TransitionToDst(CommandBuffer& a_cmdBuffer, const vk::Image& a_im
 	vkcmd->pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer,
 	                       vk::DependencyFlags{}, nullptr, nullptr, barrier);
 }
+
+void Commands::CopyBufferToImg(CommandBuffer& a_cmdBuffer, const vk::Buffer& a_buffer, vk::Image& a_image,
+                               const glm::uvec2& a_extent) {
+	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
+
+	vk::ImageLayout layout{vk::ImageLayout::eTransferDstOptimal};
+
+	vk::BufferImageCopy cpy;
+	cpy.bufferOffset                    = 0;
+	cpy.bufferRowLength                 = 0;
+	cpy.bufferImageHeight               = 0;
+	cpy.imageSubresource.aspectMask     = vk::ImageAspectFlagBits::eColor;
+	cpy.imageSubresource.baseArrayLayer = 0;
+	cpy.imageSubresource.layerCount     = 1;
+	cpy.imageSubresource.mipLevel       = 0;
+	cpy.imageOffset                     = {0, 0, 0};
+	cpy.imageExtent                     = {a_extent.x, a_extent.y, 1};
+
+	vkcmd->copyBufferToImage(a_buffer, a_image, layout, cpy);
+}

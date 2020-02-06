@@ -4,6 +4,7 @@
 
 #include "core/Span.h"
 
+#include "glm/vec2.hpp"
 #include "glm/vec4.hpp"
 
 #include <optional>
@@ -18,4 +19,6 @@ namespace CR::Graphics::Commands {
 	void Draw(CommandBuffer& a_cmdBuffer, uint32_t a_vertexCount, uint32_t a_instanceCount);
 
 	void TransitionToDst(CommandBuffer& a_cmdBuffer, const vk::Image& a_image, vk::Format a_format);
+	void CopyBufferToImg(CommandBuffer& a_cmdBuffer, const vk::Buffer& a_buffer, vk::Image& a_image,
+	                     const glm::uvec2& a_extent);
 }    // namespace CR::Graphics::Commands

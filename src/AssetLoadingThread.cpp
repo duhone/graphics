@@ -20,7 +20,7 @@ namespace {
 
 	void ThreadMain() {
 		unique_ptr<CommandPool> cmdPool = CreateCommandPool(CommandPool::PoolType::Transfer);
-		while(m_running.load()) {
+		while(m_running.load(memory_order_acquire)) {
 			AssetLoadingThread::task_t request;
 			{
 				unique_lock<mutex> lock(m_requestMutex);
@@ -51,12 +51,12 @@ namespace {
 }    // namespace
 
 void AssetLoadingThread::Init() {
-	m_running.store(true);
+	m_running.store(true, memory_order_release);
 	m_thread = thread([]() { ThreadMain(); });
 }
 
 void AssetLoadingThread::Shutdown() {
-	m_running.store(false);
+	m_running.store(false, memory_order_release);
 	m_notify.notify_one();
 	m_thread.join();
 }
@@ -66,7 +66,7 @@ std::shared_ptr<std::atomic_bool> AssetLoadingThread::LoadAsset(task_t&& a_task)
 
 	task_t wrappedTask = [result = result, task = move(a_task)](CommandBuffer& a_cmdBuffer) mutable {
 		auto freeResources = task(a_cmdBuffer);
-		result->store(true);
+		result->store(true, memory_order_release);
 		return freeResources;
 	};
 	{

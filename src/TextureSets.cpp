@@ -95,7 +95,7 @@ void Graphics::TextureSets::CheckLoadingTasks() {
 		if(g_used[set]) {
 			for(uint32_t slot = 0; slot < g_textureSets[set].m_ready.size(); ++slot) {
 				if(!g_textureSets[set].m_ready[slot]) {
-					if(g_textureSets[set].m_loadingTask[slot]->load()) {
+					if(g_textureSets[set].m_loadingTask[slot]->load(memory_order_acquire)) {
 						g_textureSets[set].m_ready[slot] = true;
 						g_textureSets[set].m_loadingTask[slot].reset();
 					}
@@ -222,7 +222,10 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 
 			    GetDevice([&memory](vk::Device& a_device) { a_device.unmapMemory(memory); });
 
+			    Header header = g_textureSets[set].m_headers[slot];
 			    Commands::TransitionToDst(a_buffer, g_textureSets[set].m_images[slot], vk::Format::eBc7SrgbBlock);
+			    Commands::CopyBufferToImg(a_buffer, stagingBuffer, g_textureSets[set].m_images[slot],
+			                              {header.Width, header.Height});
 
 			    return [stagingBuffer, memory]() {
 				    GetDevice([&stagingBuffer, &memory](vk::Device& a_device) {
