@@ -12,7 +12,7 @@ using namespace CR::Graphics;
 using namespace std;
 
 TEST_CASE_METHOD(TestFixture, "texture_set", "") {
-	auto crtexSpencer = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "spencer_walk.crtexd");
+	auto crtexSpencer = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "BonusHarrySelect_0.crtexd");
 	auto crtexComp    = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "CompletionScreen.crtexd");
 	TextureCreateInfo texInfo[2];
 	texInfo[0].TextureData = Core::Span<byte>{crtexSpencer->data(), crtexSpencer->size()};
