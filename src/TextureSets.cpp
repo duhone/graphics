@@ -8,6 +8,7 @@
 #include "DataCompression/LosslessCompression.h"
 #include "core/Log.h"
 #include "core/algorithm.h"
+#include "core/literals.h"
 
 #include "tsl/robin_map.h"
 
@@ -17,6 +18,7 @@
 using namespace std;
 using namespace CR;
 using namespace CR::Graphics;
+using namespace CR::Core::Literals;
 
 namespace {
 	constexpr uint16_t c_maxTextureSets{8};
@@ -25,6 +27,9 @@ namespace {
 	static_assert((1 << c_idSetShift) == c_maxTexturesPerSet);
 	static_assert(c_maxTextureSets * c_maxTexturesPerSet < numeric_limits<uint16_t>::max(),
 	              "textures use a 16 bit id, some bits hold the texture set, some hold the index inside the set");
+	constexpr uint32_t c_maxStagingTextureSize = (uint32_t)16_Mb;    // enough for a 4kx4k bc7 or astc4x4
+	static_assert(c_maxStagingTextureSize <= 64_Mb,
+	              "Neet to really think about this if there is a need to go over 64_Mb");
 
 	// Must match whats in TextureProcessor, assuming dont need this every frame.
 #pragma pack(4)
@@ -47,6 +52,9 @@ namespace {
 	bitset<c_maxTextureSets> g_used;
 	TextureSetImpl g_textureSets[c_maxTextureSets];
 	tsl::robin_map<string, uint16_t> g_lookup;
+	vk::Buffer g_stagingBuffer;
+	vk::DeviceMemory g_stagingMemory;
+	void* g_stagingData;
 
 	uint16_t CalcID(uint16_t a_set, uint16_t a_slot) {
 		Core::Log::Assert(a_set < c_maxTextureSets, "invalid set");
@@ -136,6 +144,9 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 		vector<byte> textureData = DataCompression::Decompress(a_textures[slot].TextureData.data(),
 		                                                       (uint32_t)(a_textures[slot].TextureData.size()));
 		if(textureData.size() < sizeof(Header)) { Core::Log::Fail("corrupt crtex file {}", a_textures[slot].Name); }
+		if(textureData.size() > c_maxStagingTextureSize) {
+			Core::Log::Fail("texture is too large {}", a_textures[slot].Name);
+		}
 		Header& header = g_textureSets[set].m_headers.emplace_back();
 		memcpy(&header, textureData.data(), sizeof(Header));
 
@@ -196,43 +207,14 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 		g_textureSets[set].m_ready.push_back(false);
 		g_textureSets[set].m_loadingTask.push_back(AssetLoadingThread::LoadAsset(
 		    [textureData = move(textureDataList[slot]), set, slot](CommandBuffer& a_buffer) {
-			    vk::BufferCreateInfo stagInfo;
-			    stagInfo.flags       = vk::BufferCreateFlags{};
-			    stagInfo.sharingMode = vk::SharingMode::eExclusive;
-			    stagInfo.size        = textureData.size() - sizeof(Header);
-			    stagInfo.usage       = vk::BufferUsageFlagBits::eTransferSrc;
-
-			    vk::Buffer stagingBuffer;
-			    vk::DeviceMemory memory;
-			    void* memoryPtr;
-			    GetDevice([&stagInfo, &stagingBuffer, &memory, &memoryPtr](vk::Device& a_device) {
-				    stagingBuffer           = a_device.createBuffer(stagInfo);
-				    auto bufferRequirements = a_device.getBufferMemoryRequirements(stagingBuffer);
-
-				    vk::MemoryAllocateInfo allocInfo;
-				    allocInfo.memoryTypeIndex = GetHostMemoryIndex();
-				    allocInfo.allocationSize  = bufferRequirements.size;
-				    memory                    = a_device.allocateMemory(allocInfo);
-				    a_device.bindBufferMemory(stagingBuffer, memory, 0);
-
-				    memoryPtr = a_device.mapMemory(memory, 0, VK_WHOLE_SIZE);
-			    });
-
-			    memcpy(memoryPtr, textureData.data() + sizeof(Header), textureData.size() - sizeof(Header));
-
-			    GetDevice([&memory](vk::Device& a_device) { a_device.unmapMemory(memory); });
+			    memcpy(g_stagingData, textureData.data() + sizeof(Header), textureData.size() - sizeof(Header));
 
 			    Header header = g_textureSets[set].m_headers[slot];
 			    Commands::TransitionToDst(a_buffer, g_textureSets[set].m_images[slot], vk::Format::eBc7SrgbBlock);
-			    Commands::CopyBufferToImg(a_buffer, stagingBuffer, g_textureSets[set].m_images[slot],
+			    Commands::CopyBufferToImg(a_buffer, g_stagingBuffer, g_textureSets[set].m_images[slot],
 			                              {header.Width, header.Height});
 
-			    return [stagingBuffer, memory]() {
-				    GetDevice([&stagingBuffer, &memory](vk::Device& a_device) {
-					    a_device.freeMemory(memory);
-					    a_device.destroyBuffer(stagingBuffer);
-				    });
-			    };
+			    return []() {};
 		    }));
 	}
 	textureDataList.clear();
@@ -243,6 +225,31 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 
 void TextureSets::Init() {
 	g_used.reset();
+
+	vk::BufferCreateInfo stagInfo;
+	stagInfo.flags       = vk::BufferCreateFlags{};
+	stagInfo.sharingMode = vk::SharingMode::eExclusive;
+	stagInfo.size        = c_maxStagingTextureSize;
+	stagInfo.usage       = vk::BufferUsageFlagBits::eTransferSrc;
+
+	GetDevice([&stagInfo](vk::Device& a_device) {
+		g_stagingBuffer         = a_device.createBuffer(stagInfo);
+		auto bufferRequirements = a_device.getBufferMemoryRequirements(g_stagingBuffer);
+
+		vk::MemoryAllocateInfo allocInfo;
+		allocInfo.memoryTypeIndex = GetHostMemoryIndex();
+		allocInfo.allocationSize  = bufferRequirements.size;
+		g_stagingMemory           = a_device.allocateMemory(allocInfo);
+		a_device.bindBufferMemory(g_stagingBuffer, g_stagingMemory, 0);
+
+		g_stagingData = a_device.mapMemory(g_stagingMemory, 0, VK_WHOLE_SIZE);
+	});
 }
 
-void TextureSets::Shutdown() {}
+void TextureSets::Shutdown() {
+	GetDevice([](vk::Device& a_device) {
+		a_device.unmapMemory(g_stagingMemory);
+		a_device.freeMemory(g_stagingMemory);
+		a_device.destroyBuffer(g_stagingBuffer);
+	});
+}
