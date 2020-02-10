@@ -12,7 +12,7 @@
 namespace CR::Graphics {
 	class SpriteManager;
 
-	void GetDevice(std::function<void(vk::Device&)> a_func);
+	vk::Device& GetDevice();
 	uint32_t GetDeviceMemoryIndex();
 	uint32_t GetHostMemoryIndex();
 	const vk::RenderPass& GetRenderPass();

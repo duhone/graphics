@@ -18,38 +18,39 @@ void Graphics::DescriptorPoolInit() {
 	poolInfo.pPoolSizes    = &poolSize;
 	poolInfo.maxSets       = 1;
 
-	GetDevice([&](auto& a_device) { m_pool = a_device.createDescriptorPool(poolInfo); });
+	m_pool = GetDevice().createDescriptorPool(poolInfo);
 }
 
 void Graphics::DescriptorPoolDestroy() {
-	GetDevice([&](auto& a_device) { a_device.destroyDescriptorPool(m_pool); });
+	GetDevice().destroyDescriptorPool(m_pool);
 }
 
 vk::DescriptorSet Graphics::CreateDescriptorSet(const vk::DescriptorSetLayout& a_layout,
                                                 UniformBufferDynamic& a_buffer) {
 	vk::DescriptorSet result;
-	GetDevice([&](auto& a_device) {
-		vk::DescriptorSetAllocateInfo info;
-		info.descriptorPool     = m_pool;
-		info.descriptorSetCount = 1;
-		info.pSetLayouts        = &a_layout;
+	auto& device = GetDevice();
 
-		result = a_device.allocateDescriptorSets(info)[0];
+	vk::DescriptorSetAllocateInfo info;
+	info.descriptorPool     = m_pool;
+	info.descriptorSetCount = 1;
+	info.pSetLayouts        = &a_layout;
 
-		vk::DescriptorBufferInfo bufInfo;
-		bufInfo.buffer = a_buffer.GetHandle();
-		bufInfo.offset = 0;
-		bufInfo.range  = 256 * 8 * 4;
+	result = device.allocateDescriptorSets(info)[0];
 
-		vk::WriteDescriptorSet writeSet;
-		writeSet.dstSet          = result;
-		writeSet.dstBinding      = 0;
-		writeSet.dstArrayElement = 0;
-		writeSet.descriptorType  = vk::DescriptorType::eUniformBufferDynamic;
-		writeSet.descriptorCount = 1;
-		writeSet.pBufferInfo     = &bufInfo;
+	vk::DescriptorBufferInfo bufInfo;
+	bufInfo.buffer = a_buffer.GetHandle();
+	bufInfo.offset = 0;
+	bufInfo.range  = 256 * 8 * 4;
 
-		a_device.updateDescriptorSets(1, &writeSet, 0, nullptr);
-	});
+	vk::WriteDescriptorSet writeSet;
+	writeSet.dstSet          = result;
+	writeSet.dstBinding      = 0;
+	writeSet.dstArrayElement = 0;
+	writeSet.descriptorType  = vk::DescriptorType::eUniformBufferDynamic;
+	writeSet.descriptorCount = 1;
+	writeSet.pBufferInfo     = &bufInfo;
+
+	device.updateDescriptorSets(1, &writeSet, 0, nullptr);
+
 	return result;
 }

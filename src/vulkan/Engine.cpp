@@ -8,7 +8,6 @@
 #include "SpriteManager.h"
 #include "TextureSets.h"
 
-#include "core/Locked.h"
 #include "core/Log.h"
 #include "core/algorithm.h"
 
@@ -44,7 +43,7 @@ namespace {
 
 		// private: internal so private anyway
 		vk::Instance m_Instance;
-		Locked<vk::Device> m_Device;
+		vk::Device m_Device;
 		int32_t m_GraphicsQueueIndex{-1};
 		int32_t m_TransferQueueIndex{-1};
 		int32_t m_PresentationQueueIndex{-1};
@@ -408,20 +407,19 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	vk::FenceCreateInfo fenceInfo;
 	m_frameFence = device.createFence(fenceInfo);
 
-	m_Device([&](auto& a_device) { a_device = device; });
+	m_Device = device;
 }
 
 Engine::~Engine() {
-	m_Device([&](auto& a_device) {
-		a_device.destroyFence(m_frameFence);
-		a_device.destroySemaphore(m_renderingFinished);
-		for(auto& framebuffer : m_frameBuffers) { a_device.destroyFramebuffer(framebuffer); }
-		a_device.destroyRenderPass(m_RenderPass);
-		for(auto& imageView : m_primarySwapChainImageViews) { a_device.destroyImageView(imageView); }
-		m_primarySwapChainImageViews.clear();
-		a_device.destroySwapchainKHR(m_PrimarySwapChain);
-		a_device.destroy();
-	});
+	m_Device.destroyFence(m_frameFence);
+	m_Device.destroySemaphore(m_renderingFinished);
+	for(auto& framebuffer : m_frameBuffers) { m_Device.destroyFramebuffer(framebuffer); }
+	m_Device.destroyRenderPass(m_RenderPass);
+	for(auto& imageView : m_primarySwapChainImageViews) { m_Device.destroyImageView(imageView); }
+	m_primarySwapChainImageViews.clear();
+	m_Device.destroySwapchainKHR(m_PrimarySwapChain);
+	m_Device.destroy();
+
 	m_Instance.destroySurfaceKHR(m_PrimarySurface);
 	m_Instance.destroy();
 }
@@ -447,14 +445,13 @@ void Graphics::Frame() {
 	engine->ExecutePending();
 	TextureSets::CheckLoadingTasks();
 
-	engine->m_Device([&](auto& a_device) {
-		engine->m_currentFrameBuffer =
-		    a_device.acquireNextImageKHR(engine->m_PrimarySwapChain, UINT64_MAX, vk::Semaphore{}, engine->m_frameFence)
-		        .value;
+	engine->m_currentFrameBuffer =
+	    engine->m_Device
+	        .acquireNextImageKHR(engine->m_PrimarySwapChain, UINT64_MAX, vk::Semaphore{}, engine->m_frameFence)
+	        .value;
 
-		a_device.waitForFences(1, &engine->m_frameFence, true, UINT64_MAX);
-		a_device.resetFences(1, &engine->m_frameFence);
-	});
+	engine->m_Device.waitForFences(1, &engine->m_frameFence, true, UINT64_MAX);
+	engine->m_Device.resetFences(1, &engine->m_frameFence);
 
 	engine->m_commandBuffer = engine->m_commandPool->CreateCommandBuffer();
 
@@ -488,7 +485,7 @@ void Graphics::Frame() {
 void Graphics::ShutdownEngine() {
 	AssetLoadingThread::Shutdown();
 	assert(GetEngine().get());
-	GetEngine()->m_Device([](auto& a_device) { a_device.waitIdle(); });
+	GetEngine()->m_Device.waitIdle();
 	GetEngine()->ExecutePending();
 	GetEngine()->m_commandBuffer.reset();
 	GetEngine()->m_commandPool.reset();
@@ -498,9 +495,9 @@ void Graphics::ShutdownEngine() {
 	GetEngine().reset();
 }
 
-void Graphics::GetDevice(std::function<void(vk::Device&)> a_func) {
+vk::Device& Graphics::GetDevice() {
 	assert(GetEngine().get());
-	GetEngine()->m_Device([&](auto& a_device) { a_func(a_device); });
+	return GetEngine()->m_Device;
 }
 
 uint32_t Graphics::GetDeviceMemoryIndex() {
