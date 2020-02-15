@@ -443,7 +443,6 @@ void Graphics::Frame() {
 	auto engine = GetEngine().get();
 
 	engine->ExecutePending();
-	TextureSets::CheckLoadingTasks();
 
 	engine->m_currentFrameBuffer =
 	    engine->m_Device
@@ -456,6 +455,7 @@ void Graphics::Frame() {
 	engine->m_commandBuffer = engine->m_commandPool->CreateCommandBuffer();
 
 	engine->m_commandBuffer->Begin();
+	TextureSets::CheckLoadingTasks(*engine->m_commandBuffer.get());
 	Commands::RenderPassBegin(*engine->m_commandBuffer.get(), engine->m_clearColor);
 	engine->m_spriteManager->Draw(*engine->m_commandBuffer.get());
 	Commands::RenderPassEnd(*engine->m_commandBuffer.get());

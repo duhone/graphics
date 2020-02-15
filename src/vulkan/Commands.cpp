@@ -76,9 +76,6 @@ void Commands::TransitionToDst(CommandBuffer& a_cmdBuffer, const vk::Image& a_im
 	barrier.subresourceRange.baseMipLevel   = 0;
 	barrier.subresourceRange.levelCount     = 1;
 
-	vk::PipelineStageFlags sourceStage      = vk::PipelineStageFlagBits::eTopOfPipe;
-	vk::PipelineStageFlags destinationStage = vk::PipelineStageFlagBits::eTransfer;
-
 	vkcmd->pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer,
 	                       vk::DependencyFlags{}, nullptr, nullptr, barrier);
 }
@@ -101,4 +98,46 @@ void Commands::CopyBufferToImg(CommandBuffer& a_cmdBuffer, const vk::Buffer& a_b
 	cpy.imageExtent                     = {a_extent.x, a_extent.y, 1};
 
 	vkcmd->copyBufferToImage(a_buffer, a_image, layout, cpy);
+}
+
+void Commands::TransitionToGraphicsQueue(CommandBuffer& a_cmdBuffer, const vk::Image& a_image) {
+	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
+
+	vk::ImageMemoryBarrier barrier;
+	barrier.image                           = a_image;
+	barrier.srcQueueFamilyIndex             = GetTransferQueueIndex();
+	barrier.dstQueueFamilyIndex             = GetGraphicsQueueIndex();
+	barrier.srcAccessMask                   = vk::AccessFlagBits::eTransferWrite;
+	barrier.dstAccessMask                   = vk::AccessFlags{};
+	barrier.oldLayout                       = vk::ImageLayout::eTransferDstOptimal;
+	barrier.newLayout                       = vk::ImageLayout::eShaderReadOnlyOptimal;
+	barrier.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount     = 1;
+	barrier.subresourceRange.baseMipLevel   = 0;
+	barrier.subresourceRange.levelCount     = 1;
+
+	vkcmd->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe,
+	                       vk::DependencyFlags{}, nullptr, nullptr, barrier);
+}
+
+void Commands::TransitionFromTransferQueue(CommandBuffer& a_cmdBuffer, const vk::Image& a_image) {
+	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
+
+	vk::ImageMemoryBarrier barrier;
+	barrier.image                           = a_image;
+	barrier.srcQueueFamilyIndex             = GetTransferQueueIndex();
+	barrier.dstQueueFamilyIndex             = GetGraphicsQueueIndex();
+	barrier.srcAccessMask                   = vk::AccessFlags{};
+	barrier.dstAccessMask                   = vk::AccessFlagBits::eShaderRead;
+	barrier.oldLayout                       = vk::ImageLayout::eTransferDstOptimal;
+	barrier.newLayout                       = vk::ImageLayout::eShaderReadOnlyOptimal;
+	barrier.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount     = 1;
+	barrier.subresourceRange.baseMipLevel   = 0;
+	barrier.subresourceRange.levelCount     = 1;
+
+	vkcmd->pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eFragmentShader,
+	                       vk::DependencyFlags{}, nullptr, nullptr, barrier);
 }

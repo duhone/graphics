@@ -69,8 +69,16 @@ TextureSet ::~TextureSet() {
 	if(m_id != c_unused) {
 		uint16_t set = GetSet(m_id);
 		while(!Core::all_of(g_textureSets[set].m_ready, [](const auto& a_rdy) { return a_rdy; })) {
-			TextureSets::CheckLoadingTasks();
 			this_thread::sleep_for(64ms);
+
+			for(uint32_t slot = 0; slot < g_textureSets[set].m_ready.size(); ++slot) {
+				if(!g_textureSets[set].m_ready[slot]) {
+					if(g_textureSets[set].m_loadingTask[slot]->load(memory_order_acquire)) {
+						g_textureSets[set].m_loadingTask[slot].reset();
+						g_textureSets[set].m_ready[slot] = true;
+					}
+				}
+			}
 		}
 		auto& device = GetDevice();
 		for(auto& view : g_textureSets[set].m_views) { device.destroyImageView(view); }
@@ -98,14 +106,15 @@ TextureSet& TextureSet::operator=(TextureSet&& a_other) {
 	return *this;
 }
 
-void Graphics::TextureSets::CheckLoadingTasks() {
+void Graphics::TextureSets::CheckLoadingTasks(CommandBuffer& a_cmdBuffer) {
 	for(uint32_t set = 0; set < c_maxTextureSets; ++set) {
 		if(g_used[set]) {
 			for(uint32_t slot = 0; slot < g_textureSets[set].m_ready.size(); ++slot) {
 				if(!g_textureSets[set].m_ready[slot]) {
 					if(g_textureSets[set].m_loadingTask[slot]->load(memory_order_acquire)) {
-						g_textureSets[set].m_ready[slot] = true;
 						g_textureSets[set].m_loadingTask[slot].reset();
+						Commands::TransitionFromTransferQueue(a_cmdBuffer, g_textureSets[set].m_images[slot]);
+						g_textureSets[set].m_ready[slot] = true;
 					}
 				}
 			}
@@ -209,6 +218,7 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 			    Commands::TransitionToDst(a_buffer, g_textureSets[set].m_images[slot], vk::Format::eBc7SrgbBlock);
 			    Commands::CopyBufferToImg(a_buffer, g_stagingBuffer, g_textureSets[set].m_images[slot],
 			                              {header.Width, header.Height});
+			    Commands::TransitionToGraphicsQueue(a_buffer, g_textureSets[set].m_images[slot]);
 
 			    return []() {};
 		    }));

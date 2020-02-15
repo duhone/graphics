@@ -4,5 +4,5 @@ namespace CR::Graphics::TextureSets {
 	void Init();
 	void Shutdown();
 
-	void CheckLoadingTasks();
+	void CheckLoadingTasks(CommandBuffer& a_cmdBuffer);
 }    // namespace CR::Graphics::TextureSets
