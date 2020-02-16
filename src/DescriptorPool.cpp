@@ -9,13 +9,15 @@ namespace {
 }    // namespace
 
 void Graphics::DescriptorPoolInit() {
-	vk::DescriptorPoolSize poolSize;
-	poolSize.type            = vk::DescriptorType::eUniformBufferDynamic;
-	poolSize.descriptorCount = 4;
+	vk::DescriptorPoolSize poolSize[2];
+	poolSize[0].type            = vk::DescriptorType::eUniformBufferDynamic;
+	poolSize[0].descriptorCount = 1;
+	poolSize[1].type            = vk::DescriptorType::eCombinedImageSampler;
+	poolSize[1].descriptorCount = 1;
 
 	vk::DescriptorPoolCreateInfo poolInfo;
-	poolInfo.poolSizeCount = 1;
-	poolInfo.pPoolSizes    = &poolSize;
+	poolInfo.poolSizeCount = 2;
+	poolInfo.pPoolSizes    = poolSize;
 	poolInfo.maxSets       = 1;
 
 	m_pool = GetDevice().createDescriptorPool(poolInfo);
@@ -41,6 +43,9 @@ vk::DescriptorSet Graphics::CreateDescriptorSet(const vk::DescriptorSetLayout& a
 	bufInfo.buffer = a_buffer.GetHandle();
 	bufInfo.offset = 0;
 	bufInfo.range  = 256 * 8 * 4;
+
+	// vk::DescriptorImageInfo imgInfo;
+	// imgInfo.
 
 	vk::WriteDescriptorSet writeSet;
 	writeSet.dstSet          = result;

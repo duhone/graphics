@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "TextureSets.h"
 #include "UniformBufferDynamic.h"
 
 #include "vulkan/vulkan.hpp"

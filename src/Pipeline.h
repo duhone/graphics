@@ -34,5 +34,6 @@ namespace CR::Graphics {
 		vk::PipelineLayout m_pipeLineLayout;
 		vk::Pipeline m_pipeline;
 		vk::DescriptorSetLayout m_descriptorSetLayout;
+		vk::Sampler m_sampler;
 	};
 }    // namespace CR::Graphics

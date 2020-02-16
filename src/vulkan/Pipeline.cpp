@@ -102,15 +102,31 @@ Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
 	pushRange.size       = sizeof(glm::vec2);
 	pushRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
-	vk::DescriptorSetLayoutBinding dslBinding;
-	dslBinding.binding         = 0;
-	dslBinding.descriptorCount = 1;
-	dslBinding.descriptorType  = vk::DescriptorType::eUniformBufferDynamic;
-	dslBinding.stageFlags      = vk::ShaderStageFlagBits::eVertex;
+	vk::SamplerCreateInfo samplerInfo;
+	samplerInfo.addressModeU     = vk::SamplerAddressMode::eClampToEdge;
+	samplerInfo.addressModeV     = vk::SamplerAddressMode::eClampToEdge;
+	samplerInfo.addressModeW     = vk::SamplerAddressMode::eClampToEdge;
+	samplerInfo.minFilter        = vk::Filter::eLinear;
+	samplerInfo.magFilter        = vk::Filter::eLinear;
+	samplerInfo.mipmapMode       = vk::SamplerMipmapMode::eNearest;
+	samplerInfo.anisotropyEnable = false;
+
+	m_sampler = GetDevice().createSampler(samplerInfo);
+
+	vk::DescriptorSetLayoutBinding dslBinding[2];
+	dslBinding[0].binding            = 0;
+	dslBinding[0].descriptorCount    = 1;
+	dslBinding[0].descriptorType     = vk::DescriptorType::eUniformBufferDynamic;
+	dslBinding[0].stageFlags         = vk::ShaderStageFlagBits::eVertex;
+	dslBinding[1].binding            = 1;
+	dslBinding[1].descriptorCount    = 1;
+	dslBinding[1].descriptorType     = vk::DescriptorType::eCombinedImageSampler;
+	dslBinding[1].stageFlags         = vk::ShaderStageFlagBits::eFragment;
+	dslBinding[1].pImmutableSamplers = &m_sampler;
 
 	vk::DescriptorSetLayoutCreateInfo dslInfo;
-	dslInfo.bindingCount = 1;
-	dslInfo.pBindings    = &dslBinding;
+	dslInfo.bindingCount = 2;
+	dslInfo.pBindings    = dslBinding;
 
 	m_descriptorSetLayout = device.createDescriptorSetLayout(dslInfo);
 
@@ -151,6 +167,7 @@ Pipeline& Pipeline::operator=(Pipeline&& a_other) {
 	a_other.m_pipeline            = vk::Pipeline{};
 	a_other.m_pipeLineLayout      = vk::PipelineLayout{};
 	a_other.m_descriptorSetLayout = vk::DescriptorSetLayout{};
+	a_other.m_sampler             = vk::Sampler{};
 
 	return *this;
 }
@@ -161,15 +178,17 @@ Pipeline::~Pipeline() {
 
 void Pipeline::Free() {
 	if(m_pipeline) {
-		ExecuteNextFrame(
-		    [pipeline = m_pipeline, pipeLineLayout = m_pipeLineLayout, descriptorSetLayout = m_descriptorSetLayout]() {
-			    auto& device = GetDevice();
-			    device.destroyPipeline(pipeline);
-			    device.destroyPipelineLayout(pipeLineLayout);
-			    device.destroyDescriptorSetLayout(descriptorSetLayout);
-		    });
+		ExecuteNextFrame([pipeline = m_pipeline, pipeLineLayout = m_pipeLineLayout,
+		                  descriptorSetLayout = m_descriptorSetLayout, sampler = m_sampler]() {
+			auto& device = GetDevice();
+			device.destroyPipeline(pipeline);
+			device.destroyPipelineLayout(pipeLineLayout);
+			device.destroyDescriptorSetLayout(descriptorSetLayout);
+			device.destroySampler(sampler);
+		});
 	}
 	m_pipeline            = vk::Pipeline{};
 	m_pipeLineLayout      = vk::PipelineLayout{};
 	m_descriptorSetLayout = vk::DescriptorSetLayout{};
+	m_sampler             = vk::Sampler{};
 }
