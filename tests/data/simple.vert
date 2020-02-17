@@ -3,6 +3,8 @@
 precision highp float;
 
 layout(location = 0) out mediump vec4 Color;
+layout(location = 1) out mediump vec2 UV;
+layout(location = 2) out flat mediump int TextureIndex;
 
 const int MaxSprites = 256; //max in one batch, i.e. sprites per template
 
@@ -17,7 +19,7 @@ layout(std430, push_constant) uniform SpriteTemplateData
 } templateData;
 
 struct SpriteUniformData{
-  // x,y are upper left corner, z and w are unused
+  // x,y are upper left corner, z is the texture to use, and w is unused
   vec4 Offset;
   vec4 Color;
 };
@@ -28,6 +30,7 @@ layout(binding = 0) uniform SpriteData{
 
 void main() {
   vec2 position = Vertices[gl_VertexIndex];
+  UV = position;
 
   position *= templateData.FrameSize;
   position += spriteData.Data[gl_InstanceIndex].Offset.xy;
@@ -37,4 +40,5 @@ void main() {
   gl_Position = vec4(pos.x, pos.y, 0.0, 1.0);
 
   Color = spriteData.Data[gl_InstanceIndex].Color;
+  TextureIndex = int(spriteData.Data[gl_InstanceIndex].Offset.z);
 }

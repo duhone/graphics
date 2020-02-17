@@ -97,7 +97,7 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	appInfo.applicationVersion = a_settings.ApplicationVersion;
 	appInfo.pEngineName        = "Conjure";
 	appInfo.engineVersion      = Version;
-	appInfo.apiVersion         = VK_API_VERSION_1_0;
+	appInfo.apiVersion         = VK_API_VERSION_1_2;
 
 	vector<const char*> enabledLayersPtrs;
 	for(auto& layer : enabledLayers) { enabledLayersPtrs.push_back(layer.c_str()); }
@@ -127,6 +127,10 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	for(auto& device : physicalDevices) {
 		auto props = device.getProperties();
 		Log::Info("Device Name : {}", props.deviceName);
+		if(props.apiVersion < appInfo.apiVersion) {
+			Log::Warn("Device didn't support vulkan 1.2");
+			continue;
+		}
 		auto memProps = device.getMemoryProperties();
 		Log::Info("  Device max allocations: {}", props.limits.maxMemoryAllocationCount);
 		Log::Info("  Device max array layers: {}", props.limits.maxImageArrayLayers);
@@ -218,7 +222,20 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 			m_PresentationQueueIndex = -1;
 		}
 	}
-	if(!foundDevice) { Log::Fail("Could not find a valid vulkan graphics device"); }
+	if(!foundDevice) { Log::Fail("Could not find a valid vulkan 1.2 graphics device"); }
+
+	vector<string> enabledDeviceLayers;
+	if(a_settings.EnableDebug) {
+		vector<vk::LayerProperties> layers = selectedDevice.enumerateDeviceLayerProperties();
+		for(const auto& layer : layers) {
+			if("VK_LAYER_LUNARG_standard_validation"s == layer.layerName) {
+				enabledDeviceLayers.push_back(layer.layerName);
+			}
+		}
+	}
+
+	vector<const char*> enabledDeviceLayersPtrs;
+	for(auto& layer : enabledDeviceLayers) { enabledDeviceLayersPtrs.push_back(layer.c_str()); }
 
 	auto memProps = selectedDevice.getMemoryProperties();
 	for(uint32_t i = 0; i < memProps.memoryHeapCount; ++i) {
@@ -255,9 +272,20 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 		}
 	}
 
-	vk::PhysicalDeviceFeatures requiredFeatures;
-	requiredFeatures.textureCompressionBC = true;
-	requiredFeatures.fullDrawIndexUint32  = true;
+	vk::PhysicalDeviceFeatures2 requiredFeatures;
+	requiredFeatures.features.textureCompressionBC                   = true;
+	requiredFeatures.features.fullDrawIndexUint32                    = true;
+	requiredFeatures.features.shaderSampledImageArrayDynamicIndexing = true;
+	if(a_settings.EnableDebug) { requiredFeatures.features.robustBufferAccess = true; }
+
+	vk::PhysicalDeviceVulkan12Features requiredFeatures12;
+	requiredFeatures12.descriptorBindingPartiallyBound           = true;
+	requiredFeatures12.descriptorBindingVariableDescriptorCount  = true;
+	requiredFeatures12.descriptorIndexing                        = true;
+	requiredFeatures12.shaderSampledImageArrayNonUniformIndexing = true;
+	requiredFeatures12.shaderInputAttachmentArrayDynamicIndexing = true;
+	requiredFeatures12.runtimeDescriptorArray                    = true;
+	requiredFeatures.pNext                                       = &requiredFeatures12;
 
 	int32_t graphicsQueueIndex     = 0;
 	int32_t presentationQueueIndex = 0;
@@ -292,9 +320,9 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	vk::DeviceCreateInfo createLogDevInfo;
 	createLogDevInfo.queueCreateInfoCount    = (int)size(queueInfos);
 	createLogDevInfo.pQueueCreateInfos       = data(queueInfos);
-	createLogDevInfo.pEnabledFeatures        = &requiredFeatures;
-	createLogDevInfo.enabledLayerCount       = 0;
-	createLogDevInfo.ppEnabledLayerNames     = nullptr;
+	createLogDevInfo.pEnabledFeatures        = (vk::PhysicalDeviceFeatures*)&requiredFeatures;
+	createLogDevInfo.enabledLayerCount       = (uint32_t)enabledDeviceLayersPtrs.size();
+	createLogDevInfo.ppEnabledLayerNames     = enabledDeviceLayersPtrs.data();
 	createLogDevInfo.enabledExtensionCount   = (uint32_t)size(deviceExtensions);
 	createLogDevInfo.ppEnabledExtensionNames = data(deviceExtensions);
 

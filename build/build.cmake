@@ -18,6 +18,7 @@ set(GRAPHICS_SRCS
     ${graphics_root}/src/AssetLoadingThread.cpp
     ${graphics_root}/src/Commands.h
     ${graphics_root}/src/CommandPool.h
+    ${graphics_root}/src/Constants.h
     ${graphics_root}/src/DescriptorPool.h
     ${graphics_root}/src/DescriptorPool.cpp
     ${graphics_root}/src/UniformBufferDynamic.h

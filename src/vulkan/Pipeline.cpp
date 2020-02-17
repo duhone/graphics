@@ -1,5 +1,6 @@
 ﻿#include "Pipeline.h"
 
+#include "../Constants.h"
 #include "EngineInternal.h"
 
 #include "DataCompression/LosslessCompression.h"
@@ -35,28 +36,40 @@ Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
 	vk::UniqueShaderModule fragModule = device.createShaderModuleUnique(fragInfo);
 
 	glm::vec2 invScreenSize{1.0f / GetWindowSize().x, 1.0f / GetWindowSize().y};
-	vk::SpecializationMapEntry specInfoEntrys[2];
-	specInfoEntrys[0].constantID = 0;
-	specInfoEntrys[0].offset     = offsetof(glm::vec2, x);
-	specInfoEntrys[0].size       = sizeof(float);
-	specInfoEntrys[1].constantID = 1;
-	specInfoEntrys[1].offset     = offsetof(glm::vec2, y);
-	specInfoEntrys[1].size       = sizeof(float);
+	vk::SpecializationMapEntry vertSpecInfoEntrys[2];
+	vertSpecInfoEntrys[0].constantID = 0;
+	vertSpecInfoEntrys[0].offset     = offsetof(glm::vec2, x);
+	vertSpecInfoEntrys[0].size       = sizeof(float);
+	vertSpecInfoEntrys[1].constantID = 1;
+	vertSpecInfoEntrys[1].offset     = offsetof(glm::vec2, y);
+	vertSpecInfoEntrys[1].size       = sizeof(float);
 
-	vk::SpecializationInfo specInfo;
-	specInfo.dataSize      = sizeof(invScreenSize);
-	specInfo.pData         = &invScreenSize;
-	specInfo.mapEntryCount = (uint32_t)size(specInfoEntrys);
-	specInfo.pMapEntries   = specInfoEntrys;
+	vk::SpecializationInfo vertSpecInfo;
+	vertSpecInfo.dataSize      = sizeof(invScreenSize);
+	vertSpecInfo.pData         = &invScreenSize;
+	vertSpecInfo.mapEntryCount = (uint32_t)size(vertSpecInfoEntrys);
+	vertSpecInfo.pMapEntries   = vertSpecInfoEntrys;
+
+	vk::SpecializationMapEntry fragSpecInfoEntrys;
+	fragSpecInfoEntrys.constantID = 0;
+	fragSpecInfoEntrys.offset     = 0;
+	fragSpecInfoEntrys.size       = sizeof(int32_t);
+
+	vk::SpecializationInfo fragSpecInfo;
+	fragSpecInfo.dataSize      = sizeof(invScreenSize);
+	fragSpecInfo.pData         = &c_maxTextures;
+	fragSpecInfo.mapEntryCount = 1;
+	fragSpecInfo.pMapEntries   = &fragSpecInfoEntrys;
 
 	vk::PipelineShaderStageCreateInfo shaderPipeInfo[2];
 	shaderPipeInfo[0].module              = vertModule.get();
 	shaderPipeInfo[0].pName               = "main";
 	shaderPipeInfo[0].stage               = vk::ShaderStageFlagBits::eVertex;
-	shaderPipeInfo[0].pSpecializationInfo = &specInfo;
+	shaderPipeInfo[0].pSpecializationInfo = &vertSpecInfo;
 	shaderPipeInfo[1].module              = fragModule.get();
 	shaderPipeInfo[1].pName               = "main";
 	shaderPipeInfo[1].stage               = vk::ShaderStageFlagBits::eFragment;
+	shaderPipeInfo[1].pSpecializationInfo = &fragSpecInfo;
 
 	// defaults are fine for this one. we dont have a vertex buffer
 	vk::PipelineVertexInputStateCreateInfo vertInputInfo;
@@ -113,16 +126,21 @@ Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
 
 	m_sampler = GetDevice().createSampler(samplerInfo);
 
+	// Have to pass one sampler per descriptor. but only using one sampler, so just have to duplicate
+	vector<vk::Sampler> samplers;
+	samplers.reserve(c_maxTextures);
+	for(int32_t i = 0; i < c_maxTextures; ++i) { samplers.push_back(m_sampler); }
+
 	vk::DescriptorSetLayoutBinding dslBinding[2];
 	dslBinding[0].binding            = 0;
 	dslBinding[0].descriptorCount    = 1;
 	dslBinding[0].descriptorType     = vk::DescriptorType::eUniformBufferDynamic;
 	dslBinding[0].stageFlags         = vk::ShaderStageFlagBits::eVertex;
 	dslBinding[1].binding            = 1;
-	dslBinding[1].descriptorCount    = 1;
+	dslBinding[1].descriptorCount    = c_maxTextures;
 	dslBinding[1].descriptorType     = vk::DescriptorType::eCombinedImageSampler;
 	dslBinding[1].stageFlags         = vk::ShaderStageFlagBits::eFragment;
-	dslBinding[1].pImmutableSamplers = &m_sampler;
+	dslBinding[1].pImmutableSamplers = samplers.data();
 
 	vk::DescriptorSetLayoutCreateInfo dslInfo;
 	dslInfo.bindingCount = 2;
