@@ -2,6 +2,7 @@
 
 #include "AssetLoadingThread.h"
 #include "Commands.h"
+#include "Constants.h"
 #include "TextureSets.h"
 #include "vulkan/EngineInternal.h"
 
@@ -41,6 +42,7 @@ namespace {
 
 	struct TextureSetImpl {
 		vector<string> m_names;
+		vector<uint16_t> m_textureIndex;
 		vector<Header> m_headers;
 		vector<vk::Image> m_images;
 		vector<vk::ImageView> m_views;
@@ -50,6 +52,7 @@ namespace {
 	};
 
 	bitset<c_maxTextureSets> g_used;
+	bitset<c_maxTextures> g_textureSlots;
 	TextureSetImpl g_textureSets[c_maxTextureSets];
 	tsl::robin_map<string, uint16_t> g_lookup;
 	vk::Buffer g_stagingBuffer;
@@ -80,6 +83,7 @@ TextureSet ::~TextureSet() {
 				}
 			}
 		}
+
 		auto& device = GetDevice();
 		for(auto& view : g_textureSets[set].m_views) { device.destroyImageView(view); }
 		for(auto& img : g_textureSets[set].m_images) { device.destroyImage(img); }
@@ -91,6 +95,8 @@ TextureSet ::~TextureSet() {
 		g_textureSets[set].m_views.clear();
 		g_textureSets[set].m_loadingTask.clear();
 		g_textureSets[set].m_ready.clear();
+		for(const auto& slot : g_textureSets[set].m_textureIndex) { g_textureSlots[slot] = false; }
+		g_textureSets[set].m_textureIndex.clear();
 		g_used[m_id] = false;
 	}
 }
@@ -145,6 +151,7 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 	auto& device = GetDevice();
 
 	g_textureSets[set].m_names.reserve(a_textures.size());
+	g_textureSets[set].m_textureIndex.reserve(a_textures.size());
 	g_textureSets[set].m_headers.reserve(a_textures.size());
 	g_textureSets[set].m_images.reserve(a_textures.size());
 	g_textureSets[set].m_views.reserve(a_textures.size());
@@ -152,6 +159,15 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 	g_textureSets[set].m_ready.reserve(a_textures.size());
 	vector<vector<byte>> textureDataList;
 	for(uint32_t slot = 0; slot < a_textures.size(); ++slot) {
+		uint16_t descSlot = c_maxTextures;
+		for(uint16_t i = 0; i < c_maxTextures; ++i) {
+			if(!g_textureSlots[i]) {
+				descSlot = i;
+				break;
+			}
+		}
+		if(descSlot == c_maxTextures) { Core::Log::Fail("Ran out of available texture descriptor slots"); }
+
 		vector<byte> textureData = DataCompression::Decompress(a_textures[slot].TextureData.data(),
 		                                                       (uint32_t)(a_textures[slot].TextureData.size()));
 		if(textureData.size() < sizeof(Header)) { Core::Log::Fail("corrupt crtex file {}", a_textures[slot].Name); }
@@ -186,6 +202,8 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 		memOffset += (uint32_t)imageRequirements.size;
 
 		textureDataList.push_back(move(textureData));
+
+		g_textureSets[set].m_textureIndex.push_back(descSlot);
 	}
 
 	vk::MemoryAllocateInfo allocInfo;
