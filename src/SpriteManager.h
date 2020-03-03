@@ -76,6 +76,8 @@ namespace CR::Graphics {
 		void FreeSprite(uint16_t a_index);
 		void SetSprite(uint16_t a_index, const glm::vec2& a_position, const glm::vec4& a_color);
 
+		void Frame();
+
 		void Draw(CommandBuffer& a_commandBuffer);
 
 	  private:

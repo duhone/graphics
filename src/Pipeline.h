@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "DescriptorPool.h"
+
 #include "core/Span.h"
 
 #include "vulkan/vulkan.hpp"
@@ -28,6 +30,8 @@ namespace CR::Graphics {
 		const vk::PipelineLayout& GetLayout() const { return m_pipeLineLayout; }
 		const vk::DescriptorSetLayout& GetDescLayout() const { return m_descriptorSetLayout; }
 
+		void Frame(vk::DescriptorSet& a_set);
+
 	  private:
 		void Free();
 
@@ -35,5 +39,7 @@ namespace CR::Graphics {
 		vk::Pipeline m_pipeline;
 		vk::DescriptorSetLayout m_descriptorSetLayout;
 		vk::Sampler m_sampler;
+
+		uint32_t m_lastTextureVersion{0};
 	};
 }    // namespace CR::Graphics

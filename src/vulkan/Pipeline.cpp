@@ -2,6 +2,7 @@
 
 #include "../Constants.h"
 #include "EngineInternal.h"
+#include "TextureSets.h"
 
 #include "DataCompression/LosslessCompression.h"
 #include "core/Span.h"
@@ -181,6 +182,7 @@ Pipeline& Pipeline::operator=(Pipeline&& a_other) {
 	m_pipeline            = a_other.m_pipeline;
 	m_pipeLineLayout      = a_other.m_pipeLineLayout;
 	m_descriptorSetLayout = a_other.m_descriptorSetLayout;
+	m_sampler             = a_other.m_sampler;
 
 	a_other.m_pipeline            = vk::Pipeline{};
 	a_other.m_pipeLineLayout      = vk::PipelineLayout{};
@@ -209,4 +211,16 @@ void Pipeline::Free() {
 	m_pipeLineLayout      = vk::PipelineLayout{};
 	m_descriptorSetLayout = vk::DescriptorSetLayout{};
 	m_sampler             = vk::Sampler{};
+}
+
+void Pipeline::Frame(vk::DescriptorSet& a_set) {
+	uint32_t currentVersion = TextureSets::GetCurrentVersion();
+	if(currentVersion > m_lastTextureVersion) {
+		std::vector<vk::ImageView> images;
+		std::vector<uint16_t> imageIndices;
+		TextureSets::GetImageData(images, imageIndices);
+		UpdateDescriptorSet(a_set, m_sampler, {images.data(), images.size()},
+		                    {imageIndices.data(), imageIndices.size()});
+		m_lastTextureVersion = currentVersion;
+	}
 }

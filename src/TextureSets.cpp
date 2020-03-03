@@ -51,6 +51,7 @@ namespace {
 		vector<bool> m_ready;
 	};
 
+	uint32_t g_version{0};
 	bitset<c_maxTextureSets> g_used;
 	bitset<c_maxTextures> g_textureSlots;
 	TextureSetImpl g_textureSets[c_maxTextureSets];
@@ -98,6 +99,8 @@ TextureSet ::~TextureSet() {
 		for(const auto& slot : g_textureSets[set].m_textureIndex) { g_textureSlots[slot] = false; }
 		g_textureSets[set].m_textureIndex.clear();
 		g_used[m_id] = false;
+
+		++g_version;
 	}
 }
 
@@ -162,7 +165,8 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 		uint16_t descSlot = c_maxTextures;
 		for(uint16_t i = 0; i < c_maxTextures; ++i) {
 			if(!g_textureSlots[i]) {
-				descSlot = i;
+				descSlot          = i;
+				g_textureSlots[i] = true;
 				break;
 			}
 		}
@@ -243,6 +247,8 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 	}
 	textureDataList.clear();
 
+	++g_version;
+
 	TextureSet result{set};
 	return result;
 }
@@ -274,4 +280,18 @@ void TextureSets::Shutdown() {
 	device.unmapMemory(g_stagingMemory);
 	device.freeMemory(g_stagingMemory);
 	device.destroyBuffer(g_stagingBuffer);
+}
+
+uint32_t TextureSets::GetCurrentVersion() {
+	return g_version;
+}
+
+void TextureSets::GetImageData(std::vector<vk::ImageView>& a_images, std::vector<uint16_t>& a_imageIndices) {
+	for(uint32_t set = 0; set < c_maxTextureSets; ++set) {
+		if(g_used[set]) {
+			a_images.insert(end(a_images), g_textureSets[set].m_views.begin(), g_textureSets[set].m_views.end());
+			a_imageIndices.insert(end(a_imageIndices), g_textureSets[set].m_textureIndex.begin(),
+			                      g_textureSets[set].m_textureIndex.end());
+		}
+	}
 }

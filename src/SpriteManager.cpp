@@ -104,6 +104,12 @@ void SpriteManager::FreeSprite(uint16_t a_index) {
 	m_sprites.Used[a_index] = false;
 }
 
+void SpriteManager::Frame() {
+	for(uint32_t type = 0; type < MaxSpriteTypes; ++type) {
+		if(m_spriteTypes.Used[type]) { m_spriteTypes.Pipelines[type].Frame(m_spriteTypes.DescSets[type]); }
+	}
+}
+
 void SpriteManager::Draw(CommandBuffer& a_commandBuffer) {
 	for(uint32_t type = 0; type < MaxSpriteTypes; ++type) {
 		SpriteUniformData* uniformData = m_spriteTypes.UniformBuffers[type].GetData<SpriteUniformData>();

@@ -480,6 +480,8 @@ void Graphics::Frame() {
 	engine->m_Device.waitForFences(1, &engine->m_frameFence, true, UINT64_MAX);
 	engine->m_Device.resetFences(1, &engine->m_frameFence);
 
+	engine->m_spriteManager->Frame();
+
 	engine->m_commandBuffer = engine->m_commandPool->CreateCommandBuffer();
 
 	engine->m_commandBuffer->Begin();
