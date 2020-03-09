@@ -66,12 +66,15 @@ void Graphics::UpdateDescriptorSet(const vk::DescriptorSet& a_set, const vk::Sam
 	auto& device = GetDevice();
 
 	std::vector<vk::WriteDescriptorSet> writeSets;
+	std::vector<vk::DescriptorImageInfo> imgInfos;
+	writeSets.reserve(a_imageViews.size());
+	imgInfos.reserve(a_imageViews.size());
 
 	for(uint32_t i = 0; i < a_imageViews.size(); ++i) {
-		vk::DescriptorImageInfo imgInfo;
-		imgInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		imgInfo.imageView   = a_imageViews[i];
-		imgInfo.sampler     = a_sampler;
+		vk::DescriptorImageInfo& imgInfo = imgInfos.emplace_back();
+		imgInfo.imageLayout              = vk::ImageLayout::eShaderReadOnlyOptimal;
+		imgInfo.imageView                = a_imageViews[i];
+		imgInfo.sampler                  = a_sampler;
 
 		vk::WriteDescriptorSet& writeSet = writeSets.emplace_back();
 		writeSet.dstSet                  = a_set;

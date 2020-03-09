@@ -28,25 +28,33 @@ TEST_CASE_METHOD(TestFixture, "sprites_basic", "") {
 
 	auto spriteType = CreateSpriteType(info);
 
-	SpriteTemplateCreateInfo templateInfo;
-	templateInfo.Name      = "test template";
-	templateInfo.Type      = spriteType;
-	templateInfo.FrameSize = {256, 256};
-	auto spriteTemplate    = CreateSpriteTemplate(templateInfo);
+	SpriteTemplateCreateInfo templateInfoComp;
+	templateInfoComp.Name      = "comp template";
+	templateInfoComp.Type      = spriteType;
+	templateInfoComp.FrameSize = {480, 320};
+	auto spriteTemplateComp    = CreateSpriteTemplate(templateInfoComp);
+
+	SpriteTemplateCreateInfo templateInfoHarry;
+	templateInfoHarry.Name      = "harry template";
+	templateInfoHarry.Type      = spriteType;
+	templateInfoHarry.FrameSize = {186, 291};
+	auto spriteTemplateHarry    = CreateSpriteTemplate(templateInfoHarry);
 
 	Graphics::SpriteCreateInfo spriteInfo;
-	spriteInfo.Name     = "test sprite1";
-	spriteInfo.Template = spriteTemplate;
-	auto sprite1        = CreateSprite(spriteInfo);
-	spriteInfo.Name     = "test sprite2";
-	spriteInfo.Template = spriteTemplate;
-	auto sprite2        = CreateSprite(spriteInfo);
+	spriteInfo.Name        = "test sprite1";
+	spriteInfo.Template    = spriteTemplateComp;
+	spriteInfo.TextureName = "completion_screen";
+	auto sprite1           = CreateSprite(spriteInfo);
+	spriteInfo.Name        = "test sprite2";
+	spriteInfo.Template    = spriteTemplateHarry;
+	spriteInfo.TextureName = "bonus_harry";
+	auto sprite2           = CreateSprite(spriteInfo);
 
 	Sprite::Props props;
-	props.Position = glm::vec2{64128.0f, 64.0f};
-	props.Color    = glm::vec4{1.0f, 1.0f, 0.0f, 1.0f};
-	sprite1->SetProps(props);
 	props.Position = glm::vec2{128.0f, 128.0f};
+	props.Color    = glm::vec4{1.0f, 1.0f, 1.0f, 1.0f};
+	sprite1->SetProps(props);
+	props.Position = glm::vec2{64.0f, 64.0f};
 	props.Color    = glm::vec4{1.0f, 1.0f, 1.0f, 1.0f};
 	sprite2->SetProps(props);
 
@@ -60,7 +68,7 @@ TEST_CASE_METHOD(TestFixture, "sprites_basic", "") {
 		if(props.Position.x < 0.0f) { step.x = 1.0f; }
 		if(props.Position.y > 720.0f) { step.y = -2.0f; }
 		if(props.Position.y < 0.0f) { step.y = 2.0f; }
-		sprite1->SetProps(props);
+		sprite2->SetProps(props);
 		Frame();
 	}
 }

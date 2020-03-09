@@ -3,6 +3,7 @@
 #include "CommandPool.h"
 #include "vulkan/EngineInternal.h"
 
+#include <string_view>
 #include <vector>
 
 namespace CR::Graphics::TextureSets {
@@ -11,6 +12,7 @@ namespace CR::Graphics::TextureSets {
 
 	uint32_t GetCurrentVersion();
 	void GetImageData(std::vector<vk::ImageView>& a_images, std::vector<uint16_t>& a_imageIndices);
+	uint16_t GetTextureIndex(const char* a_textureName);
 
 	void CheckLoadingTasks(CommandBuffer& a_cmdBuffer);
 }    // namespace CR::Graphics::TextureSets

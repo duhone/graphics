@@ -6,6 +6,7 @@
 #include "glm/vec4.hpp"
 
 #include <memory>
+#include <string>
 
 namespace CR::Graphics {
 	class Sprite {
@@ -25,6 +26,7 @@ namespace CR::Graphics {
 	struct SpriteCreateInfo {
 		std::string Name;
 		std::shared_ptr<SpriteTemplate> Template;
+		std::string TextureName;
 	};
 	std::unique_ptr<Sprite> CreateSprite(const SpriteCreateInfo& a_info);
 }    // namespace CR::Graphics

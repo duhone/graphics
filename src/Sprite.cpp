@@ -33,6 +33,6 @@ void SpriteImpl::SetProps(const Props& a_props) {
 }
 
 std::unique_ptr<Graphics::Sprite> Graphics::CreateSprite(const SpriteCreateInfo& a_info) {
-	uint16_t index = GetSpriteManager().CreateSprite(a_info.Name, a_info.Template);
+	uint16_t index = GetSpriteManager().CreateSprite(a_info.Name, a_info.Template, a_info.TextureName.c_str());
 	return make_unique<SpriteImpl>(index);
 }

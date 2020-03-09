@@ -295,3 +295,9 @@ void TextureSets::GetImageData(std::vector<vk::ImageView>& a_images, std::vector
 		}
 	}
 }
+
+uint16_t TextureSets::GetTextureIndex(const char* a_textureName) {
+	auto texIter = g_lookup.find(a_textureName);
+	if(texIter == g_lookup.end()) { Core::Log::Fail("Requested a texture {} that hasn't been loaded", a_textureName); }
+	return texIter->second;
+}

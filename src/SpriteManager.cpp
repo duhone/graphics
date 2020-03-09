@@ -78,7 +78,8 @@ void SpriteManager::FreeTemplate(uint8_t a_index) {
 	m_spriteTemplates.Used[a_index] = false;
 }
 
-uint16_t SpriteManager::CreateSprite(const std::string_view a_name, std::shared_ptr<SpriteTemplate> a_template) {
+uint16_t SpriteManager::CreateSprite(const std::string_view a_name, std::shared_ptr<SpriteTemplate> a_template,
+                                     const char* a_textureName) {
 	uint32_t templateIndex = ((SpriteTemplateImpl*)a_template.get())->GetIndex();
 
 	uint32_t result = 0;
@@ -93,6 +94,7 @@ uint16_t SpriteManager::CreateSprite(const std::string_view a_name, std::shared_
 	m_sprites.Names[result]           = a_name;
 	m_sprites.TemplateIndices[result] = (uint8_t)templateIndex;
 	m_sprites.Templates[result]       = move(a_template);
+	m_sprites.TextureIndices[result]  = TextureSets::GetTextureIndex(a_textureName);
 
 	return (uint16_t)result;
 }
@@ -117,7 +119,7 @@ void SpriteManager::Draw(CommandBuffer& a_commandBuffer) {
 			if(m_sprites.Used[sprite]) {
 				uniformData[sprite].Position.x = m_sprites.Positions[sprite].x;
 				uniformData[sprite].Position.y = m_sprites.Positions[sprite].y;
-				uniformData[sprite].Position.z = 1.0f;
+				uniformData[sprite].Position.z = m_sprites.TextureIndices[sprite];
 				uniformData[sprite].Position.w = 1.0f;
 
 				uniformData[sprite].Color = m_sprites.Colors[sprite];
@@ -141,9 +143,9 @@ void SpriteManager::Draw(CommandBuffer& a_commandBuffer) {
 					glm::vec2 frameSize = m_spriteTemplates.FrameSizes[templ];
 					Commands::PushConstants(a_commandBuffer, m_spriteTypes.Pipelines[type],
 					                        Span<std::byte>{(byte*)&frameSize, sizeof(frameSize)});
+					descOffset = templ * SpritesPerTemplate * sizeof(SpriteUniformData);
 					Commands::BindDescriptorSet(a_commandBuffer, m_spriteTypes.Pipelines[type],
 					                            m_spriteTypes.DescSets[type], descOffset);
-					descOffset += templ * SpritesPerTemplate * sizeof(SpriteUniformData);
 					Commands::Draw(a_commandBuffer, 4, numSprites);
 				}
 			}
