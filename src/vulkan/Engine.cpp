@@ -279,13 +279,14 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	if(a_settings.EnableDebug) { requiredFeatures.features.robustBufferAccess = true; }
 
 	vk::PhysicalDeviceVulkan12Features requiredFeatures12;
-	requiredFeatures12.descriptorBindingPartiallyBound           = true;
-	requiredFeatures12.descriptorBindingVariableDescriptorCount  = true;
-	requiredFeatures12.descriptorIndexing                        = true;
-	requiredFeatures12.shaderSampledImageArrayNonUniformIndexing = true;
-	requiredFeatures12.shaderInputAttachmentArrayDynamicIndexing = true;
-	requiredFeatures12.runtimeDescriptorArray                    = true;
-	requiredFeatures.pNext                                       = &requiredFeatures12;
+	requiredFeatures12.descriptorBindingPartiallyBound              = true;
+	requiredFeatures12.descriptorBindingVariableDescriptorCount     = true;
+	requiredFeatures12.descriptorIndexing                           = true;
+	requiredFeatures12.shaderSampledImageArrayNonUniformIndexing    = true;
+	requiredFeatures12.shaderInputAttachmentArrayDynamicIndexing    = true;
+	requiredFeatures12.runtimeDescriptorArray                       = true;
+	requiredFeatures12.descriptorBindingSampledImageUpdateAfterBind = true;
+	requiredFeatures.pNext                                          = &requiredFeatures12;
 
 	int32_t graphicsQueueIndex     = 0;
 	int32_t presentationQueueIndex = 0;

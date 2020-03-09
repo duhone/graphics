@@ -1,6 +1,7 @@
 #version 450
 
 precision mediump float;
+precision mediump int;
 
 layout (constant_id = 0) const int c_maxTextures = 4096;
 

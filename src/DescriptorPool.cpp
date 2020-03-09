@@ -75,7 +75,7 @@ void Graphics::UpdateDescriptorSet(const vk::DescriptorSet& a_set, const vk::Sam
 
 		vk::WriteDescriptorSet& writeSet = writeSets.emplace_back();
 		writeSet.dstSet                  = a_set;
-		writeSet.dstBinding              = 0;
+		writeSet.dstBinding              = 1;
 		writeSet.dstArrayElement         = a_textureIndices[i];
 		writeSet.descriptorType          = vk::DescriptorType::eCombinedImageSampler;
 		writeSet.descriptorCount         = 1;
