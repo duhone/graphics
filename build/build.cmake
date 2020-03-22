@@ -93,9 +93,7 @@ if(IncludeTests)
       ${graphics_root}/tests/data/simple.vert
       ${graphics_root}/tests/data/simple.frag
       ${graphics_root}/tests/data/simple.crsm
-      ${graphics_root}/tests/data/BonusHarrySelect_0.tga
-      ${graphics_root}/tests/data/BonusHarrySelect_0.crtexd
-      ${graphics_root}/tests/data/CompletionScreen.tga
+      ${graphics_root}/tests/data/BonusHarrySelect.crtexd
       ${graphics_root}/tests/data/CompletionScreen.crtexd
   )
 	

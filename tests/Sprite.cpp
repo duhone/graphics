@@ -12,7 +12,7 @@ using namespace CR::Graphics;
 using namespace std;
 
 TEST_CASE_METHOD(TestFixture, "sprites_basic", "") {
-	auto crtexHarry = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "BonusHarrySelect_0.crtexd");
+	auto crtexHarry = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "BonusHarrySelect.crtexd");
 	auto crtexComp  = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "CompletionScreen.crtexd");
 	TextureCreateInfo texInfo[2];
 	texInfo[0].TextureData = Core::Span<byte>{crtexHarry->data(), crtexHarry->size()};
