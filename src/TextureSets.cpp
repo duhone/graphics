@@ -327,3 +327,10 @@ uint16_t TextureSets::GetTextureIndex(const char* a_textureName) {
 	if(texIter == g_lookup.end()) { Core::Log::Fail("Requested a texture {} that hasn't been loaded", a_textureName); }
 	return texIter->second;
 }
+
+uint16_t TextureSets::GetMaxFrames(uint16_t a_textureIndex) {
+	auto set  = GetSet(a_textureIndex);
+	auto slot = GetSlot(a_textureIndex);
+
+	return g_textureSets[set].m_headers[slot].Frames;
+}

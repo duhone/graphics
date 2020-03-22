@@ -16,9 +16,11 @@ namespace CR::Graphics {
 		Sprite(const Sprite&) = delete;
 		Sprite& operator=(const Sprite&) = delete;
 
+		enum class eFrameRate { None, FPS10, FPS12, FPS15, FPS20, FPS30, FPS60 };
 		struct Props {
 			glm::vec2 Position;
 			glm::vec4 Color;
+			eFrameRate FrameRate{eFrameRate::None};
 		};
 		virtual void SetProps(const Props& a_props) = 0;
 	};

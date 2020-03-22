@@ -2,6 +2,7 @@
 
 #include "CommandPool.h"
 #include "DescriptorPool.h"
+#include "Graphics/Sprite.h"
 #include "Graphics/SpriteTemplate.h"
 #include "Graphics/SpriteType.h"
 #include "Pipeline.h"
@@ -57,6 +58,9 @@ namespace CR::Graphics {
 		glm::vec2 Positions[MaxSprites];
 		glm::vec4 Colors[MaxSprites];
 		uint16_t TextureIndices[MaxSprites];
+		Sprite::eFrameRate FrameRates[MaxSprites];
+		uint16_t MaxFrames[MaxSprites];
+		uint16_t CurrentFrame[MaxSprites];
 	};
 
 	class SpriteManager {
@@ -76,7 +80,8 @@ namespace CR::Graphics {
 		uint16_t CreateSprite(const std::string_view a_name, std::shared_ptr<SpriteTemplate> a_template,
 		                      const char* a_textureName);
 		void FreeSprite(uint16_t a_index);
-		void SetSprite(uint16_t a_index, const glm::vec2& a_position, const glm::vec4& a_color);
+		void SetSprite(uint16_t a_index, const glm::vec2& a_position, const glm::vec4& a_color,
+		               Sprite::eFrameRate a_framerate);
 
 		void Frame();
 
@@ -86,10 +91,13 @@ namespace CR::Graphics {
 		SpriteTypes m_spriteTypes;
 		SpriteTemplates m_spriteTemplates;
 		Sprites m_sprites;
+		uint16_t m_currentFrame{0};
 	};
 
-	inline void SpriteManager::SetSprite(uint16_t a_index, const glm::vec2& a_position, const glm::vec4& a_color) {
-		m_sprites.Positions[a_index] = a_position;
-		m_sprites.Colors[a_index]    = a_color;
+	inline void SpriteManager::SetSprite(uint16_t a_index, const glm::vec2& a_position, const glm::vec4& a_color,
+	                                     Sprite::eFrameRate a_framerate) {
+		m_sprites.Positions[a_index]  = a_position;
+		m_sprites.Colors[a_index]     = a_color;
+		m_sprites.FrameRates[a_index] = a_framerate;
 	}
 }    // namespace CR::Graphics

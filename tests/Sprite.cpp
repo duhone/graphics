@@ -54,8 +54,9 @@ TEST_CASE_METHOD(TestFixture, "sprites_basic", "") {
 	props.Position = glm::vec2{128.0f, 128.0f};
 	props.Color    = glm::vec4{1.0f, 1.0f, 1.0f, 1.0f};
 	sprite1->SetProps(props);
-	props.Position = glm::vec2{64.0f, 64.0f};
-	props.Color    = glm::vec4{1.0f, 1.0f, 1.0f, 1.0f};
+	props.Position  = glm::vec2{64.0f, 64.0f};
+	props.Color     = glm::vec4{1.0f, 1.0f, 1.0f, 1.0f};
+	props.FrameRate = Sprite::eFrameRate::FPS20;
 	sprite2->SetProps(props);
 
 	glm::vec2 step{1.0f, 2.0f};

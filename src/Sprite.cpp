@@ -29,7 +29,7 @@ SpriteImpl::~SpriteImpl() {
 }
 
 void SpriteImpl::SetProps(const Props& a_props) {
-	GetSpriteManager().SetSprite(m_index, a_props.Position, a_props.Color);
+	GetSpriteManager().SetSprite(m_index, a_props.Position, a_props.Color, a_props.FrameRate);
 }
 
 std::unique_ptr<Graphics::Sprite> Graphics::CreateSprite(const SpriteCreateInfo& a_info) {

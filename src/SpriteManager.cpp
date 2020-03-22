@@ -95,6 +95,9 @@ uint16_t SpriteManager::CreateSprite(const std::string_view a_name, std::shared_
 	m_sprites.TemplateIndices[result] = (uint8_t)templateIndex;
 	m_sprites.Templates[result]       = move(a_template);
 	m_sprites.TextureIndices[result]  = TextureSets::GetTextureIndex(a_textureName);
+	m_sprites.MaxFrames[result]       = TextureSets::GetMaxFrames(m_sprites.TextureIndices[result]);
+	m_sprites.FrameRates[result]      = Sprite::eFrameRate::None;
+	m_sprites.CurrentFrame[result]    = 0;
 
 	return (uint16_t)result;
 }
@@ -107,8 +110,54 @@ void SpriteManager::FreeSprite(uint16_t a_index) {
 }
 
 void SpriteManager::Frame() {
+	++m_currentFrame;
 	for(uint32_t type = 0; type < MaxSpriteTypes; ++type) {
 		if(m_spriteTypes.Used[type]) { m_spriteTypes.Pipelines[type].Frame(m_spriteTypes.DescSets[type]); }
+	}
+	for(uint32_t sprite = 0; sprite < MaxSprites; ++sprite) {
+		if(m_sprites.Used[sprite]) {
+			switch(m_sprites.FrameRates[sprite]) {
+				case Sprite::eFrameRate::None:
+					// Nothing to do
+					break;
+				case Sprite::eFrameRate::FPS10:
+					if(m_currentFrame % 6 == 0) {
+						++m_sprites.CurrentFrame[sprite];
+						m_sprites.CurrentFrame[sprite] %= m_sprites.MaxFrames[sprite];
+					}
+					break;
+				case Sprite::eFrameRate::FPS12:
+					if(m_currentFrame % 5 == 0) {
+						++m_sprites.CurrentFrame[sprite];
+						m_sprites.CurrentFrame[sprite] %= m_sprites.MaxFrames[sprite];
+					}
+					break;
+				case Sprite::eFrameRate::FPS15:
+					if(m_currentFrame % 4 == 0) {
+						++m_sprites.CurrentFrame[sprite];
+						m_sprites.CurrentFrame[sprite] %= m_sprites.MaxFrames[sprite];
+					}
+					break;
+				case Sprite::eFrameRate::FPS20:
+					if(m_currentFrame % 3 == 0) {
+						++m_sprites.CurrentFrame[sprite];
+						m_sprites.CurrentFrame[sprite] %= m_sprites.MaxFrames[sprite];
+					}
+					break;
+				case Sprite::eFrameRate::FPS30:
+					if(m_currentFrame % 2 == 0) {
+						++m_sprites.CurrentFrame[sprite];
+						m_sprites.CurrentFrame[sprite] %= m_sprites.MaxFrames[sprite];
+					}
+					break;
+				case Sprite::eFrameRate::FPS60: {
+					++m_sprites.CurrentFrame[sprite];
+					m_sprites.CurrentFrame[sprite] %= m_sprites.MaxFrames[sprite];
+				} break;
+				default:
+					break;
+			}
+		}
 	}
 }
 
@@ -120,7 +169,7 @@ void SpriteManager::Draw(CommandBuffer& a_commandBuffer) {
 				uniformData[sprite].Position.x = m_sprites.Positions[sprite].x;
 				uniformData[sprite].Position.y = m_sprites.Positions[sprite].y;
 				uniformData[sprite].Position.z = m_sprites.TextureIndices[sprite];
-				uniformData[sprite].Position.w = 1.0f;
+				uniformData[sprite].Position.w = m_sprites.CurrentFrame[sprite];
 
 				uniformData[sprite].Color = m_sprites.Colors[sprite];
 			}
