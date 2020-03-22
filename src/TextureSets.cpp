@@ -245,16 +245,22 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 	for(uint32_t slot = 0; slot < a_textures.size(); ++slot) {
 		g_textureSets[set].m_ready.push_back(false);
 		g_textureSets[set].m_loadingTask.push_back(AssetLoadingThread::LoadAsset(
-		    [textureData = move(textureDataList[slot]), set, slot](CommandBuffer& a_buffer) {
+		    [textureData = move(textureDataList[slot]), set, slot](auto getCmdBuffer, auto submit) {
 			    Core::BinaryReader reader;
 			    reader.Data = textureData.data();
 
 			    Header header;
 			    Core::Read(reader, header);
 
-			    Commands::TransitionToDst(a_buffer, g_textureSets[set].m_images[slot], vk::Format::eBc7SrgbBlock,
-			                              header.Frames);
+			    {
+				    CommandBuffer& cmdBuffer = getCmdBuffer();
+				    Commands::TransitionToDst(cmdBuffer, g_textureSets[set].m_images[slot], vk::Format::eBc7SrgbBlock,
+				                              header.Frames);
+				    submit();
+			    }
 			    for(uint32_t i = 0; i < header.Frames; ++i) {
+				    CommandBuffer& cmdBuffer = getCmdBuffer();
+
 				    vector<byte> compressedData;
 				    Core::Read(reader, compressedData);
 
@@ -263,12 +269,15 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 
 				    memcpy(g_stagingData, uncompressedData.data(), uncompressedData.size());
 
-				    Commands::CopyBufferToImg(a_buffer, g_stagingBuffer, g_textureSets[set].m_images[slot],
+				    Commands::CopyBufferToImg(cmdBuffer, g_stagingBuffer, g_textureSets[set].m_images[slot],
 				                              {header.Width, header.Height}, i);
+				    submit();
 			    }
-			    Commands::TransitionToGraphicsQueue(a_buffer, g_textureSets[set].m_images[slot], header.Frames);
-
-			    return []() {};
+			    {
+				    CommandBuffer& cmdBuffer = getCmdBuffer();
+				    Commands::TransitionToGraphicsQueue(cmdBuffer, g_textureSets[set].m_images[slot], header.Frames);
+				    submit();
+			    }
 		    }));
 	}
 	textureDataList.clear();
