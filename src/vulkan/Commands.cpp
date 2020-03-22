@@ -59,7 +59,8 @@ void Commands::BindDescriptorSet(CommandBuffer& a_cmdBuffer, const Pipeline& a_p
 	vkcmd->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, a_pipeline.GetLayout(), 0, 1, &a_set, 1, &a_offset);
 }
 
-void Commands::TransitionToDst(CommandBuffer& a_cmdBuffer, const vk::Image& a_image, vk::Format a_format) {
+void Commands::TransitionToDst(CommandBuffer& a_cmdBuffer, const vk::Image& a_image, vk::Format a_format,
+                               uint32_t a_layerCount) {
 	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
 
 	vk::ImageMemoryBarrier barrier;
@@ -72,7 +73,7 @@ void Commands::TransitionToDst(CommandBuffer& a_cmdBuffer, const vk::Image& a_im
 	barrier.newLayout                       = vk::ImageLayout::eTransferDstOptimal;
 	barrier.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
 	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount     = 1;
+	barrier.subresourceRange.layerCount     = a_layerCount;
 	barrier.subresourceRange.baseMipLevel   = 0;
 	barrier.subresourceRange.levelCount     = 1;
 
@@ -81,7 +82,7 @@ void Commands::TransitionToDst(CommandBuffer& a_cmdBuffer, const vk::Image& a_im
 }
 
 void Commands::CopyBufferToImg(CommandBuffer& a_cmdBuffer, const vk::Buffer& a_buffer, vk::Image& a_image,
-                               const glm::uvec2& a_extent) {
+                               const glm::uvec2& a_extent, uint32_t layer) {
 	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
 
 	vk::ImageLayout layout{vk::ImageLayout::eTransferDstOptimal};
@@ -91,7 +92,7 @@ void Commands::CopyBufferToImg(CommandBuffer& a_cmdBuffer, const vk::Buffer& a_b
 	cpy.bufferRowLength                 = 0;
 	cpy.bufferImageHeight               = 0;
 	cpy.imageSubresource.aspectMask     = vk::ImageAspectFlagBits::eColor;
-	cpy.imageSubresource.baseArrayLayer = 0;
+	cpy.imageSubresource.baseArrayLayer = layer;
 	cpy.imageSubresource.layerCount     = 1;
 	cpy.imageSubresource.mipLevel       = 0;
 	cpy.imageOffset                     = {0, 0, 0};
@@ -100,7 +101,7 @@ void Commands::CopyBufferToImg(CommandBuffer& a_cmdBuffer, const vk::Buffer& a_b
 	vkcmd->copyBufferToImage(a_buffer, a_image, layout, cpy);
 }
 
-void Commands::TransitionToGraphicsQueue(CommandBuffer& a_cmdBuffer, const vk::Image& a_image) {
+void Commands::TransitionToGraphicsQueue(CommandBuffer& a_cmdBuffer, const vk::Image& a_image, uint32_t a_layerCount) {
 	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
 
 	vk::ImageMemoryBarrier barrier;
@@ -113,7 +114,7 @@ void Commands::TransitionToGraphicsQueue(CommandBuffer& a_cmdBuffer, const vk::I
 	barrier.newLayout                       = vk::ImageLayout::eShaderReadOnlyOptimal;
 	barrier.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
 	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount     = 1;
+	barrier.subresourceRange.layerCount     = a_layerCount;
 	barrier.subresourceRange.baseMipLevel   = 0;
 	barrier.subresourceRange.levelCount     = 1;
 
@@ -121,7 +122,8 @@ void Commands::TransitionToGraphicsQueue(CommandBuffer& a_cmdBuffer, const vk::I
 	                       vk::DependencyFlags{}, nullptr, nullptr, barrier);
 }
 
-void Commands::TransitionFromTransferQueue(CommandBuffer& a_cmdBuffer, const vk::Image& a_image) {
+void Commands::TransitionFromTransferQueue(CommandBuffer& a_cmdBuffer, const vk::Image& a_image,
+                                           uint32_t a_layerCount) {
 	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
 
 	vk::ImageMemoryBarrier barrier;
@@ -134,7 +136,7 @@ void Commands::TransitionFromTransferQueue(CommandBuffer& a_cmdBuffer, const vk:
 	barrier.newLayout                       = vk::ImageLayout::eShaderReadOnlyOptimal;
 	barrier.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
 	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount     = 1;
+	barrier.subresourceRange.layerCount     = a_layerCount;
 	barrier.subresourceRange.baseMipLevel   = 0;
 	barrier.subresourceRange.levelCount     = 1;
 

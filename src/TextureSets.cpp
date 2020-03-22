@@ -7,6 +7,7 @@
 #include "vulkan/EngineInternal.h"
 
 #include "DataCompression/LosslessCompression.h"
+#include "core/BinaryStream.h"
 #include "core/Log.h"
 #include "core/algorithm.h"
 #include "core/literals.h"
@@ -30,13 +31,18 @@ namespace {
 	              "textures use a 16 bit id, some bits hold the texture set, some hold the index inside the set");
 	constexpr uint32_t c_maxStagingTextureSize = (uint32_t)16_Mb;    // enough for a 4kx4k bc7 or astc4x4
 	static_assert(c_maxStagingTextureSize <= 64_Mb,
-	              "Neet to really think about this if there is a need to go over 64_Mb");
+	              "Need to really think about this if there is a need to go over 64_Mb");
 
 	// Must match whats in TextureProcessor, assuming dont need this every frame.
-#pragma pack(4)
+#pragma pack(1)
 	struct Header {
+		static constexpr uint32_t c_FourCC{'CRTX'};
+		static constexpr uint32_t c_Version{1};
+		uint32_t FourCC{c_FourCC};
+		uint16_t Version{c_Version};
 		uint16_t Width{0};
 		uint16_t Height{0};
+		uint16_t Frames{0};
 	};
 #pragma pack()
 
@@ -122,7 +128,8 @@ void Graphics::TextureSets::CheckLoadingTasks(CommandBuffer& a_cmdBuffer) {
 				if(!g_textureSets[set].m_ready[slot]) {
 					if(g_textureSets[set].m_loadingTask[slot]->load(memory_order_acquire)) {
 						g_textureSets[set].m_loadingTask[slot].reset();
-						Commands::TransitionFromTransferQueue(a_cmdBuffer, g_textureSets[set].m_images[slot]);
+						Commands::TransitionFromTransferQueue(a_cmdBuffer, g_textureSets[set].m_images[slot],
+						                                      g_textureSets[set].m_headers[slot].Frames);
 						g_textureSets[set].m_ready[slot] = true;
 					}
 				}
@@ -172,14 +179,19 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 		}
 		if(descSlot == c_maxTextures) { Core::Log::Fail("Ran out of available texture descriptor slots"); }
 
-		vector<byte> textureData = DataCompression::Decompress(a_textures[slot].TextureData.data(),
-		                                                       (uint32_t)(a_textures[slot].TextureData.size()));
+		vector<byte> textureData;
+		textureData.insert(begin(textureData), a_textures[slot].TextureData.data(),
+		                   a_textures[slot].TextureData.data() + a_textures[slot].TextureData.size());
 		if(textureData.size() < sizeof(Header)) { Core::Log::Fail("corrupt crtex file {}", a_textures[slot].Name); }
 		if(textureData.size() > c_maxStagingTextureSize) {
 			Core::Log::Fail("texture is too large {}", a_textures[slot].Name);
 		}
 		Header& header = g_textureSets[set].m_headers.emplace_back();
 		memcpy(&header, textureData.data(), sizeof(Header));
+		if(header.FourCC != Header::c_FourCC) { Core::Log::Fail("texture is not a crtexd fourcc is wrong"); }
+		if(header.Version != Header::c_Version) {
+			Core::Log::Fail("texture is not the correct version, rebuild the texture");
+		}
 
 		g_textureSets[set].m_names.push_back(a_textures[slot].Name);
 		g_lookup.emplace(a_textures[slot].Name, CalcID(set, slot));
@@ -188,7 +200,7 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 		createInfo.extent.width  = header.Width;
 		createInfo.extent.height = header.Height;
 		createInfo.extent.depth  = 1;
-		createInfo.arrayLayers   = 1;
+		createInfo.arrayLayers   = header.Frames;
 		createInfo.mipLevels     = 1;
 		createInfo.tiling        = vk::ImageTiling::eOptimal;
 		createInfo.sharingMode   = vk::SharingMode::eExclusive;
@@ -219,13 +231,13 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 		device.bindImageMemory(g_textureSets[set].m_images[slot], g_textureSets[set].m_imageMemory, memOffsets[slot]);
 		vk::ImageViewCreateInfo viewInfo;
 		viewInfo.image                           = g_textureSets[set].m_images[slot];
-		viewInfo.viewType                        = vk::ImageViewType::e2D;
+		viewInfo.viewType                        = vk::ImageViewType::e2DArray;
 		viewInfo.format                          = vk::Format::eBc7SrgbBlock;
 		viewInfo.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
 		viewInfo.subresourceRange.baseMipLevel   = 0;
 		viewInfo.subresourceRange.levelCount     = 1;
 		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount     = 1;
+		viewInfo.subresourceRange.layerCount     = g_textureSets[set].m_headers[slot].Frames;
 
 		g_textureSets[set].m_views.push_back(device.createImageView(viewInfo));
 	}
@@ -234,13 +246,27 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 		g_textureSets[set].m_ready.push_back(false);
 		g_textureSets[set].m_loadingTask.push_back(AssetLoadingThread::LoadAsset(
 		    [textureData = move(textureDataList[slot]), set, slot](CommandBuffer& a_buffer) {
-			    memcpy(g_stagingData, textureData.data() + sizeof(Header), textureData.size() - sizeof(Header));
+			    Core::BinaryReader reader;
+			    reader.Data = textureData.data();
 
-			    Header header = g_textureSets[set].m_headers[slot];
-			    Commands::TransitionToDst(a_buffer, g_textureSets[set].m_images[slot], vk::Format::eBc7SrgbBlock);
-			    Commands::CopyBufferToImg(a_buffer, g_stagingBuffer, g_textureSets[set].m_images[slot],
-			                              {header.Width, header.Height});
-			    Commands::TransitionToGraphicsQueue(a_buffer, g_textureSets[set].m_images[slot]);
+			    Header header;
+			    Core::Read(reader, header);
+
+			    Commands::TransitionToDst(a_buffer, g_textureSets[set].m_images[slot], vk::Format::eBc7SrgbBlock,
+			                              header.Frames);
+			    for(uint32_t i = 0; i < header.Frames; ++i) {
+				    vector<byte> compressedData;
+				    Core::Read(reader, compressedData);
+
+				    vector<byte> uncompressedData =
+				        DataCompression::Decompress(compressedData.data(), (uint32_t)compressedData.size());
+
+				    memcpy(g_stagingData, uncompressedData.data(), uncompressedData.size());
+
+				    Commands::CopyBufferToImg(a_buffer, g_stagingBuffer, g_textureSets[set].m_images[slot],
+				                              {header.Width, header.Height}, i);
+			    }
+			    Commands::TransitionToGraphicsQueue(a_buffer, g_textureSets[set].m_images[slot], header.Frames);
 
 			    return []() {};
 		    }));
