@@ -38,6 +38,8 @@ set(SRCS
     ${root}/src/vulkan/Commands.cpp
     ${root}/src/Pipeline.h
     ${root}/src/vulkan/Pipeline.cpp
+    ${root}/src/shaders/Simple.h
+    ${root}/src/shaders/Simple.cpp
 )
 
 set(BUILD
@@ -97,9 +99,6 @@ set(SRCS
 set(TEST_DATA
   ${root}/tests/data/simple.vert
   ${root}/tests/data/simple.frag
-  ${root}/tests/data/simple.crsm
-  ${root}/tests/data/BonusHarrySelect.crtexd
-  ${root}/tests/data/CompletionScreen.crtexd
 )
 
 add_executable(graphics_tests
@@ -127,13 +126,27 @@ target_link_libraries(graphics_tests
 	glfw
 )
 
+add_dependencies(embed shadercompiler)
+add_dependencies(graphics embed shadercompiler)
+add_dependencies(graphics_tests TextureProcessor)
+
 add_custom_command(TARGET graphics_tests POST_BUILD        
 COMMAND ${CMAKE_COMMAND} -E copy_if_different  
 	"${glfw_dll}"
 	$<TARGET_FILE_DIR:graphics_tests>)
-	
-add_custom_command(TARGET graphics_tests POST_BUILD        
-COMMAND ${CMAKE_COMMAND} -E copy_if_different  
-	${TEST_DATA}
-	$<TARGET_FILE_DIR:graphics_tests>)
 
+add_custom_command(TARGET shadercompiler POST_BUILD
+    COMMAND $<TARGET_FILE:shadercompiler> -v ${root}/tests/data/simple.vert -f ${root}/tests/data/simple.frag -o ${CMAKE_CURRENT_BINARY_DIR}/generated/simple.crsm
+)
+
+add_custom_command(TARGET embed POST_BUILD
+    COMMAND $<TARGET_FILE:embed> -i ${CMAKE_CURRENT_BINARY_DIR}/generated/simple.crsm -o ${root}/src/shaders/Simple
+)
+
+add_custom_command(TARGET graphics_tests POST_BUILD
+    COMMAND $<TARGET_FILE:TextureProcessor> -i ${root}/tests/data/CompletionScreen -o $<TARGET_FILE_DIR:graphics_tests>/CompletionScreen -p
+)
+
+add_custom_command(TARGET graphics_tests POST_BUILD
+    COMMAND $<TARGET_FILE:TextureProcessor> -i ${root}/tests/data/BonusHarrySelect -o $<TARGET_FILE_DIR:graphics_tests>/BonusHarrySelect -p
+)
