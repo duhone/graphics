@@ -59,8 +59,7 @@ void Commands::BindDescriptorSet(CommandBuffer& a_cmdBuffer, const Pipeline& a_p
 	vkcmd->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, a_pipeline.GetLayout(), 0, 1, &a_set, 1, &a_offset);
 }
 
-void Commands::TransitionToDst(CommandBuffer& a_cmdBuffer, const vk::Image& a_image, vk::Format a_format,
-                               uint32_t a_layerCount) {
+void Commands::TransitionToDst(CommandBuffer& a_cmdBuffer, const vk::Image& a_image, uint32_t a_layerCount) {
 	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
 
 	vk::ImageMemoryBarrier barrier;

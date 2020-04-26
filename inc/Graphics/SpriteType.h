@@ -18,7 +18,7 @@ namespace CR::Graphics {
 
 	struct SpriteTypeCreateInfo {
 		std::string Name;
-		Core::Span<std::byte> ShaderModule;    // crsm file
+		Core::Span<const std::byte> ShaderModule;    // crsm file
 	};
 	// The number of sprite types has the largest impact on performance of your app,
 	// try to keep the number of types as small as possible

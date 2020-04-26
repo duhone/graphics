@@ -12,7 +12,7 @@
 #include "core/algorithm.h"
 #include "core/literals.h"
 
-#include "tsl/robin_map.h"
+#include <3rdParty/robinmap.h>
 
 #include <bitset>
 #include <unordered_map>
@@ -139,10 +139,10 @@ void Graphics::TextureSets::CheckLoadingTasks(CommandBuffer& a_cmdBuffer) {
 }
 
 TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_textures) {
-	if(a_textures.size() > c_maxTexturesPerSet) {
-		Core::Log::Fail("Texture Sets have a maximum size of {}. {} were requested", c_maxTexturesPerSet,
-		                a_textures.size());
-	}
+	Core::Log::Require(a_textures.size() <= c_maxTexturesPerSet,
+	                   "Texture Sets have a maximum size of {}. {} was requested", c_maxTexturesPerSet,
+	                   a_textures.size());
+
 	uint16_t set = c_maxTextureSets;
 	for(uint16_t i = 0; i < c_maxTextureSets; ++i) {
 		if(!g_used[i]) {
@@ -150,7 +150,7 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 			break;
 		}
 	}
-	if(set == c_maxTextureSets) { Core::Log::Fail("Ran out of available texture sets"); }
+	Core::Log::Require(set != c_maxTextureSets, "Ran out of available texture sets");
 
 	g_used[set] = true;
 
@@ -177,24 +177,24 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 				break;
 			}
 		}
-		if(descSlot == c_maxTextures) { Core::Log::Fail("Ran out of available texture descriptor slots"); }
+		Core::Log::Require(descSlot != c_maxTextures, "Ran out of available texture descriptor slots");
 
 		vector<byte> textureData;
 		textureData.insert(begin(textureData), a_textures[slot].TextureData.data(),
 		                   a_textures[slot].TextureData.data() + a_textures[slot].TextureData.size());
-		if(textureData.size() < sizeof(Header)) { Core::Log::Fail("corrupt crtex file {}", a_textures[slot].Name); }
-		if(textureData.size() > c_maxStagingTextureSize) {
-			Core::Log::Fail("texture is too large {}", a_textures[slot].Name);
-		}
+		Core::Log::Require(textureData.size() >= sizeof(Header), "corrupt crtex file {}", a_textures[slot].Name);
+
+		Core::Log::Require(textureData.size() <= c_maxStagingTextureSize, "texture is too large {}",
+		                   a_textures[slot].Name);
+
 		Header& header = g_textureSets[set].m_headers.emplace_back();
 		memcpy(&header, textureData.data(), sizeof(Header));
-		if(header.FourCC != Header::c_FourCC) { Core::Log::Fail("texture is not a crtexd fourcc is wrong"); }
-		if(header.Version != Header::c_Version) {
-			Core::Log::Fail("texture is not the correct version, rebuild the texture");
-		}
+		Core::Log::Require(header.FourCC == Header::c_FourCC, "texture is not a crtexd fourcc is wrong");
+		Core::Log::Require(header.Version == Header::c_Version,
+		                   "texture is not the correct version, rebuild the texture");
 
 		g_textureSets[set].m_names.push_back(a_textures[slot].Name);
-		g_lookup.emplace(a_textures[slot].Name, CalcID(set, slot));
+		g_lookup.emplace(a_textures[slot].Name, CalcID(set, (uint16_t)slot));
 
 		vk::ImageCreateInfo createInfo;
 		createInfo.extent.width  = header.Width;
@@ -254,18 +254,17 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 
 			    {
 				    CommandBuffer& cmdBuffer = getCmdBuffer();
-				    Commands::TransitionToDst(cmdBuffer, g_textureSets[set].m_images[slot], vk::Format::eBc7SrgbBlock,
-				                              header.Frames);
+				    Commands::TransitionToDst(cmdBuffer, g_textureSets[set].m_images[slot], header.Frames);
 				    submit();
 			    }
 			    for(uint32_t i = 0; i < header.Frames; ++i) {
 				    CommandBuffer& cmdBuffer = getCmdBuffer();
 
-				    vector<byte> compressedData;
+				    std::vector<std::byte> compressedData;
 				    Core::Read(reader, compressedData);
 
-				    vector<byte> uncompressedData =
-				        DataCompression::Decompress(compressedData.data(), (uint32_t)compressedData.size());
+				    Core::storage_buffer<byte> uncompressedData = DataCompression::Decompress(
+				        CR::Core::Span<const byte>(compressedData.data(), compressedData.size()));
 
 				    memcpy(g_stagingData, uncompressedData.data(), uncompressedData.size());
 
@@ -333,7 +332,8 @@ void TextureSets::GetImageData(std::vector<vk::ImageView>& a_images, std::vector
 
 uint16_t TextureSets::GetTextureIndex(const char* a_textureName) {
 	auto texIter = g_lookup.find(a_textureName);
-	if(texIter == g_lookup.end()) { Core::Log::Fail("Requested a texture {} that hasn't been loaded", a_textureName); }
+	Core::Log::Assert(texIter != g_lookup.end(), "Requested a texture {} that hasn't been loaded", a_textureName);
+
 	return texIter->second;
 }
 

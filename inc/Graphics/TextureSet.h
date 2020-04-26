@@ -28,7 +28,7 @@ namespace CR::Graphics {
 
 	struct TextureCreateInfo {
 		std::string Name;
-		Core::Span<std::byte> TextureData;    // crtex file
+		Core::Span<const std::byte> TextureData;    // crtex file
 	};
 	TextureSet CreateTextureSet(const Core::Span<TextureCreateInfo> a_textures);
 

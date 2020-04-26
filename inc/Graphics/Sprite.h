@@ -2,8 +2,7 @@
 
 #include "Graphics/SpriteTemplate.h"
 
-#include "glm/vec2.hpp"
-#include "glm/vec4.hpp"
+#include <3rdParty/glm.h>
 
 #include <memory>
 #include <string>

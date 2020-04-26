@@ -18,9 +18,8 @@ SpriteManager::SpriteManager() {
 }
 
 SpriteManager::~SpriteManager() {
-	if(m_spriteTypes.Used.any()) {
-		Core::Log::Fail("not all sprite types were deleted when shutting down the graphics engine");
-	}
+	Core::Log::Assert(!m_spriteTypes.Used.any(),
+	                  "not all sprite types were deleted when shutting down the graphics engine");
 }
 
 uint8_t SpriteManager::CreateType(const std::string_view a_name, Pipeline&& a_pipeline) {
@@ -31,7 +30,8 @@ uint8_t SpriteManager::CreateType(const std::string_view a_name, Pipeline&& a_pi
 			break;
 		}
 	}
-	if(result == m_spriteTypes.Used.size()) { Core::Log::Fail("Ran out of available sprite types"); }
+	Core::Log::Require(result != m_spriteTypes.Used.size(), "Ran out of available sprite types");
+
 	m_spriteTypes.Used[result]           = true;
 	m_spriteTypes.Names[result]          = a_name;
 	m_spriteTypes.Pipelines[result]      = move(a_pipeline);
@@ -61,7 +61,8 @@ uint8_t SpriteManager::CreateTemplate(const std::string_view a_name, std::shared
 			break;
 		}
 	}
-	if(result == (typeIndex + 1) * SpriteTemplatesPerType) { Core::Log::Fail("Ran out of available sprite templates"); }
+	Core::Log::Require(result != (typeIndex + 1) * SpriteTemplatesPerType, "Ran out of available sprite templates");
+
 	m_spriteTemplates.Used[result]        = true;
 	m_spriteTemplates.Names[result]       = a_name;
 	m_spriteTemplates.TypeIndices[result] = (uint8_t)typeIndex;
@@ -89,7 +90,8 @@ uint16_t SpriteManager::CreateSprite(const std::string_view a_name, std::shared_
 			break;
 		}
 	}
-	if(result == (templateIndex + 1) * SpritesPerTemplate) { Core::Log::Fail("Ran out of available sprites"); }
+	Core::Log::Assert(result != (templateIndex + 1) * SpritesPerTemplate, "Ran out of available sprites");
+
 	m_sprites.Used[result]            = true;
 	m_sprites.Names[result]           = a_name;
 	m_sprites.TemplateIndices[result] = (uint8_t)templateIndex;

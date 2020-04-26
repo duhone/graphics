@@ -8,8 +8,7 @@
 #include "Pipeline.h"
 #include "UniformBufferDynamic.h"
 
-#include "glm/vec2.hpp"
-#include "glm/vec4.hpp"
+#include <3rdParty/glm.h>
 
 #include <bitset>
 #include <limits>

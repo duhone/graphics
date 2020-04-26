@@ -5,7 +5,7 @@
 #include "vulkan/vulkan.hpp"
 #include <windows.h>
 
-#include "glm/vec2.hpp"
+#include <3rdParty/glm.h>
 
 #include <functional>
 

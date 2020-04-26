@@ -1,4 +1,4 @@
-﻿#include "catch.hpp"
+﻿#include <3rdParty/doctest.h>
 
 #include "Graphics/Engine.h"
 #include "Graphics/SpriteType.h"
@@ -11,11 +11,11 @@ using namespace CR;
 using namespace CR::Graphics;
 using namespace std;
 
-TEST_CASE_METHOD(TestFixture, "sprite_type_basic", "") {
-	auto crsm = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "simple.crsm");
+TEST_CASE_FIXTURE(TestFixture, "sprite_type_basic") {
+	Platform::MemoryMappedFile crsm(Platform::GetCurrentProcessPath() / "simple.crsm");
 	SpriteTypeCreateInfo info;
 	info.Name         = "sprite type";
-	info.ShaderModule = Core::Span<byte>{crsm->data(), crsm->size()};
+	info.ShaderModule = Core::Span<const byte>{crsm.data(), crsm.size()};
 
 	auto spriteType = CreateSpriteType(info);
 }

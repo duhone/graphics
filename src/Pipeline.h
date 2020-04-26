@@ -12,7 +12,7 @@
 
 namespace CR::Graphics {
 	struct CreatePipelineArgs {
-		Core::Span<std::byte> ShaderModule;    // crsm file
+		Core::Span<const std::byte> ShaderModule;    // crsm file
 	};
 
 	struct Pipeline {

@@ -2,8 +2,7 @@
 
 #include "Graphics/Engine.h"
 
-#include "GLFW/glfw3.h"
-#include "GLFW/glfw3native.h"
+#include <3rdParty/glfw.h>
 
 class TestFixture {
   protected:

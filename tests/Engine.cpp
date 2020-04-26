@@ -1,4 +1,4 @@
-#include "catch.hpp"
+﻿#include <3rdParty/doctest.h>
 
 #include "TestFixture.h"
 
@@ -6,4 +6,4 @@
 
 using namespace CR::Graphics;
 
-TEST_CASE_METHOD(TestFixture, "engine creation/destruction", "") {}
+TEST_CASE_FIXTURE(TestFixture, "engine creation/destruction") {}

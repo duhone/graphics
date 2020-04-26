@@ -12,7 +12,7 @@ using namespace CR;
 using namespace CR::Graphics;
 
 Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
-	auto crsm = DataCompression::Decompress(a_args.ShaderModule.data(), (uint32_t)a_args.ShaderModule.size());
+	auto crsm = DataCompression::Decompress(a_args.ShaderModule);
 
 	auto& device = GetDevice();
 	struct Header {

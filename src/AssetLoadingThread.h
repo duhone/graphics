@@ -2,7 +2,7 @@
 
 #include "vulkan/EngineInternal.h"
 
-#include "function2/function2.hpp"
+#include <3rdParty/function2.h>
 
 #include <future>
 #include <memory>

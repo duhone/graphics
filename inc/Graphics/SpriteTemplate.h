@@ -2,7 +2,7 @@
 
 #include "Graphics/SpriteType.h"
 
-#include "glm/vec2.hpp"
+#include <3rdParty/glm.h>
 
 #include <memory>
 

@@ -222,7 +222,7 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 			m_PresentationQueueIndex = -1;
 		}
 	}
-	if(!foundDevice) { Log::Fail("Could not find a valid vulkan 1.2 graphics device"); }
+	Log::Require(foundDevice, "Could not find a valid vulkan 1.2 graphics device");
 
 	vector<string> enabledDeviceLayers;
 	if(a_settings.EnableDebug) {

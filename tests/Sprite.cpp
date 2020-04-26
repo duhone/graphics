@@ -1,4 +1,4 @@
-﻿#include "catch.hpp"
+﻿#include <3rdParty/doctest.h>
 
 #include "Graphics/Engine.h"
 #include "Graphics/Sprite.h"
@@ -11,20 +11,20 @@ using namespace CR;
 using namespace CR::Graphics;
 using namespace std;
 
-TEST_CASE_METHOD(TestFixture, "sprites_basic", "") {
-	auto crtexHarry = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "BonusHarrySelect.crtexd");
-	auto crtexComp  = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "CompletionScreen.crtexd");
+TEST_CASE_FIXTURE(TestFixture, "sprites_basic") {
+	Platform::MemoryMappedFile crtexHarry(Platform::GetCurrentProcessPath() / "BonusHarrySelect.crtexd");
+	Platform::MemoryMappedFile crtexComp = (Platform::GetCurrentProcessPath() / "CompletionScreen.crtexd");
 	TextureCreateInfo texInfo[2];
-	texInfo[0].TextureData = Core::Span<byte>{crtexHarry->data(), crtexHarry->size()};
+	texInfo[0].TextureData = Core::Span<const byte>{crtexHarry.data(), crtexHarry.size()};
 	texInfo[0].Name        = "bonus_harry";
-	texInfo[1].TextureData = Core::Span<byte>{crtexComp->data(), crtexComp->size()};
+	texInfo[1].TextureData = Core::Span<const byte>{crtexComp.data(), crtexComp.size()};
 	texInfo[1].Name        = "completion_screen";
 	TextureSet texSet      = CreateTextureSet(texInfo);
 
-	auto crsm = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "simple.crsm");
+	Platform::MemoryMappedFile crsm(Platform::GetCurrentProcessPath() / "simple.crsm");
 	SpriteTypeCreateInfo info;
 	info.Name         = "sprite type";
-	info.ShaderModule = Core::Span<byte>{crsm->data(), crsm->size()};
+	info.ShaderModule = Core::Span<const byte>{crsm.data(), crsm.size()};
 
 	auto spriteType = CreateSpriteType(info);
 

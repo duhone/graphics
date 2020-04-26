@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "glm/vec4.hpp"
+#include <3rdParty/glm.h>
 
 #include <functional>
 #include <optional>

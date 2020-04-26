@@ -1,4 +1,4 @@
-﻿#include "catch.hpp"
+﻿#include <3rdParty/doctest.h>
 
 #include "Graphics/Engine.h"
 #include "Graphics/TextureSet.h"
@@ -11,13 +11,13 @@ using namespace CR;
 using namespace CR::Graphics;
 using namespace std;
 
-TEST_CASE_METHOD(TestFixture, "texture_set", "") {
-	auto crtexSpencer = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "BonusHarrySelect.crtexd");
-	auto crtexComp    = Platform::OpenMMapFile(Platform::GetCurrentProcessPath() / "CompletionScreen.crtexd");
+TEST_CASE_FIXTURE(TestFixture, "texture_set") {
+	Platform::MemoryMappedFile crtexSpencer(Platform::GetCurrentProcessPath() / "BonusHarrySelect.crtexd");
+	Platform::MemoryMappedFile crtexComp(Platform::GetCurrentProcessPath() / "CompletionScreen.crtexd");
 	TextureCreateInfo texInfo[2];
-	texInfo[0].TextureData = Core::Span<byte>{crtexSpencer->data(), crtexSpencer->size()};
+	texInfo[0].TextureData = Core::Span<const byte>{crtexSpencer.data(), crtexSpencer.size()};
 	texInfo[0].Name        = "spencer_walk";
-	texInfo[1].TextureData = Core::Span<byte>{crtexComp->data(), crtexComp->size()};
+	texInfo[1].TextureData = Core::Span<const byte>{crtexComp.data(), crtexComp.size()};
 	texInfo[1].Name        = "completion_screen";
 	TextureSet texSet      = CreateTextureSet({texInfo, 2});
 }
