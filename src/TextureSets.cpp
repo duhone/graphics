@@ -248,6 +248,7 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 		    [textureData = move(textureDataList[slot]), set, slot](auto getCmdBuffer, auto submit) {
 			    Core::BinaryReader reader;
 			    reader.Data = textureData.data();
+			    reader.Size = (uint32_t)textureData.size();
 
 			    Header header;
 			    Core::Read(reader, header);
