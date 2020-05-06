@@ -13,12 +13,7 @@ using namespace CR::Graphics;
 using namespace std;
 
 TEST_CASE_FIXTURE(TestFixture, "sprite_template_basic") {
-	Platform::MemoryMappedFile crsm(Platform::GetCurrentProcessPath() / "simple.crsm");
-	SpriteTypeCreateInfo info;
-	info.Name         = "sprite type";
-	info.ShaderModule = Core::Span<const byte>{crsm.data(), crsm.size()};
-
-	auto spriteType = CreateSpriteType(info);
+	auto spriteType = CreateSpriteType();
 
 	SpriteTemplateCreateInfo templateInfo;
 	templateInfo.Name      = "test template";

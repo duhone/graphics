@@ -6,6 +6,8 @@
 #include "core/Log.h"
 #include "core/literals.h"
 
+#include "shaders/Simple.h"
+
 using namespace std;
 using namespace CR;
 using namespace CR::Core;
@@ -17,11 +19,11 @@ SpriteTypeImpl::~SpriteTypeImpl() {
 	GetSpriteManager().FreeType(m_index);
 }
 
-std::shared_ptr<Graphics::SpriteType> Graphics::CreateSpriteType(const SpriteTypeCreateInfo& a_info) {
+std::shared_ptr<Graphics::SpriteType> Graphics::CreateSpriteType() {
 	CreatePipelineArgs info;
-	info.ShaderModule = a_info.ShaderModule;
+	info.ShaderModule = CR::embed::GetSimple();
 
 	Pipeline pipeline{info};
-	auto typeIndex = GetSpriteManager().CreateType(a_info.Name, move(pipeline));
+	auto typeIndex = GetSpriteManager().CreateType("simple", move(pipeline));
 	return make_shared<Graphics::SpriteTypeImpl>(typeIndex);
 }

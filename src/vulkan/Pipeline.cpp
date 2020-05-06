@@ -5,6 +5,7 @@
 #include "TextureSets.h"
 
 #include "DataCompression/LosslessCompression.h"
+#include "core/BinaryStream.h"
 #include "core/Span.h"
 
 using namespace std;
@@ -12,18 +13,38 @@ using namespace CR;
 using namespace CR::Graphics;
 
 Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
-	auto crsm = DataCompression::Decompress(a_args.ShaderModule);
-
 	auto& device = GetDevice();
+#pragma pack(1)
+	static const uint32_t c_FourCC  = 'CRSM';
+	static const uint16_t c_Version = 1;
 	struct Header {
-		uint32_t VertSize{0};
-		uint32_t FragSize{0};
+		uint32_t FourCC{c_FourCC};
+		uint16_t Version{c_Version};
+		uint16_t VertSize{0};
+		uint16_t FragSize{0};
 	};
+#pragma pack()
 	Header header;
-	memcpy(&header, crsm.data(), sizeof(Header));
+	Core::BinaryReader reader;
+	reader.Data   = a_args.ShaderModule.data();
+	reader.Offset = 0;
+	reader.Size   = (uint32_t)a_args.ShaderModule.size();
 
-	Core::Span<byte> vertShader{crsm.data() + sizeof(Header), header.VertSize};
-	Core::Span<byte> fragShader{crsm.data() + sizeof(Header) + header.VertSize, header.FragSize};
+	Core::Read(reader, header);
+	Core::Log::Require(header.FourCC == c_FourCC, "Shader is not a crsm file");
+	Core::Log::Require(header.Version == c_Version, "Shader module is wrong version, must be version 1");
+
+	// header holds the uncompressed size, the compressed size is stored right before the buffer
+	uint32_t bufferSize = 0;
+	Core::Read(reader, bufferSize);
+
+	auto vertShader = DataCompression::Decompress(Core::Span{reader.Data + reader.Offset, bufferSize});
+	reader.Offset += bufferSize;
+	Core::Log::Require(header.VertSize == vertShader.size(), "corrupt shader module file");
+
+	Core::Read(reader, bufferSize);
+	auto fragShader = DataCompression::Decompress(Core::Span{reader.Data + reader.Offset, bufferSize});
+	Core::Log::Require(header.FragSize == fragShader.size(), "corrupt shader module file");
 
 	vk::ShaderModuleCreateInfo vertInfo;
 	vertInfo.pCode    = (uint32_t*)vertShader.data();

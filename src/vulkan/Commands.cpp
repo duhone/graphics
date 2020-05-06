@@ -94,8 +94,8 @@ void Commands::CopyBufferToImg(CommandBuffer& a_cmdBuffer, const vk::Buffer& a_b
 	cpy.imageSubresource.baseArrayLayer = layer;
 	cpy.imageSubresource.layerCount     = 1;
 	cpy.imageSubresource.mipLevel       = 0;
-	cpy.imageOffset                     = {0, 0, 0};
-	cpy.imageExtent                     = {a_extent.x, a_extent.y, 1};
+	cpy.imageOffset                     = vk::Offset3D{0, 0, 0};
+	cpy.imageExtent                     = vk::Extent3D{a_extent.x, a_extent.y, 1};
 
 	vkcmd->copyBufferToImage(a_buffer, a_image, layout, cpy);
 }

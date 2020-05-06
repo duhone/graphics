@@ -21,12 +21,7 @@ TEST_CASE_FIXTURE(TestFixture, "sprites_basic") {
 	texInfo[1].Name        = "completion_screen";
 	TextureSet texSet      = CreateTextureSet(texInfo);
 
-	Platform::MemoryMappedFile crsm(Platform::GetCurrentProcessPath() / "simple.crsm");
-	SpriteTypeCreateInfo info;
-	info.Name         = "sprite type";
-	info.ShaderModule = Core::Span<const byte>{crsm.data(), crsm.size()};
-
-	auto spriteType = CreateSpriteType(info);
+	auto spriteType = CreateSpriteType();
 
 	SpriteTemplateCreateInfo templateInfoComp;
 	templateInfoComp.Name      = "comp template";
