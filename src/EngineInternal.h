@@ -10,7 +10,7 @@
 #include <functional>
 
 namespace CR::Graphics {
-	class SpriteManager;
+	class SpriteManagerBasic;
 
 	vk::Device& GetDevice();
 	uint32_t GetDeviceMemoryIndex();
@@ -24,7 +24,7 @@ namespace CR::Graphics {
 	vk::Queue& GetTransferQueue();
 
 	const glm::ivec2& GetWindowSize();
-	SpriteManager& GetSpriteManager();
+	SpriteManagerBasic& GetSpriteManagerBasic();
 
 	void ExecuteNextFrame(std::function<void()> a_func);
 }    // namespace CR::Graphics

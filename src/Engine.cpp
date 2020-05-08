@@ -5,7 +5,7 @@
 #include "Commands.h"
 #include "DescriptorPool.h"
 #include "EngineInternal.h"
-#include "SpriteManager.h"
+#include "SpriteManagerBasic.h"
 #include "TextureSets.h"
 
 #include "core/Log.h"
@@ -68,7 +68,7 @@ namespace {
 
 		std::unique_ptr<CommandPool> m_commandPool;
 
-		std::unique_ptr<SpriteManager> m_spriteManager;
+		std::unique_ptr<SpriteManagerBasic> m_spriteManagerBasic;
 
 		// Per frame members
 		uint32_t m_currentFrameBuffer{0};
@@ -464,7 +464,7 @@ void Graphics::CreateEngine(const EngineSettings& a_settings) {
 	DescriptorPoolInit();
 	AssetLoadingThread::Init();
 	TextureSets::Init();
-	GetEngine()->m_spriteManager = make_unique<SpriteManager>();
+	GetEngine()->m_spriteManagerBasic = make_unique<SpriteManagerBasic>();
 }
 
 void Graphics::Frame() {
@@ -481,14 +481,14 @@ void Graphics::Frame() {
 	engine->m_Device.waitForFences(1, &engine->m_frameFence, true, UINT64_MAX);
 	engine->m_Device.resetFences(1, &engine->m_frameFence);
 
-	engine->m_spriteManager->Frame();
+	engine->m_spriteManagerBasic->Frame();
 
 	engine->m_commandBuffer = engine->m_commandPool->CreateCommandBuffer();
 
 	engine->m_commandBuffer->Begin();
 	TextureSets::CheckLoadingTasks(*engine->m_commandBuffer.get());
 	Commands::RenderPassBegin(*engine->m_commandBuffer.get(), engine->m_clearColor);
-	engine->m_spriteManager->Draw(*engine->m_commandBuffer.get());
+	engine->m_spriteManagerBasic->Draw(*engine->m_commandBuffer.get());
 	Commands::RenderPassEnd(*engine->m_commandBuffer.get());
 	engine->m_commandBuffer->End();
 
@@ -520,7 +520,7 @@ void Graphics::ShutdownEngine() {
 	GetEngine()->ExecutePending();
 	GetEngine()->m_commandBuffer.reset();
 	GetEngine()->m_commandPool.reset();
-	GetEngine()->m_spriteManager.reset();
+	GetEngine()->m_spriteManagerBasic.reset();
 	TextureSets::Shutdown();
 	DescriptorPoolDestroy();
 	GetEngine().reset();
@@ -571,9 +571,9 @@ const vk::Framebuffer& Graphics::GetFrameBuffer() {
 	return GetEngine()->m_frameBuffers[GetEngine()->m_currentFrameBuffer];
 }
 
-SpriteManager& Graphics::GetSpriteManager() {
+SpriteManagerBasic& Graphics::GetSpriteManagerBasic() {
 	assert(GetEngine().get());
-	return *GetEngine()->m_spriteManager.get();
+	return *GetEngine()->m_spriteManagerBasic.get();
 }
 
 void Graphics::ExecuteNextFrame(std::function<void()> a_func) {

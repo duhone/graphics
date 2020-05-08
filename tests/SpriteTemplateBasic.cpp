@@ -1,8 +1,7 @@
 ﻿#include <3rdParty/doctest.h>
 
 #include "Graphics/Engine.h"
-#include "Graphics/SpriteTemplate.h"
-#include "Graphics/SpriteType.h"
+#include "Graphics/SpriteTemplateBasic.h"
 #include "Platform/MemoryMappedFile.h"
 #include "Platform/PathUtils.h"
 
@@ -13,11 +12,8 @@ using namespace CR::Graphics;
 using namespace std;
 
 TEST_CASE_FIXTURE(TestFixture, "sprite_template_basic") {
-	auto spriteType = CreateSpriteType();
-
-	SpriteTemplateCreateInfo templateInfo;
+	SpriteTemplateBasicCreateInfo templateInfo;
 	templateInfo.Name      = "test template";
-	templateInfo.Type      = spriteType;
 	templateInfo.FrameSize = {64, 64};
-	auto spriteTemplate    = CreateSpriteTemplate(templateInfo);
+	auto spriteTemplate    = CreateSpriteTemplateBasic(templateInfo);
 }

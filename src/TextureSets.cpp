@@ -3,8 +3,8 @@
 #include "AssetLoadingThread.h"
 #include "Commands.h"
 #include "Constants.h"
+#include "EngineInternal.h"
 #include "TextureSets.h"
-#include "vulkan/EngineInternal.h"
 
 #include "DataCompression/LosslessCompression.h"
 #include "core/BinaryStream.h"

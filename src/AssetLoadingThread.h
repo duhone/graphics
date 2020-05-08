@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "vulkan/EngineInternal.h"
+#include "EngineInternal.h"
 
 #include <3rdParty/function2.h>
 

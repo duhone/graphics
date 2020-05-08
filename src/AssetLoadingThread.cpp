@@ -1,7 +1,7 @@
 ﻿#include "AssetLoadingThread.h"
 
 #include "CommandPool.h"
-#include "vulkan/EngineInternal.h"
+#include "EngineInternal.h"
 
 #include <deque>
 #include <future>

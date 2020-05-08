@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "CommandPool.h"
-#include "vulkan/EngineInternal.h"
+#include "EngineInternal.h"
 
 #include <string_view>
 #include <vector>

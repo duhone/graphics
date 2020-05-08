@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Graphics/SpriteTemplate.h"
+#include "Graphics/SpriteTemplateBasic.h"
 
 #include <3rdParty/glm.h>
 
@@ -8,12 +8,12 @@
 #include <string>
 
 namespace CR::Graphics {
-	class Sprite {
+	class SpriteBasic {
 	  public:
-		Sprite()              = default;
-		virtual ~Sprite()     = default;
-		Sprite(const Sprite&) = delete;
-		Sprite& operator=(const Sprite&) = delete;
+		SpriteBasic()                   = default;
+		virtual ~SpriteBasic()          = default;
+		SpriteBasic(const SpriteBasic&) = delete;
+		SpriteBasic& operator=(const SpriteBasic&) = delete;
 
 		enum class eFrameRate { None, FPS10, FPS12, FPS15, FPS20, FPS30, FPS60 };
 		struct Props {
@@ -24,10 +24,10 @@ namespace CR::Graphics {
 		virtual void SetProps(const Props& a_props) = 0;
 	};
 
-	struct SpriteCreateInfo {
+	struct SpriteBasicCreateInfo {
 		std::string Name;
-		std::shared_ptr<SpriteTemplate> Template;
+		std::shared_ptr<SpriteTemplateBasic> Template;
 		std::string TextureName;
 	};
-	std::unique_ptr<Sprite> CreateSprite(const SpriteCreateInfo& a_info);
+	std::unique_ptr<SpriteBasic> CreateSpriteBasic(const SpriteBasicCreateInfo& a_info);
 }    // namespace CR::Graphics

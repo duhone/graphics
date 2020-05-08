@@ -1,6 +1,6 @@
 ﻿#include "Pipeline.h"
 
-#include "../Constants.h"
+#include "Constants.h"
 #include "EngineInternal.h"
 #include "TextureSets.h"
 

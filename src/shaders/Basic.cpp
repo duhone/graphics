@@ -1,8 +1,8 @@
-#include "Simple.h"
+#include "Basic.h"
 
 #include <core/Span.h>
 
-const CR::Core::Span<const std::byte> CR::embed::GetSimple(){
+const CR::Core::Span<const std::byte> CR::embed::GetBasic(){
 	static const std::byte data[] = {
 		std::byte(0x4d), std::byte(0x53), std::byte(0x52), std::byte(0x43), std::byte(0x1), std::byte(0x0), std::byte(0xf4), std::byte(0xb), std::byte(0xb4), std::byte(0x4), std::byte(0x77), std::byte(0x4), std::byte(0x0), std::byte(0x0), std::byte(0x46), std::byte(0x43), std::byte(0x52), std::byte(0x43), 
 		std::byte(0x2), std::byte(0x0), std::byte(0x0), std::byte(0x0), std::byte(0xf4), std::byte(0xb), std::byte(0x0), std::byte(0x0), std::byte(0x67), std::byte(0x4), std::byte(0x0), std::byte(0x0), std::byte(0x28), std::byte(0xb5), std::byte(0x2f), std::byte(0xfd), std::byte(0x60), std::byte(0xf4), 

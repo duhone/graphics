@@ -7,9 +7,8 @@ find_package(Vulkan REQUIRED)
 ###############################################
 set(PUBLIC_HDRS
     ${root}/inc/Graphics/Engine.h
-    ${root}/inc/Graphics/Sprite.h
-    ${root}/inc/Graphics/SpriteType.h
-    ${root}/inc/Graphics/SpriteTemplate.h
+    ${root}/inc/Graphics/SpriteBasic.h
+    ${root}/inc/Graphics/SpriteTemplateBasic.h
     ${root}/inc/Graphics/TextureSet.h
 )
 
@@ -22,24 +21,24 @@ set(SRCS
     ${root}/src/DescriptorPool.h
     ${root}/src/DescriptorPool.cpp
     ${root}/src/UniformBufferDynamic.h
-    ${root}/src/Sprite.cpp
-    ${root}/src/SpriteTypeImpl.h
-    ${root}/src/SpriteType.cpp
-    ${root}/src/SpriteTemplateImpl.h
-    ${root}/src/SpriteTemplate.cpp
-    ${root}/src/SpriteManager.h
-    ${root}/src/SpriteManager.cpp
+    ${root}/src/SpriteBasic.cpp
+    ${root}/src/SpriteTemplateBasicImpl.h
+    ${root}/src/SpriteTemplateBasic.cpp
+    ${root}/src/SpriteManagerBasic.h
+    ${root}/src/SpriteManagerBasic.cpp
     ${root}/src/TextureSets.h
     ${root}/src/TextureSets.cpp
-    ${root}/src/vulkan/EngineInternal.h
-    ${root}/src/vulkan/Engine.cpp
-    ${root}/src/vulkan/UniformBufferDynamic.cpp
-    ${root}/src/vulkan/CommandPool.cpp
-    ${root}/src/vulkan/Commands.cpp
+    ${root}/src/EngineInternal.h
+    ${root}/src/Engine.cpp
+    ${root}/src/UniformBufferDynamic.cpp
+    ${root}/src/CommandPool.cpp
+    ${root}/src/Commands.cpp
     ${root}/src/Pipeline.h
-    ${root}/src/vulkan/Pipeline.cpp
-    ${root}/src/shaders/Simple.h
-    ${root}/src/shaders/Simple.cpp
+    ${root}/src/Pipeline.cpp
+    ${root}/src/shaders/Basic.h
+    ${root}/src/shaders/Basic.cpp
+    ${root}/src/shaders/Basic.vert
+    ${root}/src/shaders/Basic.frag
 )
 
 set(BUILD
@@ -49,6 +48,7 @@ set(BUILD
 add_library(graphics OBJECT  
 	${PUBLIC_HDRS} 
 	${SRCS} 
+	${SRCS_SHADERS} 
 	${BUILD}
 )
 	
@@ -79,8 +79,7 @@ target_link_libraries(graphics PUBLIC
 	glm
     function2
 )
-	
-				
+					
 ###############################################
 #unit tests
 ###############################################
@@ -91,25 +90,16 @@ set(SRCS
   ${root}/tests/UniformBufferDynamic.cpp
   ${root}/tests/TextureSet.cpp
   ${root}/tests/FrameBuffer.cpp
-  ${root}/tests/Sprite.cpp
-  ${root}/tests/SpriteType.cpp
-  ${root}/tests/SpriteTemplate.cpp
-)
-
-set(TEST_DATA
-  ${root}/tests/data/simple.vert
-  ${root}/tests/data/simple.frag
+  ${root}/tests/SpriteBasic.cpp
+  ${root}/tests/SpriteTemplateBasic.cpp
 )
 
 add_executable(graphics_tests
 					${SRCS}
-					${TEST_DATA}
 )
 
 settingsCR(graphics_tests)
 					
-set_property(TARGET graphics_tests APPEND PROPERTY FOLDER tests)
-
 target_include_directories(graphics_tests PRIVATE
 	"${root}/src"
 )	
@@ -136,11 +126,11 @@ COMMAND ${CMAKE_COMMAND} -E copy_if_different
 	$<TARGET_FILE_DIR:graphics_tests>)
 
 add_custom_command(TARGET shadercompiler POST_BUILD
-    COMMAND $<TARGET_FILE:shadercompiler> -v ${root}/tests/data/simple.vert -f ${root}/tests/data/simple.frag -o ${CMAKE_CURRENT_BINARY_DIR}/generated/simple.crsm
+    COMMAND $<TARGET_FILE:shadercompiler> -v ${root}/src/shaders/basic.vert -f ${root}/src/shaders/basic.frag -o ${CMAKE_CURRENT_BINARY_DIR}/generated/basic.crsm
 )
 
 add_custom_command(TARGET embed POST_BUILD
-    COMMAND $<TARGET_FILE:embed> -i ${CMAKE_CURRENT_BINARY_DIR}/generated/simple.crsm -o ${root}/src/shaders/Simple
+    COMMAND $<TARGET_FILE:embed> -i ${CMAKE_CURRENT_BINARY_DIR}/generated/basic.crsm -o ${root}/src/shaders/Basic
 )
 
 add_custom_command(TARGET graphics_tests POST_BUILD
