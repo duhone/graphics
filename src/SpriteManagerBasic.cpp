@@ -27,7 +27,8 @@ SpriteManagerBasic::~SpriteManagerBasic() {
 	                  "not all sprite types were deleted when shutting down the graphics engine");
 }
 
-uint8_t SpriteManagerBasic::CreateTemplate(const std::string_view a_name, const glm::uvec2& a_frameSize) {
+uint8_t SpriteManagerBasic::CreateTemplate(const std::string_view a_name, const glm::uvec2& a_frameSize,
+                                           eFrameRate frameRate, const char* a_textureName) {
 	size_t result = MaxSpriteTemplates;
 	for(size_t i = 0; i < MaxSpriteTemplates; ++i) {
 		if(!m_spriteTemplates.Used[i]) {
@@ -37,9 +38,12 @@ uint8_t SpriteManagerBasic::CreateTemplate(const std::string_view a_name, const 
 	}
 	Core::Log::Require(result != MaxSpriteTemplates, "Ran out of available sprite templates");
 
-	m_spriteTemplates.Used[result]       = true;
-	m_spriteTemplates.Names[result]      = a_name;
-	m_spriteTemplates.FrameSizes[result] = a_frameSize;
+	m_spriteTemplates.Used[result]           = true;
+	m_spriteTemplates.Names[result]          = a_name;
+	m_spriteTemplates.FrameSizes[result]     = a_frameSize;
+	m_spriteTemplates.TextureIndices[result] = TextureSets::GetTextureIndex(a_textureName);
+	m_spriteTemplates.MaxFrames[result]      = TextureSets::GetMaxFrames(m_spriteTemplates.TextureIndices[result]);
+	m_spriteTemplates.FrameRates[result]     = frameRate;
 
 	return (uint8_t)result;
 }
@@ -51,7 +55,7 @@ void SpriteManagerBasic::FreeTemplate(uint8_t a_index) {
 }
 
 uint16_t SpriteManagerBasic::CreateSprite(const std::string_view a_name,
-                                          std::shared_ptr<SpriteTemplateBasic> a_template, const char* a_textureName) {
+                                          std::shared_ptr<SpriteTemplateBasic> a_template) {
 	uint32_t templateIndex = ((SpriteTemplateBasicImpl*)a_template.get())->GetIndex();
 
 	uint32_t result = 0;
@@ -67,9 +71,6 @@ uint16_t SpriteManagerBasic::CreateSprite(const std::string_view a_name,
 	m_sprites.Names[result]           = a_name;
 	m_sprites.TemplateIndices[result] = (uint8_t)templateIndex;
 	m_sprites.Templates[result]       = move(a_template);
-	m_sprites.TextureIndices[result]  = TextureSets::GetTextureIndex(a_textureName);
-	m_sprites.MaxFrames[result]       = TextureSets::GetMaxFrames(m_sprites.TextureIndices[result]);
-	m_sprites.FrameRates[result]      = SpriteBasic::eFrameRate::None;
 	m_sprites.CurrentFrame[result]    = 0;
 
 	return (uint16_t)result;
@@ -88,43 +89,44 @@ void SpriteManagerBasic::Frame() {
 
 	for(uint32_t sprite = 0; sprite < MaxSprites; ++sprite) {
 		if(m_sprites.Used[sprite]) {
-			switch(m_sprites.FrameRates[sprite]) {
-				case SpriteBasic::eFrameRate::None:
+			auto& templIndex = m_sprites.TemplateIndices[sprite];
+			switch(m_spriteTemplates.FrameRates[templIndex]) {
+				case eFrameRate::None:
 					// Nothing to do
 					break;
-				case SpriteBasic::eFrameRate::FPS10:
+				case eFrameRate::FPS10:
 					if(m_currentFrame % 6 == 0) {
 						++m_sprites.CurrentFrame[sprite];
-						m_sprites.CurrentFrame[sprite] %= m_sprites.MaxFrames[sprite];
+						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
 					}
 					break;
-				case SpriteBasic::eFrameRate::FPS12:
+				case eFrameRate::FPS12:
 					if(m_currentFrame % 5 == 0) {
 						++m_sprites.CurrentFrame[sprite];
-						m_sprites.CurrentFrame[sprite] %= m_sprites.MaxFrames[sprite];
+						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
 					}
 					break;
-				case SpriteBasic::eFrameRate::FPS15:
+				case eFrameRate::FPS15:
 					if(m_currentFrame % 4 == 0) {
 						++m_sprites.CurrentFrame[sprite];
-						m_sprites.CurrentFrame[sprite] %= m_sprites.MaxFrames[sprite];
+						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
 					}
 					break;
-				case SpriteBasic::eFrameRate::FPS20:
+				case eFrameRate::FPS20:
 					if(m_currentFrame % 3 == 0) {
 						++m_sprites.CurrentFrame[sprite];
-						m_sprites.CurrentFrame[sprite] %= m_sprites.MaxFrames[sprite];
+						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
 					}
 					break;
-				case SpriteBasic::eFrameRate::FPS30:
+				case eFrameRate::FPS30:
 					if(m_currentFrame % 2 == 0) {
 						++m_sprites.CurrentFrame[sprite];
-						m_sprites.CurrentFrame[sprite] %= m_sprites.MaxFrames[sprite];
+						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
 					}
 					break;
-				case SpriteBasic::eFrameRate::FPS60: {
+				case eFrameRate::FPS60: {
 					++m_sprites.CurrentFrame[sprite];
-					m_sprites.CurrentFrame[sprite] %= m_sprites.MaxFrames[sprite];
+					m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
 				} break;
 				default:
 					break;
@@ -137,9 +139,11 @@ void SpriteManagerBasic::Draw(CommandBuffer& a_commandBuffer) {
 	SpriteUniformData* uniformData = UniformBuffer.GetData<SpriteUniformData>();
 	for(uint32_t sprite = 0; sprite < MaxSprites; ++sprite) {
 		if(m_sprites.Used[sprite]) {
+			auto& templIndex = m_sprites.TemplateIndices[sprite];
+
 			uniformData[sprite].Position.x = m_sprites.Positions[sprite].x;
 			uniformData[sprite].Position.y = m_sprites.Positions[sprite].y;
-			uniformData[sprite].Position.z = m_sprites.TextureIndices[sprite];
+			uniformData[sprite].Position.z = m_spriteTemplates.TextureIndices[templIndex];
 			uniformData[sprite].Position.w = m_sprites.CurrentFrame[sprite];
 
 			uniformData[sprite].Color = m_sprites.Colors[sprite];

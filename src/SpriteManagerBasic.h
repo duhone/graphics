@@ -23,8 +23,11 @@ namespace CR::Graphics {
 
 	struct SpriteTemplates {
 		std::bitset<MaxSpriteTemplates> Used;
+		uint16_t TextureIndices[MaxSprites];
 		std::string Names[MaxSpriteTemplates];
 		glm::uvec2 FrameSizes[MaxSpriteTemplates];
+		eFrameRate FrameRates[MaxSprites];
+		uint16_t MaxFrames[MaxSprites];
 	};
 
 	struct SpriteUniformData {
@@ -40,9 +43,6 @@ namespace CR::Graphics {
 		uint8_t TemplateIndices[MaxSprites];
 		glm::vec2 Positions[MaxSprites];
 		glm::vec4 Colors[MaxSprites];
-		uint16_t TextureIndices[MaxSprites];
-		SpriteBasic::eFrameRate FrameRates[MaxSprites];
-		uint16_t MaxFrames[MaxSprites];
 		uint16_t CurrentFrame[MaxSprites];
 	};
 
@@ -55,14 +55,13 @@ namespace CR::Graphics {
 		SpriteManagerBasic(SpriteManagerBasic&&)                 = delete;
 		SpriteManagerBasic& operator=(SpriteManagerBasic&&) = delete;
 
-		uint8_t CreateTemplate(std::string_view a_name, const glm::uvec2& a_frameSize);
+		uint8_t CreateTemplate(std::string_view a_name, const glm::uvec2& a_frameSize, eFrameRate frameRate,
+		                       const char* a_textureName);
 		void FreeTemplate(uint8_t a_index);
 
-		uint16_t CreateSprite(std::string_view a_name, std::shared_ptr<SpriteTemplateBasic> a_template,
-		                      const char* a_textureName);
+		uint16_t CreateSprite(std::string_view a_name, std::shared_ptr<SpriteTemplateBasic> a_template);
 		void FreeSprite(uint16_t a_index);
-		void SetSprite(uint16_t a_index, const glm::vec2& a_position, const glm::vec4& a_color,
-		               SpriteBasic::eFrameRate a_framerate);
+		void SetSprite(uint16_t a_index, const glm::vec2& a_position, const glm::vec4& a_color);
 
 		void Frame();
 
@@ -78,10 +77,8 @@ namespace CR::Graphics {
 		vk::DescriptorSet DescSet;
 	};
 
-	inline void SpriteManagerBasic::SetSprite(uint16_t a_index, const glm::vec2& a_position, const glm::vec4& a_color,
-	                                          SpriteBasic::eFrameRate a_framerate) {
-		m_sprites.Positions[a_index]  = a_position;
-		m_sprites.Colors[a_index]     = a_color;
-		m_sprites.FrameRates[a_index] = a_framerate;
+	inline void SpriteManagerBasic::SetSprite(uint16_t a_index, const glm::vec2& a_position, const glm::vec4& a_color) {
+		m_sprites.Positions[a_index] = a_position;
+		m_sprites.Colors[a_index]    = a_color;
 	}
 }    // namespace CR::Graphics

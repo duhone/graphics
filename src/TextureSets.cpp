@@ -96,6 +96,8 @@ TextureSet ::~TextureSet() {
 		for(auto& img : g_textureSets[set].m_images) { device.destroyImage(img); }
 		device.freeMemory(g_textureSets[set].m_imageMemory);
 
+		for(const auto& name : g_textureSets[set].m_names) { g_lookup.erase(name); }
+
 		g_textureSets[set].m_names.clear();
 		g_textureSets[set].m_headers.clear();
 		g_textureSets[set].m_images.clear();
@@ -110,11 +112,11 @@ TextureSet ::~TextureSet() {
 	}
 }
 
-TextureSet::TextureSet(TextureSet&& a_other) {
+TextureSet::TextureSet(TextureSet&& a_other) noexcept {
 	*this = move(a_other);
 }
 
-TextureSet& TextureSet::operator=(TextureSet&& a_other) {
+TextureSet& TextureSet::operator=(TextureSet&& a_other) noexcept {
 	m_id = a_other.m_id;
 
 	a_other.m_id = c_unused;

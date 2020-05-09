@@ -14,9 +14,9 @@ namespace CR::Graphics {
 	  public:
 		~TextureSet();
 		TextureSet(const TextureSet&) = delete;
-		TextureSet(TextureSet&& a_other);
+		TextureSet(TextureSet&& a_other) noexcept;
 		TextureSet& operator=(const TextureSet&) = delete;
-		TextureSet& operator                     =(TextureSet&& a_other);
+		TextureSet& operator                     =(TextureSet&& a_other) noexcept;
 
 	  private:
 		TextureSet(uint16_t a_id) : m_id(a_id) {}

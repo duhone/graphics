@@ -29,10 +29,10 @@ SpriteBasicImpl::~SpriteBasicImpl() {
 }
 
 void SpriteBasicImpl::SetProps(const Props& a_props) {
-	GetSpriteManagerBasic().SetSprite(m_index, a_props.Position, a_props.Color, a_props.FrameRate);
+	GetSpriteManagerBasic().SetSprite(m_index, a_props.Position, a_props.Color);
 }
 
 std::unique_ptr<Graphics::SpriteBasic> Graphics::CreateSpriteBasic(const SpriteBasicCreateInfo& a_info) {
-	uint16_t index = GetSpriteManagerBasic().CreateSprite(a_info.Name, a_info.Template, a_info.TextureName.c_str());
+	uint16_t index = GetSpriteManagerBasic().CreateSprite(a_info.Name, a_info.Template);
 	return make_unique<SpriteBasicImpl>(index);
 }

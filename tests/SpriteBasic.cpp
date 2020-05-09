@@ -22,32 +22,32 @@ TEST_CASE_FIXTURE(TestFixture, "sprites_basic") {
 	TextureSet texSet      = CreateTextureSet(texInfo);
 
 	SpriteTemplateBasicCreateInfo templateInfoComp;
-	templateInfoComp.Name      = "comp template";
-	templateInfoComp.FrameSize = {480, 320};
-	auto spriteTemplateComp    = CreateSpriteTemplateBasic(templateInfoComp);
+	templateInfoComp.Name        = "comp template";
+	templateInfoComp.FrameSize   = {480, 320};
+	templateInfoComp.TextureName = "completion_screen";
+	auto spriteTemplateComp      = CreateSpriteTemplateBasic(templateInfoComp);
 
 	SpriteTemplateBasicCreateInfo templateInfoHarry;
-	templateInfoHarry.Name      = "harry template";
-	templateInfoHarry.FrameSize = {186, 291};
-	auto spriteTemplateHarry    = CreateSpriteTemplateBasic(templateInfoHarry);
+	templateInfoHarry.Name        = "harry template";
+	templateInfoHarry.FrameSize   = {186, 291};
+	templateInfoHarry.TextureName = "bonus_harry";
+	templateInfoHarry.FrameRate   = eFrameRate::FPS20;
+	auto spriteTemplateHarry      = CreateSpriteTemplateBasic(templateInfoHarry);
 
 	Graphics::SpriteBasicCreateInfo spriteInfo;
-	spriteInfo.Name        = "test sprite1";
-	spriteInfo.Template    = spriteTemplateComp;
-	spriteInfo.TextureName = "completion_screen";
-	auto sprite1           = CreateSpriteBasic(spriteInfo);
-	spriteInfo.Name        = "test sprite2";
-	spriteInfo.Template    = spriteTemplateHarry;
-	spriteInfo.TextureName = "bonus_harry";
-	auto sprite2           = CreateSpriteBasic(spriteInfo);
+	spriteInfo.Name     = "test sprite1";
+	spriteInfo.Template = spriteTemplateComp;
+	auto sprite1        = CreateSpriteBasic(spriteInfo);
+	spriteInfo.Name     = "test sprite2";
+	spriteInfo.Template = spriteTemplateHarry;
+	auto sprite2        = CreateSpriteBasic(spriteInfo);
 
 	SpriteBasic::Props props;
 	props.Position = glm::vec2{128.0f, 128.0f};
 	props.Color    = glm::vec4{1.0f, 1.0f, 1.0f, 1.0f};
 	sprite1->SetProps(props);
-	props.Position  = glm::vec2{64.0f, 64.0f};
-	props.Color     = glm::vec4{1.0f, 1.0f, 1.0f, 1.0f};
-	props.FrameRate = SpriteBasic::eFrameRate::FPS20;
+	props.Position = glm::vec2{64.0f, 64.0f};
+	props.Color    = glm::vec4{1.0f, 1.0f, 1.0f, 1.0f};
 	sprite2->SetProps(props);
 
 	glm::vec2 step{1.0f, 2.0f};
