@@ -39,6 +39,7 @@ set(SRCS
     ${root}/src/shaders/Basic.cpp
     ${root}/src/shaders/Basic.vert
     ${root}/src/shaders/Basic.frag
+    ${root}/src/shaders/basic.crsm
 )
 
 set(BUILD
@@ -125,12 +126,14 @@ COMMAND ${CMAKE_COMMAND} -E copy_if_different
 	"${glfw_dll}"
 	$<TARGET_FILE_DIR:graphics_tests>)
 
-add_custom_command(TARGET shadercompiler POST_BUILD
-    COMMAND $<TARGET_FILE:shadercompiler> -v ${root}/src/shaders/basic.vert -f ${root}/src/shaders/basic.frag -o ${CMAKE_CURRENT_BINARY_DIR}/generated/basic.crsm
+add_custom_command(OUTPUT ${root}/src/shaders/basic.crsm
+    COMMAND $<TARGET_FILE:shadercompiler> -v ${root}/src/shaders/basic.vert -f ${root}/src/shaders/basic.frag -o ${root}/src/shaders/basic.crsm
+    DEPENDS ${root}/src/shaders/basic.vert ${root}/src/shaders/basic.frag
 )
 
-add_custom_command(TARGET embed POST_BUILD
-    COMMAND $<TARGET_FILE:embed> -i ${CMAKE_CURRENT_BINARY_DIR}/generated/basic.crsm -o ${root}/src/shaders/Basic
+add_custom_command(OUTPUT ${root}/src/shaders/Basic.h ${root}/src/shaders/Basic.cpp
+    COMMAND $<TARGET_FILE:embed> -i ${root}/src/shaders/basic.crsm -o ${root}/src/shaders/Basic
+    DEPENDS ${root}/src/shaders/basic.crsm
 )
 
 add_custom_command(TARGET graphics_tests POST_BUILD

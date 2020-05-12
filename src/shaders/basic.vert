@@ -13,15 +13,11 @@ const vec2 Vertices[4] = vec2[4](vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 1.0),
 layout (constant_id = 0) const float InvScreenSizeX = 1.0/1280.0;
 layout (constant_id = 1) const float InvScreenSizeY = 1.0/720.0;
 
-layout(std430, push_constant) uniform SpriteTemplateData
-{
-    vec2 FrameSize;
-} templateData;
-
 struct SpriteUniformData{
   // x,y are upper left corner, z is the texture to use, and w is the current frame
   vec4 Offset;
   vec4 Color;
+  vec4 FrameSize; //size in x,y.  z,w unused
 };
 
 layout(binding = 0) uniform SpriteData{
@@ -33,7 +29,7 @@ void main() {
   UV.xy = position;
   UV.z = spriteData.Data[gl_InstanceIndex].Offset.w;
 
-  position *= templateData.FrameSize;
+  position *= spriteData.Data[gl_InstanceIndex].FrameSize.xy;
   position += spriteData.Data[gl_InstanceIndex].Offset.xy;
 
   // from pixel coords to -1to1

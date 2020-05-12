@@ -132,11 +132,6 @@ Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
 	blendStateInfo.pAttachments    = &blendAttachState;
 	blendStateInfo.attachmentCount = 1;
 
-	vk::PushConstantRange pushRange;
-	pushRange.offset     = 0;
-	pushRange.size       = sizeof(glm::vec2);
-	pushRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
-
 	vk::SamplerCreateInfo samplerInfo;
 	samplerInfo.addressModeU     = vk::SamplerAddressMode::eClampToEdge;
 	samplerInfo.addressModeV     = vk::SamplerAddressMode::eClampToEdge;
@@ -171,8 +166,8 @@ Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
 	m_descriptorSetLayout = device.createDescriptorSetLayout(dslInfo);
 
 	vk::PipelineLayoutCreateInfo layoutInfo;
-	layoutInfo.pushConstantRangeCount = 1;
-	layoutInfo.pPushConstantRanges    = &pushRange;
+	layoutInfo.pushConstantRangeCount = 0;
+	layoutInfo.pPushConstantRanges    = nullptr;
 	layoutInfo.setLayoutCount         = 1;
 	layoutInfo.pSetLayouts            = &m_descriptorSetLayout;
 

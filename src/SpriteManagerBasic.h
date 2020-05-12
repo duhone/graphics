@@ -15,9 +15,10 @@
 #include <string>
 
 namespace CR::Graphics {
-	inline constexpr uint32_t SpritesPerTemplate = 128;
+	// inline constexpr uint32_t SpritesPerTemplate = 128;
 	inline constexpr uint32_t MaxSpriteTemplates = 64;
-	inline constexpr uint32_t MaxSprites         = MaxSpriteTemplates * SpritesPerTemplate;
+	inline constexpr uint32_t MaxSprites         = 1024;
+	inline constexpr uint32_t MaxSpritesPerBatch = 256;
 	static_assert(MaxSpriteTemplates - 1 <= std::numeric_limits<uint8_t>::max());    // index is a uint8_t
 	static_assert(MaxSprites - 1 <= std::numeric_limits<uint16_t>::max());           // index is a uint16_t
 
@@ -33,6 +34,7 @@ namespace CR::Graphics {
 	struct SpriteUniformData {
 		glm::vec4 Position;    // z and w are unused.
 		glm::vec4 Color;
+		glm::vec4 FrameSize;
 	};
 	static_assert((sizeof(SpriteUniformData) * MaxSprites) / MaxSpriteTemplates < 64 * 1024, "64KB max uniform range");
 

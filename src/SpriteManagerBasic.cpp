@@ -58,14 +58,14 @@ uint16_t SpriteManagerBasic::CreateSprite(const std::string_view a_name,
                                           std::shared_ptr<SpriteTemplateBasic> a_template) {
 	uint32_t templateIndex = ((SpriteTemplateBasicImpl*)a_template.get())->GetIndex();
 
-	uint32_t result = 0;
-	for(uint32_t i = templateIndex * SpritesPerTemplate; i < (templateIndex + 1) * SpritesPerTemplate; ++i) {
+	uint32_t result = MaxSprites;
+	for(uint32_t i = 0; i < MaxSprites; ++i) {
 		if(!m_sprites.Used[i]) {
 			result = i;
 			break;
 		}
 	}
-	Core::Log::Assert(result != (templateIndex + 1) * SpritesPerTemplate, "Ran out of available sprites");
+	Core::Log::Assert(result != MaxSprites, "Ran out of available sprites");
 
 	m_sprites.Used[result]            = true;
 	m_sprites.Names[result]           = a_name;
@@ -146,25 +146,26 @@ void SpriteManagerBasic::Draw(CommandBuffer& a_commandBuffer) {
 			uniformData[sprite].Position.z = m_spriteTemplates.TextureIndices[templIndex];
 			uniformData[sprite].Position.w = m_sprites.CurrentFrame[sprite];
 
-			uniformData[sprite].Color = m_sprites.Colors[sprite];
+			uniformData[sprite].Color     = m_sprites.Colors[sprite];
+			uniformData[sprite].FrameSize = glm::vec4(m_spriteTemplates.FrameSizes[templIndex], 0.0f, 0.0f);
 		}
 	}
 
 	Core::Log::Assert(Pipeline, "Sprite type didn't have a pipeline");
 	Commands::BindPipeline(a_commandBuffer, Pipeline);
 	uint32_t descOffset = 0;
-	for(uint32_t templ = 0; templ < MaxSpriteTemplates; ++templ) {
-		if(m_spriteTemplates.Used[templ]) {
-			uint32_t numSprites = 0;
-			for(uint32_t sprite = templ * SpritesPerTemplate; sprite < (templ + 1 * SpritesPerTemplate); ++sprite) {
-				if(m_sprites.Used[sprite]) { ++numSprites; }
+	uint32_t numSprites = 0;
+	Commands::BindDescriptorSet(a_commandBuffer, Pipeline, DescSet, descOffset);
+	for(uint32_t sprite = 0; sprite < MaxSprites; ++sprite) {
+		if(m_sprites.Used[sprite]) {
+			++numSprites;
+			if(numSprites > 256) {
+				Commands::Draw(a_commandBuffer, 4, numSprites);
+				// new batch
+				descOffset = MaxSpritesPerBatch * sizeof(SpriteUniformData);
+				Commands::BindDescriptorSet(a_commandBuffer, Pipeline, DescSet, descOffset);
 			}
-			// shader will take framesize as float for perf reasons.
-			glm::vec2 frameSize = m_spriteTemplates.FrameSizes[templ];
-			Commands::PushConstants(a_commandBuffer, Pipeline, Span<std::byte>{(byte*)&frameSize, sizeof(frameSize)});
-			descOffset = templ * SpritesPerTemplate * sizeof(SpriteUniformData);
-			Commands::BindDescriptorSet(a_commandBuffer, Pipeline, DescSet, descOffset);
-			Commands::Draw(a_commandBuffer, 4, numSprites);
 		}
 	}
+	if(numSprites > 0) { Commands::Draw(a_commandBuffer, 4, numSprites); }
 }
