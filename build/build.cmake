@@ -54,13 +54,7 @@ add_library(graphics OBJECT
 )
 	
 settingsCR(graphics)	
-			
-target_precompile_headers(graphics PRIVATE 
-	<3rdParty/robinmap.h>
-	<3rdParty/glm.h>
-	<3rdParty/function2.h>
-	<3rdParty/fmt.h>
-)
+createPCH(graphics)	
 
 target_include_directories(graphics PUBLIC
 	"${root}/inc"
@@ -99,7 +93,8 @@ add_executable(graphics_tests
 					${SRCS}
 )
 
-settingsCR(graphics_tests)
+settingsCR(graphics_tests)	
+createPCH(graphics_tests)
 					
 target_include_directories(graphics_tests PRIVATE
 	"${root}/src"
