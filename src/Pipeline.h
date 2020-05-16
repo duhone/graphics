@@ -20,9 +20,9 @@ namespace CR::Graphics {
 		Pipeline(const CreatePipelineArgs& a_args);
 		~Pipeline();
 		Pipeline(const Pipeline&) = delete;
-		Pipeline(Pipeline&& a_other);
+		Pipeline(Pipeline&& a_other) noexcept;
 		Pipeline& operator=(const Pipeline&) = delete;
-		Pipeline& operator                   =(Pipeline&& a_other);
+		Pipeline& operator                   =(Pipeline&& a_other) noexcept;
 
 		operator bool() const { return m_pipeline; }
 

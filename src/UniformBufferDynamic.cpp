@@ -31,11 +31,11 @@ UniformBufferDynamic::~UniformBufferDynamic() {
 	Free();
 }
 
-UniformBufferDynamic::UniformBufferDynamic(UniformBufferDynamic&& a_other) {
+UniformBufferDynamic::UniformBufferDynamic(UniformBufferDynamic&& a_other) noexcept {
 	*this = move(a_other);
 }
 
-UniformBufferDynamic& UniformBufferDynamic::operator=(UniformBufferDynamic&& a_other) {
+UniformBufferDynamic& UniformBufferDynamic::operator=(UniformBufferDynamic&& a_other) noexcept {
 	Free();
 	m_Buffer       = a_other.m_Buffer;
 	m_BufferMemory = a_other.m_BufferMemory;

@@ -14,9 +14,9 @@ namespace CR::Graphics {
 		UniformBufferDynamic(uint32_t a_bytes);
 		~UniformBufferDynamic();
 		UniformBufferDynamic(UniformBufferDynamic&) = delete;
-		UniformBufferDynamic(UniformBufferDynamic&& a_other);
+		UniformBufferDynamic(UniformBufferDynamic&& a_other) noexcept;
 		UniformBufferDynamic& operator=(UniformBufferDynamic&) = delete;
-		UniformBufferDynamic& operator                         =(UniformBufferDynamic&& a_other);
+		UniformBufferDynamic& operator                         =(UniformBufferDynamic&& a_other) noexcept;
 
 		const vk::Buffer& GetHandle() const { return m_Buffer; }
 		std::byte* GetData() const { return m_data; }

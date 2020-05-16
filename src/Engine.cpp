@@ -30,14 +30,15 @@ namespace {
 	constexpr uint32_t MajorVersion = 0;    // 64K max
 	constexpr uint32_t MinorVersion = 1;    // 256 max
 	constexpr uint32_t PatchVersion = 1;    // 256 max
-	constexpr uint32_t Version      = (MajorVersion << 16) || (MajorVersion << 8) || (PatchVersion);
+	constexpr uint32_t Version      = (MajorVersion << 16) | (MajorVersion << 8) | (PatchVersion);
 
-	class Engine {
-	  public:
+	struct Engine {
 		Engine(const EngineSettings& a_settings);
 		~Engine();
 		Engine(const Engine&) = delete;
+		Engine(Engine&&)      = delete;
 		Engine& operator=(const Engine&) = delete;
+		Engine& operator=(Engine&&) = delete;
 
 		void ExecutePending();
 
@@ -88,7 +89,9 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	if(a_settings.EnableDebug) {
 		vector<vk::LayerProperties> layers = vk::enumerateInstanceLayerProperties();
 		for(const auto& layer : layers) {
-			if("VK_LAYER_LUNARG_standard_validation"s == layer.layerName) { enabledLayers.push_back(layer.layerName); }
+			if("VK_LAYER_LUNARG_standard_validation"s == layer.layerName) {
+				enabledLayers.emplace_back(layer.layerName);
+			}
 		}
 	}
 
@@ -216,11 +219,10 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 			foundDevice    = true;
 			selectedDevice = device;
 			break;
-		} else {
-			m_GraphicsQueueIndex     = -1;
-			m_TransferQueueIndex     = -1;
-			m_PresentationQueueIndex = -1;
 		}
+		m_GraphicsQueueIndex     = -1;
+		m_TransferQueueIndex     = -1;
+		m_PresentationQueueIndex = -1;
 	}
 	Log::Require(foundDevice, "Could not find a valid vulkan 1.2 graphics device");
 
@@ -229,7 +231,7 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 		vector<vk::LayerProperties> layers = selectedDevice.enumerateDeviceLayerProperties();
 		for(const auto& layer : layers) {
 			if("VK_LAYER_LUNARG_standard_validation"s == layer.layerName) {
-				enabledDeviceLayers.push_back(layer.layerName);
+				enabledDeviceLayers.emplace_back(layer.layerName);
 			}
 		}
 	}
@@ -292,7 +294,7 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	int32_t presentationQueueIndex = 0;
 	int32_t transferQueueIndex     = 0;
 	int32_t queueIndexMap[256];    // surely no more than 256 queue families for all time
-	fill(queueIndexMap, -1);
+	Core::fill(queueIndexMap, -1);
 
 	float graphicsPriority = 1.0f;
 	float transferPriority = 0.0f;

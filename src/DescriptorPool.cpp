@@ -17,8 +17,8 @@ void Graphics::DescriptorPoolInit() {
 	poolSize[1].descriptorCount = c_maxTextures;
 
 	vk::DescriptorPoolCreateInfo poolInfo;
-	poolInfo.poolSizeCount = 2;
-	poolInfo.pPoolSizes    = poolSize;
+	poolInfo.poolSizeCount = (uint32_t)std::size(poolSize);
+	poolInfo.pPoolSizes    = std::data(poolSize);
 	poolInfo.maxSets       = 1;
 
 	m_pool = GetDevice().createDescriptorPool(poolInfo);

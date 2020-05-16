@@ -70,7 +70,7 @@ Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
 	vertSpecInfo.dataSize      = sizeof(invScreenSize);
 	vertSpecInfo.pData         = &invScreenSize;
 	vertSpecInfo.mapEntryCount = (uint32_t)size(vertSpecInfoEntrys);
-	vertSpecInfo.pMapEntries   = vertSpecInfoEntrys;
+	vertSpecInfo.pMapEntries   = data(vertSpecInfoEntrys);
 
 	vk::SpecializationMapEntry fragSpecInfoEntrys;
 	fragSpecInfoEntrys.constantID = 0;
@@ -188,11 +188,11 @@ Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
 	m_pipeline = device.createGraphicsPipeline(vk::PipelineCache{}, pipeInfo);
 }
 
-Pipeline::Pipeline(Pipeline&& a_other) {
+Pipeline::Pipeline(Pipeline&& a_other) noexcept {
 	*this = move(a_other);
 }
 
-Pipeline& Pipeline::operator=(Pipeline&& a_other) {
+Pipeline& Pipeline::operator=(Pipeline&& a_other) noexcept {
 	Free();
 
 	m_pipeline            = a_other.m_pipeline;
