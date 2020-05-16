@@ -3,36 +3,34 @@
 #include "EngineInternal.h"
 #include "SpriteManagerBasic.h"
 
-namespace {
-	class SpriteBasicImpl : public CR::Graphics::SpriteBasic {
-	  public:
-		SpriteBasicImpl(uint16_t a_index) : m_index(a_index) {}
-		virtual ~SpriteBasicImpl();
-		SpriteBasicImpl(const SpriteBasicImpl&) = delete;
-		SpriteBasicImpl& operator=(const SpriteBasicImpl&) = delete;
-
-		void SetProps(const Props& a_props) override;
-
-		uint16_t GetIndex() const { return m_index; }
-
-	  private:
-		uint16_t m_index;
-	};
-}    // namespace
-
 using namespace std;
 using namespace CR;
 using namespace CR::Graphics;
 
-SpriteBasicImpl::~SpriteBasicImpl() {
-	GetSpriteManagerBasic().FreeSprite(m_index);
+SpriteBasic::SpriteBasic(const SpriteBasicCreateInfo& a_info) {
+	m_index = GetSpriteManagerBasic().CreateSprite(a_info.Name, a_info.Template);
 }
 
-void SpriteBasicImpl::SetProps(const Props& a_props) {
-	GetSpriteManagerBasic().SetSprite(m_index, a_props.Position, a_props.Color);
+SpriteBasic::~SpriteBasic() {
+	if(m_index != c_unused) { GetSpriteManagerBasic().FreeSprite(m_index); }
 }
 
-std::unique_ptr<Graphics::SpriteBasic> Graphics::CreateSpriteBasic(const SpriteBasicCreateInfo& a_info) {
-	uint16_t index = GetSpriteManagerBasic().CreateSprite(a_info.Name, a_info.Template);
-	return make_unique<SpriteBasicImpl>(index);
+SpriteBasic::SpriteBasic(SpriteBasic&& a_other) noexcept {
+	*this = std::move(a_other);
+}
+
+SpriteBasic& SpriteBasic::operator=(SpriteBasic&& a_other) noexcept {
+	if(m_index != c_unused) { GetSpriteManagerBasic().FreeSprite(m_index); }
+	m_index         = a_other.m_index;
+	a_other.m_index = c_unused;
+
+	return *this;
+}
+
+void SpriteBasic::SetPosition(const glm::vec2& a_position) {
+	GetSpriteManagerBasic().SetSpritePosition(m_index, a_position);
+}
+
+void SpriteBasic::SetColor(const glm::vec4& a_color) {
+	GetSpriteManagerBasic().SetSpriteColor(m_index, a_color);
 }

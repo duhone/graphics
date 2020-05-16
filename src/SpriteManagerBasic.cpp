@@ -72,6 +72,8 @@ uint16_t SpriteManagerBasic::CreateSprite(const std::string_view a_name,
 	m_sprites.TemplateIndices[result] = (uint8_t)templateIndex;
 	m_sprites.Templates[result]       = move(a_template);
 	m_sprites.CurrentFrame[result]    = 0;
+	m_sprites.Colors[result]          = glm::vec4(1.0f);
+	m_sprites.Positions[result]       = glm::vec2(0.0f);
 
 	return (uint16_t)result;
 }

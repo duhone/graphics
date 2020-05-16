@@ -19,7 +19,7 @@ TEST_CASE_FIXTURE(TestFixture, "sprites_basic") {
 	texInfo[0].Name        = "bonus_harry";
 	texInfo[1].TextureData = Core::Span<const byte>{crtexComp.data(), crtexComp.size()};
 	texInfo[1].Name        = "completion_screen";
-	TextureSet texSet      = CreateTextureSet(texInfo);
+	TextureSet texSet(texInfo);
 
 	SpriteTemplateBasicCreateInfo templateInfoComp;
 	templateInfoComp.Name        = "comp template";
@@ -37,30 +37,26 @@ TEST_CASE_FIXTURE(TestFixture, "sprites_basic") {
 	Graphics::SpriteBasicCreateInfo spriteInfo;
 	spriteInfo.Name     = "test sprite1";
 	spriteInfo.Template = spriteTemplateComp;
-	auto sprite1        = CreateSpriteBasic(spriteInfo);
+	SpriteBasic sprite1(spriteInfo);
 	spriteInfo.Name     = "test sprite2";
 	spriteInfo.Template = spriteTemplateHarry;
-	auto sprite2        = CreateSpriteBasic(spriteInfo);
+	SpriteBasic sprite2(spriteInfo);
 
-	SpriteBasic::Props props;
-	props.Position = glm::vec2{128.0f, 128.0f};
-	props.Color    = glm::vec4{1.0f, 1.0f, 1.0f, 1.0f};
-	sprite1->SetProps(props);
-	props.Position = glm::vec2{64.0f, 64.0f};
-	props.Color    = glm::vec4{1.0f, 1.0f, 1.0f, 1.0f};
-	sprite2->SetProps(props);
+	sprite1.SetPosition({128.0f, 128.0f});
+	glm::vec2 position{64.0f, 64.0f};
+	sprite2.SetPosition(position);
 
 	glm::vec2 step{1.0f, 2.0f};
 
 	constexpr bool loop = true;
 	while(loop && !glfwWindowShouldClose(Window)) {
 		glfwPollEvents();
-		props.Position += step;
-		if(props.Position.x > 1280.0f) { step.x = -1.0f; }
-		if(props.Position.x < 0.0f) { step.x = 1.0f; }
-		if(props.Position.y > 720.0f) { step.y = -2.0f; }
-		if(props.Position.y < 0.0f) { step.y = 2.0f; }
-		sprite2->SetProps(props);
+		position += step;
+		if(position.x > 1280.0f) { step.x = -1.0f; }
+		if(position.x < 0.0f) { step.x = 1.0f; }
+		if(position.y > 720.0f) { step.y = -2.0f; }
+		if(position.y < 0.0f) { step.y = 2.0f; }
+		sprite2.SetPosition(position);
 		Frame();
 	}
 }

@@ -17,7 +17,7 @@ TEST_CASE_FIXTURE(TestFixture, "sprite_template_basic") {
 	TextureCreateInfo texInfo;
 	texInfo.TextureData = Core::Span<const byte>{crtexComp.data(), crtexComp.size()};
 	texInfo.Name        = "completion_screen";
-	TextureSet texSet   = CreateTextureSet({&texInfo, 1});
+	TextureSet texSet({&texInfo, 1});
 
 	SpriteTemplateBasicCreateInfo templateInfo;
 	templateInfo.Name        = "test template";

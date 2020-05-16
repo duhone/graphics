@@ -19,8 +19,8 @@ namespace CR::Graphics {
 	inline constexpr uint32_t MaxSpriteTemplates = 64;
 	inline constexpr uint32_t MaxSprites         = 1024;
 	inline constexpr uint32_t MaxSpritesPerBatch = 256;
-	static_assert(MaxSpriteTemplates - 1 <= std::numeric_limits<uint8_t>::max());    // index is a uint8_t
-	static_assert(MaxSprites - 1 <= std::numeric_limits<uint16_t>::max());           // index is a uint16_t
+	static_assert(MaxSpriteTemplates < std::numeric_limits<uint8_t>::max());    // index is a uint8_t
+	static_assert(MaxSprites < std::numeric_limits<uint16_t>::max());           // index is a uint16_t
 
 	struct SpriteTemplates {
 		std::bitset<MaxSpriteTemplates> Used;
@@ -63,7 +63,8 @@ namespace CR::Graphics {
 
 		uint16_t CreateSprite(std::string_view a_name, std::shared_ptr<SpriteTemplateBasic> a_template);
 		void FreeSprite(uint16_t a_index);
-		void SetSprite(uint16_t a_index, const glm::vec2& a_position, const glm::vec4& a_color);
+		void SetSpritePosition(uint16_t a_index, const glm::vec2& a_position);
+		void SetSpriteColor(uint16_t a_index, const glm::vec4& a_color);
 
 		void Frame();
 
@@ -79,8 +80,11 @@ namespace CR::Graphics {
 		vk::DescriptorSet DescSet;
 	};
 
-	inline void SpriteManagerBasic::SetSprite(uint16_t a_index, const glm::vec2& a_position, const glm::vec4& a_color) {
+	inline void SpriteManagerBasic::SetSpritePosition(uint16_t a_index, const glm::vec2& a_position) {
 		m_sprites.Positions[a_index] = a_position;
-		m_sprites.Colors[a_index]    = a_color;
+	}
+
+	inline void SpriteManagerBasic::SetSpriteColor(uint16_t a_index, const glm::vec4& a_color) {
+		m_sprites.Colors[a_index] = a_color;
 	}
 }    // namespace CR::Graphics

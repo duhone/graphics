@@ -19,5 +19,5 @@ TEST_CASE_FIXTURE(TestFixture, "texture_set") {
 	texInfo[0].Name        = "spencer_walk";
 	texInfo[1].TextureData = Core::Span<const byte>{crtexComp.data(), crtexComp.size()};
 	texInfo[1].Name        = "completion_screen";
-	TextureSet texSet      = CreateTextureSet({texInfo, 2});
+	TextureSet texSet({texInfo, 2});
 }

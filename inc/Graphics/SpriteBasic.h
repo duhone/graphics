@@ -8,25 +8,30 @@
 #include <string>
 
 namespace CR::Graphics {
-	class SpriteBasic {
-	  public:
-		SpriteBasic()                   = default;
-		virtual ~SpriteBasic()          = default;
-		SpriteBasic(const SpriteBasic&) = delete;
-		SpriteBasic(SpriteBasic&&)      = delete;
-		SpriteBasic& operator=(const SpriteBasic&) = delete;
-		SpriteBasic& operator=(SpriteBasic&&) = delete;
-
-		struct Props {
-			glm::vec2 Position;
-			glm::vec4 Color;
-		};
-		virtual void SetProps(const Props& a_props) = 0;
-	};
-
 	struct SpriteBasicCreateInfo {
 		std::string Name;
 		std::shared_ptr<SpriteTemplateBasic> Template;
 	};
-	std::unique_ptr<SpriteBasic> CreateSpriteBasic(const SpriteBasicCreateInfo& a_info);
+
+	// defaults to solid white, and located at 0.0,0.0
+	class SpriteBasic {
+	  public:
+		SpriteBasic() = default;
+		SpriteBasic(const SpriteBasicCreateInfo& a_info);
+		~SpriteBasic();
+		SpriteBasic(const SpriteBasic&) = delete;
+		SpriteBasic(SpriteBasic&& a_other) noexcept;
+		SpriteBasic& operator=(const SpriteBasic&) = delete;
+		SpriteBasic& operator                      =(SpriteBasic&& a_other) noexcept;
+
+		void SetPosition(const glm::vec2& a_position);
+		void SetColor(const glm::vec4& a_color);
+
+		[[nodiscard]] uint16_t GetIndex() const { return m_index; }
+
+	  private:
+		inline static constexpr uint16_t c_unused{0xffff};
+
+		uint16_t m_index = c_unused;
+	};
 }    // namespace CR::Graphics

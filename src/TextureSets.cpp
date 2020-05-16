@@ -140,7 +140,7 @@ void Graphics::TextureSets::CheckLoadingTasks(CommandBuffer& a_cmdBuffer) {
 	}
 }
 
-TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_textures) {
+TextureSet::TextureSet(const Core::Span<TextureCreateInfo> a_textures) {
 	Core::Log::Require(a_textures.size() <= c_maxTexturesPerSet,
 	                   "Texture Sets have a maximum size of {}. {} was requested", c_maxTexturesPerSet,
 	                   a_textures.size());
@@ -286,8 +286,7 @@ TextureSet Graphics::CreateTextureSet(const Core::Span<TextureCreateInfo> a_text
 
 	++g_version;
 
-	TextureSet result{set};
-	return result;
+	m_id = set;
 }
 
 void TextureSets::Init() {

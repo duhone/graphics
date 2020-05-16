@@ -6,12 +6,14 @@
 #include <vector>
 
 namespace CR::Graphics {
-	struct TextureCreateInfo;
+	struct TextureCreateInfo {
+		std::string Name;
+		Core::Span<const std::byte> TextureData;    // crtex file
+	};
 
 	class TextureSet {
-		friend TextureSet CreateTextureSet(const Core::Span<TextureCreateInfo>);
-
 	  public:
+		TextureSet(const Core::Span<TextureCreateInfo> a_textures);
 		~TextureSet();
 		TextureSet(const TextureSet&) = delete;
 		TextureSet(TextureSet&& a_other) noexcept;
@@ -19,17 +21,8 @@ namespace CR::Graphics {
 		TextureSet& operator                     =(TextureSet&& a_other) noexcept;
 
 	  private:
-		TextureSet(uint16_t a_id) : m_id(a_id) {}
-
 		inline static constexpr uint16_t c_unused{0xffff};
 
 		uint16_t m_id{c_unused};
 	};
-
-	struct TextureCreateInfo {
-		std::string Name;
-		Core::Span<const std::byte> TextureData;    // crtex file
-	};
-	TextureSet CreateTextureSet(const Core::Span<TextureCreateInfo> a_textures);
-
 }    // namespace CR::Graphics
