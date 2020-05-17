@@ -15,7 +15,8 @@ namespace CR::Graphics {
 		Core::Span<const std::byte> ShaderModule;    // crsm file
 	};
 
-	struct Pipeline {
+	class Pipeline {
+	  public:
 		Pipeline() = default;
 		Pipeline(const CreatePipelineArgs& a_args);
 		~Pipeline();
@@ -24,11 +25,11 @@ namespace CR::Graphics {
 		Pipeline& operator=(const Pipeline&) = delete;
 		Pipeline& operator                   =(Pipeline&& a_other) noexcept;
 
-		operator bool() const { return m_pipeline; }
+		operator bool() const { return (bool)m_pipeline; }
 
-		const vk::Pipeline& GetHandle() const { return m_pipeline; }
-		const vk::PipelineLayout& GetLayout() const { return m_pipeLineLayout; }
-		const vk::DescriptorSetLayout& GetDescLayout() const { return m_descriptorSetLayout; }
+		[[nodiscard]] const vk::Pipeline& GetHandle() const { return m_pipeline; }
+		[[nodiscard]] const vk::PipelineLayout& GetLayout() const { return m_pipeLineLayout; }
+		[[nodiscard]] const vk::DescriptorSetLayout& GetDescLayout() const { return m_descriptorSetLayout; }
 
 		void Frame(vk::DescriptorSet& a_set);
 

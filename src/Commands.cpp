@@ -28,39 +28,39 @@ void Commands::RenderPassBegin(CommandBuffer& a_cmdBuffer, std::optional<glm::ve
 		renderPassInfo.clearValueCount = 0;
 	}
 
-	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
-	vkcmd->beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
+	vkcmd.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 }
 
 void Commands::RenderPassEnd(CommandBuffer& a_cmdBuffer) {
-	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
-	vkcmd->endRenderPass();
+	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
+	vkcmd.endRenderPass();
 }
 
 void Commands::BindPipeline(CommandBuffer& a_cmdBuffer, Pipeline& a_pipeline) {
-	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
-	vkcmd->bindPipeline(vk::PipelineBindPoint::eGraphics, a_pipeline.GetHandle());
+	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
+	vkcmd.bindPipeline(vk::PipelineBindPoint::eGraphics, a_pipeline.GetHandle());
 }
 
 void Commands::PushConstants(CommandBuffer& a_cmdBuffer, Pipeline& a_pipeline, CR::Core::Span<std::byte> a_data) {
-	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
-	vkcmd->pushConstants(a_pipeline.GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, (uint32_t)a_data.size(),
-	                     a_data.data());
+	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
+	vkcmd.pushConstants(a_pipeline.GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, (uint32_t)a_data.size(),
+	                    a_data.data());
 }
 
 void Commands::Draw(CommandBuffer& a_cmdBuffer, uint32_t a_vertexCount, uint32_t a_instanceCount) {
-	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
-	vkcmd->draw(a_vertexCount, a_instanceCount, 0, 0);
+	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
+	vkcmd.draw(a_vertexCount, a_instanceCount, 0, 0);
 }
 
 void Commands::BindDescriptorSet(CommandBuffer& a_cmdBuffer, const Pipeline& a_pipeline, vk::DescriptorSet& a_set,
                                  uint32_t a_offset) {
-	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
-	vkcmd->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, a_pipeline.GetLayout(), 0, 1, &a_set, 1, &a_offset);
+	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
+	vkcmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, a_pipeline.GetLayout(), 0, 1, &a_set, 1, &a_offset);
 }
 
 void Commands::TransitionToDst(CommandBuffer& a_cmdBuffer, const vk::Image& a_image, uint32_t a_layerCount) {
-	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
+	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
 
 	vk::ImageMemoryBarrier barrier;
 	barrier.image                           = a_image;
@@ -76,13 +76,13 @@ void Commands::TransitionToDst(CommandBuffer& a_cmdBuffer, const vk::Image& a_im
 	barrier.subresourceRange.baseMipLevel   = 0;
 	barrier.subresourceRange.levelCount     = 1;
 
-	vkcmd->pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer,
-	                       vk::DependencyFlags{}, nullptr, nullptr, barrier);
+	vkcmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer,
+	                      vk::DependencyFlags{}, nullptr, nullptr, barrier);
 }
 
 void Commands::CopyBufferToImg(CommandBuffer& a_cmdBuffer, const vk::Buffer& a_buffer, vk::Image& a_image,
                                const glm::uvec2& a_extent, uint32_t layer) {
-	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
+	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
 
 	vk::ImageLayout layout{vk::ImageLayout::eTransferDstOptimal};
 
@@ -97,11 +97,11 @@ void Commands::CopyBufferToImg(CommandBuffer& a_cmdBuffer, const vk::Buffer& a_b
 	cpy.imageOffset                     = vk::Offset3D{0, 0, 0};
 	cpy.imageExtent                     = vk::Extent3D{a_extent.x, a_extent.y, 1};
 
-	vkcmd->copyBufferToImage(a_buffer, a_image, layout, cpy);
+	vkcmd.copyBufferToImage(a_buffer, a_image, layout, cpy);
 }
 
 void Commands::TransitionToGraphicsQueue(CommandBuffer& a_cmdBuffer, const vk::Image& a_image, uint32_t a_layerCount) {
-	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
+	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
 
 	vk::ImageMemoryBarrier barrier;
 	barrier.image                           = a_image;
@@ -117,13 +117,13 @@ void Commands::TransitionToGraphicsQueue(CommandBuffer& a_cmdBuffer, const vk::I
 	barrier.subresourceRange.baseMipLevel   = 0;
 	barrier.subresourceRange.levelCount     = 1;
 
-	vkcmd->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe,
-	                       vk::DependencyFlags{}, nullptr, nullptr, barrier);
+	vkcmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe,
+	                      vk::DependencyFlags{}, nullptr, nullptr, barrier);
 }
 
 void Commands::TransitionFromTransferQueue(CommandBuffer& a_cmdBuffer, const vk::Image& a_image,
                                            uint32_t a_layerCount) {
-	vk::CommandBuffer* vkcmd = (vk::CommandBuffer*)a_cmdBuffer.GetHandle();
+	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
 
 	vk::ImageMemoryBarrier barrier;
 	barrier.image                           = a_image;
@@ -139,6 +139,6 @@ void Commands::TransitionFromTransferQueue(CommandBuffer& a_cmdBuffer, const vk:
 	barrier.subresourceRange.baseMipLevel   = 0;
 	barrier.subresourceRange.levelCount     = 1;
 
-	vkcmd->pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eFragmentShader,
-	                       vk::DependencyFlags{}, nullptr, nullptr, barrier);
+	vkcmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eFragmentShader,
+	                      vk::DependencyFlags{}, nullptr, nullptr, barrier);
 }

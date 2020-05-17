@@ -1,10 +1,14 @@
 ﻿#include "UniformBufferDynamic.h"
 
+#include "core/Log.h"
+
 using namespace std;
+using namespace CR;
 using namespace CR::Graphics;
 
 UniformBufferDynamic::UniformBufferDynamic(uint32_t a_bytes) {
-	assert(a_bytes % 256 == 0);
+	Core::Log::Assert(a_bytes % 256 == 0, "uniform buffers must be a multiple of 256 bytes in size");
+
 	vk::BufferCreateInfo createInfo;
 	createInfo.flags       = vk::BufferCreateFlags{};
 	createInfo.sharingMode = vk::SharingMode::eExclusive;
@@ -18,7 +22,8 @@ UniformBufferDynamic::UniformBufferDynamic(uint32_t a_bytes) {
 
 	vk::MemoryAllocateInfo allocInfo;
 	allocInfo.memoryTypeIndex = GetHostMemoryIndex();
-	assert(bufferRequirements.alignment <= 256);
+	Core::Log::Assert(bufferRequirements.alignment <= 256,
+	                  "Currently assuming a 256 alignment will always be sufficient for uniform buffers");
 	allocInfo.allocationSize = bufferRequirements.size;
 	m_BufferMemory           = device.allocateMemory(allocInfo);
 

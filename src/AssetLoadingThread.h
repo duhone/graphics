@@ -8,7 +8,7 @@
 #include <memory>
 
 namespace CR::Graphics {
-	struct CommandBuffer;
+	class CommandBuffer;
 }
 
 namespace CR::Graphics::AssetLoadingThread {

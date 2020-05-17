@@ -19,7 +19,7 @@ namespace {
 	deque<AssetLoadingThread::task_t> m_requests;
 
 	void ThreadMain() {
-		unique_ptr<CommandPool> cmdPool = CreateCommandPool(CommandPool::PoolType::Transfer);
+		CommandPool cmdPool(CommandPool::PoolType::Transfer);
 		while(m_running.load(memory_order_acquire)) {
 			AssetLoadingThread::task_t request;
 			{
@@ -32,18 +32,18 @@ namespace {
 				}
 			}
 			if(request) {
-				unique_ptr<CommandBuffer> cmdBuffer;
+				CommandBuffer cmdBuffer;
 				auto getCmdBuffer = [&]() -> CommandBuffer& {
-					cmdBuffer = cmdPool->CreateCommandBuffer();
-					cmdBuffer->Begin();
-					return *cmdBuffer.get();
+					cmdBuffer = cmdPool.CreateCommandBuffer();
+					cmdBuffer.Begin();
+					return cmdBuffer;
 				};
 				auto submit = [&]() {
-					cmdBuffer->End();
+					cmdBuffer.End();
 
 					vk::SubmitInfo subInfo;
 					subInfo.commandBufferCount = 1;
-					subInfo.pCommandBuffers    = (vk::CommandBuffer*)cmdBuffer->GetHandle();
+					subInfo.pCommandBuffers    = &cmdBuffer.GetHandle();
 					GetTransferQueue().submit(subInfo, vk::Fence{});
 					GetTransferQueue().waitIdle();
 				};

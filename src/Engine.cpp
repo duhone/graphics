@@ -67,13 +67,13 @@ namespace {
 		ivec2 m_WindowSize{0, 0};
 		std::optional<glm::vec4> m_clearColor;
 
-		std::unique_ptr<CommandPool> m_commandPool;
+		CommandPool m_commandPool;
 
 		std::unique_ptr<SpriteManagerBasic> m_spriteManagerBasic;
 
 		// Per frame members
 		uint32_t m_currentFrameBuffer{0};
-		std::unique_ptr<CommandBuffer> m_commandBuffer;
+		CommandBuffer m_commandBuffer;
 
 		std::vector<std::function<void()>> m_nextFrameFuncs;
 	};
@@ -138,6 +138,7 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 		Log::Info("  Device max allocations: {}", props.limits.maxMemoryAllocationCount);
 		Log::Info("  Device max array layers: {}", props.limits.maxImageArrayLayers);
 		Log::Info("  Device max 2D image dimensions: {}", props.limits.maxImageDimension2D);
+		Log::Info("  Device max multisample: {}", (VkFlags)props.limits.framebufferColorSampleCounts);
 		for(uint32_t i = 0; i < memProps.memoryTypeCount; ++i) {
 			if(memProps.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) {
 				Log::Info("  Device Local Memory Amount: {}MB",
@@ -462,7 +463,7 @@ void Engine::ExecutePending() {
 void Graphics::CreateEngine(const EngineSettings& a_settings) {
 	assert(!GetEngine().get());
 	GetEngine()                = make_unique<Engine>(a_settings);
-	GetEngine()->m_commandPool = CreateCommandPool(CommandPool::PoolType::Primary);
+	GetEngine()->m_commandPool = CommandPool(CommandPool::PoolType::Primary);
 	DescriptorPoolInit();
 	AssetLoadingThread::Init();
 	TextureSets::Init();
@@ -485,18 +486,18 @@ void Graphics::Frame() {
 
 	engine->m_spriteManagerBasic->Frame();
 
-	engine->m_commandBuffer = engine->m_commandPool->CreateCommandBuffer();
+	engine->m_commandBuffer = engine->m_commandPool.CreateCommandBuffer();
 
-	engine->m_commandBuffer->Begin();
-	TextureSets::CheckLoadingTasks(*engine->m_commandBuffer.get());
-	Commands::RenderPassBegin(*engine->m_commandBuffer.get(), engine->m_clearColor);
-	engine->m_spriteManagerBasic->Draw(*engine->m_commandBuffer.get());
-	Commands::RenderPassEnd(*engine->m_commandBuffer.get());
-	engine->m_commandBuffer->End();
+	engine->m_commandBuffer.Begin();
+	TextureSets::CheckLoadingTasks(engine->m_commandBuffer);
+	Commands::RenderPassBegin(engine->m_commandBuffer, engine->m_clearColor);
+	engine->m_spriteManagerBasic->Draw(engine->m_commandBuffer);
+	Commands::RenderPassEnd(engine->m_commandBuffer);
+	engine->m_commandBuffer.End();
 
 	vk::SubmitInfo subInfo;
 	subInfo.commandBufferCount   = 1;
-	subInfo.pCommandBuffers      = (vk::CommandBuffer*)engine->m_commandBuffer->GetHandle();
+	subInfo.pCommandBuffers      = &engine->m_commandBuffer.GetHandle();
 	subInfo.waitSemaphoreCount   = 0;
 	subInfo.signalSemaphoreCount = 1;
 	subInfo.pSignalSemaphores    = &engine->m_renderingFinished;
@@ -520,8 +521,8 @@ void Graphics::ShutdownEngine() {
 	assert(GetEngine().get());
 	GetEngine()->m_Device.waitIdle();
 	GetEngine()->ExecutePending();
-	GetEngine()->m_commandBuffer.reset();
-	GetEngine()->m_commandPool.reset();
+	GetEngine()->m_commandBuffer = CommandBuffer{};
+	GetEngine()->m_commandPool   = CommandPool{};
 	GetEngine()->m_spriteManagerBasic.reset();
 	TextureSets::Shutdown();
 	DescriptorPoolDestroy();

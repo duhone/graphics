@@ -1,43 +1,9 @@
 ﻿#include "CommandPool.h"
-#include "EngineInternal.h"
 
 using namespace CR::Graphics;
 using namespace std;
 
-namespace {
-	class CommandPoolImpl : public CommandPool {
-	  public:
-		CommandPoolImpl(CommandPool::PoolType a_type);
-		virtual ~CommandPoolImpl();
-		CommandPoolImpl(const CommandPoolImpl&) = delete;
-		CommandPoolImpl& operator=(const CommandPoolImpl&) = delete;
-
-	  private:
-		std::unique_ptr<CommandBuffer> CreateCommandBuffer() override;
-
-		PoolType m_Type;
-		vk::CommandPool m_CommandPool;
-	};
-
-	class CommandBufferImpl : public CommandBuffer {
-	  public:
-		CommandBufferImpl(vk::CommandPool& commandPool, const vk::CommandBuffer& buffer);
-		virtual ~CommandBufferImpl();
-		CommandBufferImpl(const CommandBufferImpl&) = delete;
-		CommandBufferImpl& operator=(const CommandBufferImpl&) = delete;
-
-	  private:
-		void* GetHandle() override { return &m_Buffer; }
-		void Begin() override;
-		void End() override;
-		void Reset() override;
-
-		vk::CommandPool& m_CommandPool;
-		vk::CommandBuffer m_Buffer;
-	};
-}    // namespace
-
-CommandPoolImpl::CommandPoolImpl(CommandPool::PoolType a_type) : m_Type(a_type) {
+CommandPool::CommandPool(CommandPool::PoolType a_type) : m_Type(a_type) {
 	vk::CommandPoolCreateInfo info;
 	info.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
 	switch(m_Type) {
@@ -58,41 +24,60 @@ CommandPoolImpl::CommandPoolImpl(CommandPool::PoolType a_type) : m_Type(a_type) 
 	m_CommandPool = GetDevice().createCommandPool(info);
 }
 
-CommandPoolImpl::~CommandPoolImpl() {
-	GetDevice().destroyCommandPool(m_CommandPool);
+CommandPool::~CommandPool() {
+	if(m_Type != PoolType::Invalid) { GetDevice().destroyCommandPool(m_CommandPool); }
+	m_Type = PoolType::Invalid;
 }
 
-std::unique_ptr<CommandBuffer> CommandPoolImpl::CreateCommandBuffer() {
+CommandPool& CommandPool::operator=(CommandPool&& a_other) noexcept {
+	this->~CommandPool();
+
+	m_Type        = a_other.m_Type;
+	m_CommandPool = a_other.m_CommandPool;
+
+	a_other.m_Type = PoolType::Invalid;
+
+	return *this;
+}
+
+CommandBuffer CommandPool::CreateCommandBuffer() {
 	vk::CommandBufferAllocateInfo info;
 	info.commandBufferCount = 1;
 	info.commandPool        = m_CommandPool;
 	info.level = m_Type == PoolType::Secondary ? vk::CommandBufferLevel::eSecondary : vk::CommandBufferLevel::ePrimary;
 	vk::CommandBuffer buffer;
 	buffer = GetDevice().allocateCommandBuffers(info)[0];
-	return make_unique<CommandBufferImpl>(m_CommandPool, buffer);
+	return CommandBuffer(m_CommandPool, buffer);
 }
 
-CommandBufferImpl::CommandBufferImpl(vk::CommandPool& commandPool, const vk::CommandBuffer& buffer) :
-    m_CommandPool(commandPool), m_Buffer(buffer) {}
+CommandBuffer::CommandBuffer(vk::CommandPool& commandPool, const vk::CommandBuffer& buffer) :
+    m_CommandPool(&commandPool), m_Buffer(buffer) {}
 
-CommandBufferImpl::~CommandBufferImpl() {
-	GetDevice().freeCommandBuffers(m_CommandPool, 1, &m_Buffer);
+CommandBuffer::~CommandBuffer() {
+	if(m_CommandPool) { GetDevice().freeCommandBuffers(*m_CommandPool, 1, &m_Buffer); }
+	m_CommandPool = nullptr;
 }
 
-void CommandBufferImpl::Begin() {
+CommandBuffer& CommandBuffer::operator=(CommandBuffer&& a_other) noexcept {
+	this->~CommandBuffer();
+	m_CommandPool = a_other.m_CommandPool;
+	m_Buffer      = a_other.m_Buffer;
+
+	a_other.m_CommandPool = nullptr;
+
+	return *this;
+}
+
+void CommandBuffer::Begin() {
 	vk::CommandBufferBeginInfo info;
 	info.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
 	m_Buffer.begin(info);
 }
 
-void CommandBufferImpl::End() {
+void CommandBuffer::End() {
 	m_Buffer.end();
 }
 
-void CommandBufferImpl::Reset() {
+void CommandBuffer::Reset() {
 	m_Buffer.reset(vk::CommandBufferResetFlags{});
-}
-
-std::unique_ptr<CommandPool> CR::Graphics::CreateCommandPool(CommandPool::PoolType a_type) {
-	return make_unique<CommandPoolImpl>(a_type);
 }
