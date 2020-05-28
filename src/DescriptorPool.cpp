@@ -43,7 +43,7 @@ vk::DescriptorSet Graphics::CreateDescriptorSet(const vk::DescriptorSetLayout& a
 	vk::DescriptorBufferInfo bufInfo;
 	bufInfo.buffer = a_buffer.GetHandle();
 	bufInfo.offset = 0;
-	bufInfo.range  = 256 * 8 * 4;
+	bufInfo.range  = a_buffer.GetSize();
 
 	vk::WriteDescriptorSet writeSet;
 	writeSet.dstSet          = result;

@@ -22,15 +22,15 @@ namespace CR::Graphics {
 		std::byte* GetData() const { return m_data; }
 
 		template<typename T>
-		T* GetData() {
-			return (T*)GetData();
-		}
+		T* GetData() { return (T*)GetData(); }
 
+		uint32_t GetSize() { return m_size; }
 	  private:
 		void Free();
 
 		vk::Buffer m_Buffer;
 		vk::DeviceMemory m_BufferMemory;
 		std::byte* m_data{nullptr};
+		uint32_t m_size;
 	};
 }    // namespace CR::Graphics

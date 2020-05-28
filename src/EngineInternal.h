@@ -17,6 +17,7 @@ namespace CR::Graphics {
 	uint32_t GetHostMemoryIndex();
 	const vk::RenderPass& GetRenderPass();
 	const vk::Framebuffer& GetFrameBuffer();
+	uint32_t GetFrameRateDivisor();
 
 	uint32_t GetGraphicsQueueIndex();
 	uint32_t GetTransferQueueIndex();

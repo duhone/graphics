@@ -6,7 +6,7 @@ using namespace std;
 using namespace CR;
 using namespace CR::Graphics;
 
-UniformBufferDynamic::UniformBufferDynamic(uint32_t a_bytes) {
+UniformBufferDynamic::UniformBufferDynamic(uint32_t a_bytes) : m_size(a_bytes) {
 	Core::Log::Assert(a_bytes % 256 == 0, "uniform buffers must be a multiple of 256 bytes in size");
 
 	vk::BufferCreateInfo createInfo;

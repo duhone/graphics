@@ -66,6 +66,7 @@ namespace {
 
 		ivec2 m_WindowSize{0, 0};
 		std::optional<glm::vec4> m_clearColor;
+		uint32_t m_FrameRateDivisor{1};
 
 		CommandPool m_commandPool;
 
@@ -85,6 +86,8 @@ namespace {
 }    // namespace
 
 Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.ClearColor) {
+	m_FrameRateDivisor = (a_settings.RefreshRate + 30) / 60;
+
 	vector<string> enabledLayers;
 	if(a_settings.EnableDebug) {
 		vector<vk::LayerProperties> layers = vk::enumerateInstanceLayerProperties();
@@ -582,4 +585,9 @@ SpriteManagerBasic& Graphics::GetSpriteManagerBasic() {
 void Graphics::ExecuteNextFrame(std::function<void()> a_func) {
 	assert(GetEngine().get());
 	GetEngine()->m_nextFrameFuncs.push_back(move(a_func));
+}
+
+uint32_t Graphics::GetFrameRateDivisor() {
+	assert(GetEngine().get());
+	return GetEngine()->m_FrameRateDivisor;
 }

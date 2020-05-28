@@ -24,6 +24,11 @@ namespace CR::Graphics {
 		void* HInstance{nullptr};
 		void* Hwnd{nullptr};
 #endif
+
+		// Vulkan doesn't seem to have a way to query this, so will need to be passed in.
+		// Note, this isn't setting the refresh rate, its the application letting the engine
+		// know what the refresh rate currently is.
+		uint32_t RefreshRate{60};
 	};
 
 	void CreateEngine(const EngineSettings& a_settings);

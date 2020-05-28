@@ -84,7 +84,6 @@ set(SRCS
   ${root}/tests/Engine.cpp
   ${root}/tests/UniformBufferDynamic.cpp
   ${root}/tests/TextureSet.cpp
-  ${root}/tests/FrameBuffer.cpp
   ${root}/tests/SpriteBasic.cpp
   ${root}/tests/SpriteTemplateBasic.cpp
 )

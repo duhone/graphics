@@ -97,38 +97,40 @@ void SpriteManagerBasic::Frame() {
 					// Nothing to do
 					break;
 				case eFrameRate::FPS10:
-					if(m_currentFrame % 6 == 0) {
+					if(m_currentFrame % (6 * GetFrameRateDivisor()) == 0) {
 						++m_sprites.CurrentFrame[sprite];
 						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
 					}
 					break;
 				case eFrameRate::FPS12:
-					if(m_currentFrame % 5 == 0) {
+					if(m_currentFrame % (5 * GetFrameRateDivisor()) == 0) {
 						++m_sprites.CurrentFrame[sprite];
 						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
 					}
 					break;
 				case eFrameRate::FPS15:
-					if(m_currentFrame % 4 == 0) {
+					if(m_currentFrame % (4 * GetFrameRateDivisor()) == 0) {
 						++m_sprites.CurrentFrame[sprite];
 						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
 					}
 					break;
 				case eFrameRate::FPS20:
-					if(m_currentFrame % 3 == 0) {
+					if(m_currentFrame % (3 * GetFrameRateDivisor()) == 0) {
 						++m_sprites.CurrentFrame[sprite];
 						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
 					}
 					break;
 				case eFrameRate::FPS30:
-					if(m_currentFrame % 2 == 0) {
+					if(m_currentFrame % (2 * GetFrameRateDivisor()) == 0) {
 						++m_sprites.CurrentFrame[sprite];
 						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
 					}
 					break;
 				case eFrameRate::FPS60: {
-					++m_sprites.CurrentFrame[sprite];
-					m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
+					if(m_currentFrame % (1 * GetFrameRateDivisor()) == 0) {
+						++m_sprites.CurrentFrame[sprite];
+						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
+					}
 				} break;
 				default:
 					break;
