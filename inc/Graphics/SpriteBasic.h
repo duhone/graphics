@@ -26,6 +26,7 @@ namespace CR::Graphics {
 
 		void SetPosition(const glm::vec2& a_position);
 		void SetColor(const glm::vec4& a_color);
+		void SetRotation(float a_rotation);
 
 		[[nodiscard]] uint16_t GetIndex() const { return m_index; }
 

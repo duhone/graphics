@@ -34,3 +34,7 @@ void SpriteBasic::SetPosition(const glm::vec2& a_position) {
 void SpriteBasic::SetColor(const glm::vec4& a_color) {
 	GetSpriteManagerBasic().SetSpriteColor(m_index, a_color);
 }
+
+void SpriteBasic::SetRotation(float a_rotation) {
+	GetSpriteManagerBasic().SetSpriteRotation(m_index, a_rotation);
+}

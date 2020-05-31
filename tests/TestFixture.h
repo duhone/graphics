@@ -7,6 +7,7 @@
 class TestFixture {
   protected:
 	GLFWwindow* Window{nullptr};
+	float m_frameTime{0.0f};
 
   public:
 	TestFixture() {
@@ -28,6 +29,7 @@ class TestFixture {
 		settings.HInstance          = GetModuleHandle(nullptr);
 		settings.ClearColor         = glm::vec4(0.0f, 0.0f, 0.75f, 1.0f);
 		settings.RefreshRate        = displayMode->refreshRate;
+		m_frameTime                 = 1.0f / displayMode->refreshRate;
 
 		REQUIRE_NOTHROW(CR::Graphics::CreateEngine(settings));
 	}

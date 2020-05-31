@@ -57,18 +57,22 @@ Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
 	vk::UniqueShaderModule vertModule = device.createShaderModuleUnique(vertInfo);
 	vk::UniqueShaderModule fragModule = device.createShaderModuleUnique(fragInfo);
 
-	glm::vec2 invScreenSize{1.0f / GetWindowSize().x, 1.0f / GetWindowSize().y};
-	vk::SpecializationMapEntry vertSpecInfoEntrys[2];
+	std::vector<std::byte> specVertBuffer;
+
+	vk::SpecializationMapEntry vertSpecInfoEntrys[3];
 	vertSpecInfoEntrys[0].constantID = 0;
-	vertSpecInfoEntrys[0].offset     = offsetof(glm::vec2, x);
+	vertSpecInfoEntrys[0].offset     = (uint32_t)Core::Write(specVertBuffer, 1.0f / GetWindowSize().x);
 	vertSpecInfoEntrys[0].size       = sizeof(float);
 	vertSpecInfoEntrys[1].constantID = 1;
-	vertSpecInfoEntrys[1].offset     = offsetof(glm::vec2, y);
+	vertSpecInfoEntrys[1].offset     = (uint32_t)Core::Write(specVertBuffer, 1.0f / GetWindowSize().y);
 	vertSpecInfoEntrys[1].size       = sizeof(float);
+	vertSpecInfoEntrys[2].constantID = 2;
+	vertSpecInfoEntrys[2].offset     = (uint32_t)Core::Write(specVertBuffer, c_maxSpritesPerBatch);
+	vertSpecInfoEntrys[2].size       = sizeof(c_maxSpritesPerBatch);
 
 	vk::SpecializationInfo vertSpecInfo;
-	vertSpecInfo.dataSize      = sizeof(invScreenSize);
-	vertSpecInfo.pData         = &invScreenSize;
+	vertSpecInfo.dataSize      = specVertBuffer.size();
+	vertSpecInfo.pData         = specVertBuffer.data();
 	vertSpecInfo.mapEntryCount = (uint32_t)size(vertSpecInfoEntrys);
 	vertSpecInfo.pMapEntries   = data(vertSpecInfoEntrys);
 
@@ -78,7 +82,7 @@ Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
 	fragSpecInfoEntrys.size       = sizeof(int32_t);
 
 	vk::SpecializationInfo fragSpecInfo;
-	fragSpecInfo.dataSize      = sizeof(invScreenSize);
+	fragSpecInfo.dataSize      = sizeof(c_maxTextures);
 	fragSpecInfo.pData         = &c_maxTextures;
 	fragSpecInfo.mapEntryCount = 1;
 	fragSpecInfo.pMapEntries   = &fragSpecInfoEntrys;

@@ -137,3 +137,35 @@ add_custom_command(TARGET graphics_tests POST_BUILD
 add_custom_command(TARGET graphics_tests POST_BUILD
     COMMAND $<TARGET_FILE:TextureProcessor> -i ${root}/tests/data/BonusHarrySelect -o $<TARGET_FILE_DIR:graphics_tests>/BonusHarrySelect -p
 )
+
+add_custom_command(TARGET graphics_tests POST_BUILD
+    COMMAND $<TARGET_FILE:TextureProcessor> -i ${root}/tests/data/leaf -o $<TARGET_FILE_DIR:graphics_tests>/leaf -p
+)
+
+add_custom_command(TARGET graphics_tests POST_BUILD
+    COMMAND $<TARGET_FILE:TextureProcessor> -i ${root}/tests/data/brick -o $<TARGET_FILE_DIR:graphics_tests>/brick -p
+)
+
+add_custom_command(TARGET graphics_tests POST_BUILD
+    COMMAND $<TARGET_FILE:TextureProcessor> -i ${root}/tests/data/wood -o $<TARGET_FILE_DIR:graphics_tests>/wood -p
+)
+
+add_custom_command(TARGET graphics_tests POST_BUILD
+    COMMAND $<TARGET_FILE:TextureProcessor> -i ${root}/tests/data/ice -o $<TARGET_FILE_DIR:graphics_tests>/ice -p
+)
+
+add_custom_command(TARGET graphics_tests POST_BUILD
+    COMMAND $<TARGET_FILE:TextureProcessor> -i ${root}/tests/data/diamond -o $<TARGET_FILE_DIR:graphics_tests>/diamond -p
+)
+
+add_custom_command(TARGET graphics_tests POST_BUILD
+    COMMAND $<TARGET_FILE:TextureProcessor> -i ${root}/tests/data/gold -o $<TARGET_FILE_DIR:graphics_tests>/gold -p
+)
+
+add_custom_command(TARGET graphics_tests POST_BUILD
+    COMMAND $<TARGET_FILE:TextureProcessor> -i ${root}/tests/data/m -o $<TARGET_FILE_DIR:graphics_tests>/m -p
+)
+
+add_custom_command(TARGET graphics_tests POST_BUILD
+    COMMAND $<TARGET_FILE:TextureProcessor> -i ${root}/tests/data/question -o $<TARGET_FILE_DIR:graphics_tests>/question -p
+)

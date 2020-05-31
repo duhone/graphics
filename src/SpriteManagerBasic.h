@@ -15,37 +15,38 @@
 #include <string>
 
 namespace CR::Graphics {
-	// inline constexpr uint32_t SpritesPerTemplate = 128;
-	inline constexpr uint32_t MaxSpriteTemplates = 64;
-	inline constexpr uint32_t MaxSprites         = 1024;
-	inline constexpr uint32_t MaxSpritesPerBatch = 256;
-	static_assert(MaxSpriteTemplates < std::numeric_limits<uint8_t>::max());    // index is a uint8_t
-	static_assert(MaxSprites < std::numeric_limits<uint16_t>::max());           // index is a uint16_t
+	inline constexpr uint32_t c_maxSpriteTemplates = 64;
+	inline constexpr uint32_t c_maxSprites         = 1024;
+	static_assert(c_maxSpriteTemplates < std::numeric_limits<uint8_t>::max());    // index is a uint8_t
+	static_assert(c_maxSprites < std::numeric_limits<uint16_t>::max());           // index is a uint16_t
 
 	struct SpriteTemplates {
-		std::bitset<MaxSpriteTemplates> Used;
-		uint16_t TextureIndices[MaxSprites];
-		std::string Names[MaxSpriteTemplates];
-		glm::uvec2 FrameSizes[MaxSpriteTemplates];
-		eFrameRate FrameRates[MaxSprites];
-		uint16_t MaxFrames[MaxSprites];
+		std::bitset<c_maxSpriteTemplates> Used;
+		uint16_t TextureIndices[c_maxSprites];
+		std::string Names[c_maxSpriteTemplates];
+		glm::uvec2 FrameSizes[c_maxSpriteTemplates];
+		eFrameRate FrameRates[c_maxSprites];
+		uint16_t MaxFrames[c_maxSprites];
 	};
 
 	struct SpriteUniformData {
 		glm::vec4 Position;    // z and w are unused.
 		glm::vec4 Color;
 		glm::vec4 FrameSize;
+		glm::vec4 Rotation;    // really a mat2
 	};
-	static_assert((sizeof(SpriteUniformData) * MaxSprites) / MaxSpriteTemplates < 64 * 1024, "64KB max uniform range");
+	static_assert((sizeof(SpriteUniformData) * c_maxSprites) / c_maxSpriteTemplates < 64 * 1024,
+	              "64KB max uniform range");
 
 	struct Sprites {
-		std::bitset<MaxSprites> Used;
-		std::string Names[MaxSprites];
-		std::shared_ptr<SpriteTemplateBasic> Templates[MaxSprites];
-		uint8_t TemplateIndices[MaxSprites];
-		glm::vec2 Positions[MaxSprites];
-		glm::vec4 Colors[MaxSprites];
-		uint16_t CurrentFrame[MaxSprites];
+		std::bitset<c_maxSprites> Used;
+		std::string Names[c_maxSprites];
+		std::shared_ptr<SpriteTemplateBasic> Templates[c_maxSprites];
+		uint8_t TemplateIndices[c_maxSprites];
+		glm::vec2 Positions[c_maxSprites];
+		glm::vec4 Colors[c_maxSprites];
+		float Rotations[c_maxSprites];
+		uint16_t CurrentFrame[c_maxSprites];
 	};
 
 	class SpriteManagerBasic {
@@ -65,6 +66,7 @@ namespace CR::Graphics {
 		void FreeSprite(uint16_t a_index);
 		void SetSpritePosition(uint16_t a_index, const glm::vec2& a_position);
 		void SetSpriteColor(uint16_t a_index, const glm::vec4& a_color);
+		void SetSpriteRotation(uint16_t a_index, float a_rotation);
 
 		void Frame();
 
@@ -86,5 +88,9 @@ namespace CR::Graphics {
 
 	inline void SpriteManagerBasic::SetSpriteColor(uint16_t a_index, const glm::vec4& a_color) {
 		m_sprites.Colors[a_index] = a_color;
+	}
+
+	inline void SpriteManagerBasic::SetSpriteRotation(uint16_t a_index, float a_rotation) {
+		m_sprites.Rotations[a_index] = a_rotation;
 	}
 }    // namespace CR::Graphics

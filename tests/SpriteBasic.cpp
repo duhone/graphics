@@ -48,8 +48,8 @@ TEST_CASE_FIXTURE(TestFixture, "sprites_basic") {
 
 	glm::vec2 step{1.0f, 2.0f};
 
-	constexpr bool loop = true;
-	while(loop && !glfwWindowShouldClose(Window)) {
+	bool loop = false;
+	do {
 		glfwPollEvents();
 		position += step;
 		if(position.x > 1280.0f) { step.x = -1.0f; }
@@ -58,5 +58,53 @@ TEST_CASE_FIXTURE(TestFixture, "sprites_basic") {
 		if(position.y < 0.0f) { step.y = 2.0f; }
 		sprite2.SetPosition(position);
 		Frame();
-	}
+	} while(loop && !glfwWindowShouldClose(Window));
+}
+
+TEST_CASE_FIXTURE(TestFixture, "sprites_rotation") {
+	Platform::MemoryMappedFile crtexLeaf(Platform::GetCurrentProcessPath() / "leaf.crtexd");
+	Platform::MemoryMappedFile crtexBrick(Platform::GetCurrentProcessPath() / "brick.crtexd");
+	TextureCreateInfo texInfo[2];
+	texInfo[0].TextureData = Core::Span<const byte>{crtexLeaf.data(), crtexLeaf.size()};
+	texInfo[0].Name        = "leaf";
+	texInfo[1].TextureData = Core::Span<const byte>{crtexBrick.data(), crtexBrick.size()};
+	texInfo[1].Name        = "brick";
+	TextureSet texSet(texInfo);
+
+	SpriteTemplateBasicCreateInfo templateInfoLeaf;
+	templateInfoLeaf.Name        = "leaf template";
+	templateInfoLeaf.FrameSize   = {88, 88};
+	templateInfoLeaf.TextureName = "leaf";
+	auto spriteTemplateLeaf      = CreateSpriteTemplateBasic(templateInfoLeaf);
+
+	SpriteTemplateBasicCreateInfo templateInfoBrick;
+	templateInfoBrick.Name        = "brick template";
+	templateInfoBrick.FrameSize   = {88, 88};
+	templateInfoBrick.TextureName = "brick";
+	auto spriteTemplateBrick      = CreateSpriteTemplateBasic(templateInfoBrick);
+
+	Graphics::SpriteBasicCreateInfo spriteInfo;
+	spriteInfo.Name     = "test leaf";
+	spriteInfo.Template = spriteTemplateLeaf;
+	SpriteBasic spriteLeaf(spriteInfo);
+	spriteInfo.Name     = "test brick";
+	spriteInfo.Template = spriteTemplateBrick;
+	SpriteBasic spriteBrick(spriteInfo);
+
+	spriteLeaf.SetPosition({128.0f, 128.0f});
+	spriteBrick.SetPosition({256.0f, 256.0f});
+
+	spriteLeaf.SetRotation(glm::radians(45.0f));
+
+	float brickStep = 1.0f;
+	float brickRot  = 0.0f;
+
+	bool loop = true;
+	do {
+		brickRot += brickStep * m_frameTime;
+		spriteBrick.SetRotation(brickRot);
+
+		glfwPollEvents();
+		Frame();
+	} while(loop && !glfwWindowShouldClose(Window));
 }

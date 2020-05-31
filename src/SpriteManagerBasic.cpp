@@ -1,6 +1,7 @@
 ﻿#include "SpriteManagerBasic.h"
 
 #include "Commands.h"
+#include "Constants.h"
 #include "SpriteTemplateBasicImpl.h"
 #include "shaders/Basic.h"
 
@@ -18,7 +19,7 @@ SpriteManagerBasic::SpriteManagerBasic() {
 	CreatePipelineArgs pipeInfo;
 	pipeInfo.ShaderModule = embed::GetBasic();
 	Pipeline              = Graphics::Pipeline(pipeInfo);
-	UniformBuffer         = UniformBufferDynamic{sizeof(SpriteUniformData) * MaxSprites};
+	UniformBuffer         = UniformBufferDynamic{sizeof(SpriteUniformData) * c_maxSprites};
 	DescSet               = CreateDescriptorSet(Pipeline.GetDescLayout(), UniformBuffer);
 }
 
@@ -29,14 +30,14 @@ SpriteManagerBasic::~SpriteManagerBasic() {
 
 uint8_t SpriteManagerBasic::CreateTemplate(const std::string_view a_name, const glm::uvec2& a_frameSize,
                                            eFrameRate frameRate, const char* a_textureName) {
-	size_t result = MaxSpriteTemplates;
-	for(size_t i = 0; i < MaxSpriteTemplates; ++i) {
+	size_t result = c_maxSpriteTemplates;
+	for(size_t i = 0; i < c_maxSpriteTemplates; ++i) {
 		if(!m_spriteTemplates.Used[i]) {
 			result = i;
 			break;
 		}
 	}
-	Core::Log::Require(result != MaxSpriteTemplates, "Ran out of available sprite templates");
+	Core::Log::Require(result != c_maxSpriteTemplates, "Ran out of available sprite templates");
 
 	m_spriteTemplates.Used[result]           = true;
 	m_spriteTemplates.Names[result]          = a_name;
@@ -58,14 +59,14 @@ uint16_t SpriteManagerBasic::CreateSprite(const std::string_view a_name,
                                           std::shared_ptr<SpriteTemplateBasic> a_template) {
 	uint32_t templateIndex = ((SpriteTemplateBasicImpl*)a_template.get())->GetIndex();
 
-	uint32_t result = MaxSprites;
-	for(uint32_t i = 0; i < MaxSprites; ++i) {
+	uint32_t result = c_maxSprites;
+	for(uint32_t i = 0; i < c_maxSprites; ++i) {
 		if(!m_sprites.Used[i]) {
 			result = i;
 			break;
 		}
 	}
-	Core::Log::Assert(result != MaxSprites, "Ran out of available sprites");
+	Core::Log::Assert(result != c_maxSprites, "Ran out of available sprites");
 
 	m_sprites.Used[result]            = true;
 	m_sprites.Names[result]           = a_name;
@@ -74,6 +75,7 @@ uint16_t SpriteManagerBasic::CreateSprite(const std::string_view a_name,
 	m_sprites.CurrentFrame[result]    = 0;
 	m_sprites.Colors[result]          = glm::vec4(1.0f);
 	m_sprites.Positions[result]       = glm::vec2(0.0f);
+	m_sprites.Rotations[result]       = 0.0f;
 
 	return (uint16_t)result;
 }
@@ -89,7 +91,7 @@ void SpriteManagerBasic::Frame() {
 	++m_currentFrame;
 	Pipeline.Frame(DescSet);
 
-	for(uint32_t sprite = 0; sprite < MaxSprites; ++sprite) {
+	for(uint32_t sprite = 0; sprite < c_maxSprites; ++sprite) {
 		if(m_sprites.Used[sprite]) {
 			auto& templIndex = m_sprites.TemplateIndices[sprite];
 			switch(m_spriteTemplates.FrameRates[templIndex]) {
@@ -141,7 +143,7 @@ void SpriteManagerBasic::Frame() {
 
 void SpriteManagerBasic::Draw(CommandBuffer& a_commandBuffer) {
 	SpriteUniformData* uniformData = UniformBuffer.GetData<SpriteUniformData>();
-	for(uint32_t sprite = 0; sprite < MaxSprites; ++sprite) {
+	for(uint32_t sprite = 0; sprite < c_maxSprites; ++sprite) {
 		if(m_sprites.Used[sprite]) {
 			auto& templIndex = m_sprites.TemplateIndices[sprite];
 
@@ -152,6 +154,11 @@ void SpriteManagerBasic::Draw(CommandBuffer& a_commandBuffer) {
 
 			uniformData[sprite].Color     = m_sprites.Colors[sprite];
 			uniformData[sprite].FrameSize = glm::vec4(m_spriteTemplates.FrameSizes[templIndex], 0.0f, 0.0f);
+
+			float sinAngle               = sin(m_sprites.Rotations[sprite]);
+			float cosAngle               = cos(m_sprites.Rotations[sprite]);
+			glm::mat2 rot                = glm::mat2{cosAngle, -sinAngle, sinAngle, cosAngle};
+			uniformData[sprite].Rotation = glm::vec4{rot[0][0], rot[0][1], rot[1][0], rot[1][1]};
 		}
 	}
 
@@ -160,13 +167,13 @@ void SpriteManagerBasic::Draw(CommandBuffer& a_commandBuffer) {
 	uint32_t descOffset = 0;
 	uint32_t numSprites = 0;
 	Commands::BindDescriptorSet(a_commandBuffer, Pipeline, DescSet, descOffset);
-	for(uint32_t sprite = 0; sprite < MaxSprites; ++sprite) {
+	for(uint32_t sprite = 0; sprite < c_maxSprites; ++sprite) {
 		if(m_sprites.Used[sprite]) {
 			++numSprites;
 			if(numSprites > 256) {
 				Commands::Draw(a_commandBuffer, 4, numSprites);
 				// new batch
-				descOffset = MaxSpritesPerBatch * sizeof(SpriteUniformData);
+				descOffset = c_maxSpritesPerBatch * sizeof(SpriteUniformData);
 				Commands::BindDescriptorSet(a_commandBuffer, Pipeline, DescSet, descOffset);
 			}
 		}
