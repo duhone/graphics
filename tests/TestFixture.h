@@ -23,7 +23,11 @@ class TestFixture {
 		CR::Graphics::EngineSettings settings;
 		settings.ApplicationName    = "Unit Test";
 		settings.ApplicationVersion = 1;
-		settings.EnableDebug        = true;
+		if constexpr(CR_DEBUG || CR_RELEASE) {
+			settings.EnableDebug = true;
+		} else {
+			settings.EnableDebug = false;
+		}
 		settings.ExtensionsToEnable = glfwGetRequiredInstanceExtensions(&settings.ExtensionsToEnableCount);
 		settings.Hwnd               = glfwGetWin32Window(Window);
 		settings.HInstance          = GetModuleHandle(nullptr);

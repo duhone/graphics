@@ -13,6 +13,7 @@ namespace CR::Graphics {
 
 	class TextureSet {
 	  public:
+		TextureSet() = default;
 		TextureSet(const Core::Span<TextureCreateInfo> a_textures);
 		~TextureSet();
 		TextureSet(const TextureSet&) = delete;
