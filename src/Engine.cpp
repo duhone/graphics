@@ -77,6 +77,11 @@ namespace {
 		CommandBuffer m_commandBuffer;
 
 		std::vector<std::function<void()>> m_nextFrameFuncs;
+
+		// MSAA
+		vk::Image m_msaaImage;
+		vk::ImageView m_msaaView;
+		vk::DeviceMemory m_msaaMemory;
 	};
 
 	unique_ptr<Engine>& GetEngine() {
@@ -279,6 +284,7 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	}
 
 	vk::PhysicalDeviceFeatures2 requiredFeatures;
+	requiredFeatures.features.sampleRateShading                      = true;
 	requiredFeatures.features.textureCompressionBC                   = true;
 	requiredFeatures.features.fullDrawIndexUint32                    = true;
 	requiredFeatures.features.shaderSampledImageArrayDynamicIndexing = true;
@@ -353,6 +359,47 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	Log::Info("Presentation modes:");
 	for(const auto& mode : presentModes) { Log::Info("    Presentation Mode: {}", to_string(mode)); }
 
+	{
+		// msaa image
+		vk::ImageCreateInfo msaaCreateInfo;
+		msaaCreateInfo.extent.width  = surfaceCaps.maxImageExtent.width;
+		msaaCreateInfo.extent.height = surfaceCaps.maxImageExtent.height;
+		msaaCreateInfo.extent.depth  = 1;
+		msaaCreateInfo.arrayLayers   = 1;
+		msaaCreateInfo.mipLevels     = 1;
+		msaaCreateInfo.samples       = vk::SampleCountFlagBits::e4;
+		msaaCreateInfo.tiling        = vk::ImageTiling::eOptimal;
+		msaaCreateInfo.sharingMode   = vk::SharingMode::eExclusive;
+		// TODO should be a transient attachment on mobile
+		msaaCreateInfo.usage         = vk::ImageUsageFlagBits::eColorAttachment;
+		msaaCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
+		msaaCreateInfo.imageType     = vk::ImageType::e2D;
+		msaaCreateInfo.flags         = vk::ImageCreateFlags{0};
+		msaaCreateInfo.format        = vk::Format::eB8G8R8A8Srgb;
+
+		m_msaaImage = device.createImage(msaaCreateInfo);
+
+		auto imageRequirements = device.getImageMemoryRequirements(m_msaaImage);
+		vk::MemoryAllocateInfo allocInfo;
+		allocInfo.memoryTypeIndex = DeviceMemoryIndex;
+		allocInfo.allocationSize  = imageRequirements.size;
+		m_msaaMemory              = device.allocateMemory(allocInfo);
+
+		device.bindImageMemory(m_msaaImage, m_msaaMemory, 0);
+
+		vk::ImageViewCreateInfo viewInfo;
+		viewInfo.image                           = m_msaaImage;
+		viewInfo.viewType                        = vk::ImageViewType::e2D;
+		viewInfo.format                          = vk::Format::eB8G8R8A8Srgb;
+		viewInfo.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
+		viewInfo.subresourceRange.baseMipLevel   = 0;
+		viewInfo.subresourceRange.levelCount     = 1;
+		viewInfo.subresourceRange.baseArrayLayer = 0;
+		viewInfo.subresourceRange.layerCount     = 1;
+
+		m_msaaView = device.createImageView(viewInfo);
+	}
+
 	vk::SwapchainCreateInfoKHR swapCreateInfo;
 	swapCreateInfo.setClipped(true);
 	swapCreateInfo.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
@@ -393,32 +440,45 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	}
 	m_WindowSize = ivec2(surfaceCaps.maxImageExtent.width, surfaceCaps.maxImageExtent.height);
 
-	vk::AttachmentDescription attatchDesc;
-	attatchDesc.initialLayout = vk::ImageLayout::eUndefined;
-	attatchDesc.finalLayout   = vk::ImageLayout::ePresentSrcKHR;
-	attatchDesc.format        = vk::Format::eB8G8R8A8Srgb;
+	vk::AttachmentDescription attatchDescs[2];
+	attatchDescs[0].initialLayout = vk::ImageLayout::eUndefined;
+	attatchDescs[0].finalLayout   = vk::ImageLayout::eColorAttachmentOptimal;
+	attatchDescs[0].format        = vk::Format::eB8G8R8A8Srgb;
 	if(a_settings.ClearColor.has_value()) {
-		attatchDesc.loadOp = vk::AttachmentLoadOp::eClear;
+		attatchDescs[0].loadOp = vk::AttachmentLoadOp::eClear;
 	} else {
-		attatchDesc.loadOp = vk::AttachmentLoadOp::eDontCare;
+		attatchDescs[0].loadOp = vk::AttachmentLoadOp::eDontCare;
 	}
-	attatchDesc.storeOp        = vk::AttachmentStoreOp::eStore;
-	attatchDesc.samples        = vk::SampleCountFlagBits::e1;
-	attatchDesc.stencilLoadOp  = vk::AttachmentLoadOp::eDontCare;
-	attatchDesc.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+	// TODO should be dont care for mobile, would be transient and never need to be stored to memory
+	attatchDescs[0].storeOp        = vk::AttachmentStoreOp::eStore;
+	attatchDescs[0].samples        = vk::SampleCountFlagBits::e4;
+	attatchDescs[0].stencilLoadOp  = vk::AttachmentLoadOp::eDontCare;
+	attatchDescs[0].stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+	attatchDescs[1].initialLayout  = vk::ImageLayout::eUndefined;
+	attatchDescs[1].finalLayout    = vk::ImageLayout::ePresentSrcKHR;
+	attatchDescs[1].format         = vk::Format::eB8G8R8A8Srgb;
+	attatchDescs[1].loadOp         = vk::AttachmentLoadOp::eDontCare;
+	// TODO should be dont care for mobile
+	attatchDescs[1].storeOp        = vk::AttachmentStoreOp::eStore;
+	attatchDescs[1].samples        = vk::SampleCountFlagBits::e1;
+	attatchDescs[1].stencilLoadOp  = vk::AttachmentLoadOp::eDontCare;
+	attatchDescs[1].stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
 
-	vk::AttachmentReference attachRef;
-	attachRef.attachment = 0;
-	attachRef.layout     = vk::ImageLayout::eColorAttachmentOptimal;
+	vk::AttachmentReference attachRefs[2];
+	attachRefs[0].attachment = 0;
+	attachRefs[0].layout     = vk::ImageLayout::eColorAttachmentOptimal;
+	attachRefs[1].attachment = 1;
+	attachRefs[1].layout     = vk::ImageLayout::eColorAttachmentOptimal;
 
 	vk::SubpassDescription subpassDesc;
 	subpassDesc.pipelineBindPoint    = vk::PipelineBindPoint::eGraphics;
 	subpassDesc.colorAttachmentCount = 1;
-	subpassDesc.pColorAttachments    = &attachRef;
+	subpassDesc.pColorAttachments    = &attachRefs[0];
+	subpassDesc.pResolveAttachments  = &attachRefs[1];
 
 	vk::RenderPassCreateInfo renderPassInfo;
-	renderPassInfo.attachmentCount = 1;
-	renderPassInfo.pAttachments    = &attatchDesc;
+	renderPassInfo.attachmentCount = 2;
+	renderPassInfo.pAttachments    = attatchDescs;
 	renderPassInfo.subpassCount    = 1;
 	renderPassInfo.pSubpasses      = &subpassDesc;
 
@@ -426,12 +486,13 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 
 	for(auto& imageView : m_primarySwapChainImageViews) {
 		vk::FramebufferCreateInfo framebufferInfo;
-		framebufferInfo.attachmentCount = 1;
-		framebufferInfo.pAttachments    = &imageView;
-		framebufferInfo.width           = m_WindowSize.x;
-		framebufferInfo.height          = m_WindowSize.y;
-		framebufferInfo.renderPass      = m_RenderPass;
-		framebufferInfo.layers          = 1;
+		const vk::ImageView attachments[] = {m_msaaView, imageView};
+		framebufferInfo.attachmentCount   = 2;
+		framebufferInfo.pAttachments      = attachments;
+		framebufferInfo.width             = m_WindowSize.x;
+		framebufferInfo.height            = m_WindowSize.y;
+		framebufferInfo.renderPass        = m_RenderPass;
+		framebufferInfo.layers            = 1;
 
 		m_frameBuffers.push_back(device.createFramebuffer(framebufferInfo));
 	}
@@ -450,6 +511,9 @@ Engine::~Engine() {
 	m_Device.destroySemaphore(m_renderingFinished);
 	for(auto& framebuffer : m_frameBuffers) { m_Device.destroyFramebuffer(framebuffer); }
 	m_Device.destroyRenderPass(m_RenderPass);
+	m_Device.destroyImageView(m_msaaView);
+	m_Device.destroyImage(m_msaaImage);
+	m_Device.freeMemory(m_msaaMemory);
 	for(auto& imageView : m_primarySwapChainImageViews) { m_Device.destroyImageView(imageView); }
 	m_primarySwapChainImageViews.clear();
 	m_Device.destroySwapchainKHR(m_PrimarySwapChain);
