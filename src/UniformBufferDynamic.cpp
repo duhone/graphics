@@ -6,6 +6,7 @@ using namespace std;
 using namespace CR;
 using namespace CR::Graphics;
 
+// Note that this is implemented in an ideal way for mobile hardware, it is slow for desktop hardware
 UniformBufferDynamic::UniformBufferDynamic(uint32_t a_bytes) : m_size(a_bytes) {
 	Core::Log::Assert(a_bytes % 256 == 0, "uniform buffers must be a multiple of 256 bytes in size");
 

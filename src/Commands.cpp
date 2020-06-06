@@ -142,3 +142,15 @@ void Commands::TransitionFromTransferQueue(CommandBuffer& a_cmdBuffer, const vk:
 	vkcmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eFragmentShader,
 	                      vk::DependencyFlags{}, nullptr, nullptr, barrier);
 }
+
+void Commands::CopyBufferToBuffer(CommandBuffer& a_cmdBuffer, const vk::Buffer& a_bufferSrc, vk::Buffer& a_bufferDst,
+                                  uint32_t a_size) {
+	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
+
+	vk::BufferCopy cpy;
+	cpy.srcOffset = 0;
+	cpy.dstOffset = 0;
+	cpy.size      = a_size;
+
+	vkcmd.copyBuffer(a_bufferSrc, a_bufferDst, cpy);
+}

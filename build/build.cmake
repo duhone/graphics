@@ -20,7 +20,6 @@ set(SRCS
     ${root}/src/Constants.h
     ${root}/src/DescriptorPool.h
     ${root}/src/DescriptorPool.cpp
-    ${root}/src/UniformBufferDynamic.h
     ${root}/src/SpriteBasic.cpp
     ${root}/src/SpriteTemplateBasicImpl.h
     ${root}/src/SpriteTemplateBasic.cpp
@@ -30,7 +29,10 @@ set(SRCS
     ${root}/src/TextureSets.cpp
     ${root}/src/EngineInternal.h
     ${root}/src/Engine.cpp
+    ${root}/src/UniformBufferDynamic.h
     ${root}/src/UniformBufferDynamic.cpp
+    ${root}/src/VertexBuffer.h
+    ${root}/src/VertexBuffer.cpp
     ${root}/src/CommandPool.cpp
     ${root}/src/Commands.cpp
     ${root}/src/Pipeline.h
@@ -86,6 +88,7 @@ set(SRCS
   ${root}/tests/TextureSet.cpp
   ${root}/tests/SpriteBasic.cpp
   ${root}/tests/SpriteTemplateBasic.cpp
+  ${root}/tests/VertexBuffer.cpp
 )
 
 add_executable(graphics_tests

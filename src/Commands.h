@@ -22,4 +22,7 @@ namespace CR::Graphics::Commands {
 	                     const glm::uvec2& a_extent, uint32_t layer);
 	void TransitionToGraphicsQueue(CommandBuffer& a_cmdBuffer, const vk::Image& a_image, uint32_t a_layerCount);
 	void TransitionFromTransferQueue(CommandBuffer& a_cmdBuffer, const vk::Image& a_image, uint32_t a_layerCount);
+
+	void CopyBufferToBuffer(CommandBuffer& a_cmdBuffer, const vk::Buffer& a_bufferSrc, vk::Buffer& a_bufferDst,
+	                        uint32_t a_size);
 }    // namespace CR::Graphics::Commands
