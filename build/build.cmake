@@ -42,6 +42,8 @@ set(SRCS
     ${root}/src/shaders/Basic.vert
     ${root}/src/shaders/Basic.frag
     ${root}/src/shaders/basic.crsm
+    ${root}/src/types/SNorm.h
+    ${root}/src/types/UNorm.h
 )
 
 set(BUILD
@@ -88,6 +90,8 @@ set(SRCS
   ${root}/tests/TextureSet.cpp
   ${root}/tests/SpriteBasic.cpp
   ${root}/tests/SpriteTemplateBasic.cpp
+  ${root}/tests/UNorm.cpp
+  ${root}/tests/SNorm.cpp
   ${root}/tests/VertexBuffer.cpp
 )
 

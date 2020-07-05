@@ -163,7 +163,7 @@ TEST_CASE_FIXTURE(TestFixture, "sprites_stress") {
 	};
 
 	vector<SpriteData> spriteData;
-	for(int32_t i = 0; i < 1024; ++i) {
+	for(int32_t i = 0; i < 256; ++i) {
 		SpriteData data;
 		data.Name           = std::to_string(Core::Random(0LL, numeric_limits<int64_t>::max()));
 		data.TemplateIndex  = Core::Random(0, (int32_t)templates.size() - 1);
