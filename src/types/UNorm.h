@@ -1,6 +1,4 @@
-﻿#include <core/Log.h>
-
-#include <3rdParty/glm.h>
+﻿#include <3rdParty/glm.h>
 
 #include <limits>
 #include <numeric>

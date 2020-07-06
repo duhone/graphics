@@ -26,7 +26,7 @@ namespace {
 		CHECK(unorm == doctest::Approx(1.0f).epsilon(epsilon));
 
 		UNorm<T> unorm2 = unorm;
-		CHECK(unorm == unorm);
+		CHECK(unorm == unorm2);
 	}
 
 	template<typename T>
@@ -47,7 +47,7 @@ namespace {
 		CHECK(((glm::vec2)unorm).y == doctest::Approx(1.0f).epsilon(epsilon));
 
 		UNorm2<T> unorm2 = unorm;
-		CHECK(unorm == unorm);
+		CHECK(unorm == unorm2);
 	}
 
 	template<typename T>
@@ -71,7 +71,7 @@ namespace {
 		CHECK(((glm::vec3)unorm).z == doctest::Approx(0.0f).epsilon(epsilon));
 
 		UNorm3<T> unorm2 = unorm;
-		CHECK(unorm == unorm);
+		CHECK(unorm == unorm2);
 	}
 
 	template<typename T>
@@ -98,7 +98,7 @@ namespace {
 		CHECK(((glm::vec4)unorm).w == doctest::Approx(0.7f).epsilon(epsilon));
 
 		UNorm4<T> unorm2 = unorm;
-		CHECK(unorm == unorm);
+		CHECK(unorm == unorm2);
 	}
 }    // namespace
 
