@@ -1,0 +1,13 @@
+﻿#pragma once
+#define WIN32_LEAN_AND_MEAN
+#define NOCOMM
+#define NOMINMAX
+#define NOGDI
+#define NOKERNEL
+#define NOUSER
+#define NONLS
+#define NOSERVICE
+#define NOIME
+#define NOMCX
+#include "vulkan/vulkan.hpp"
+#include <windows.h>

@@ -1,4 +1,7 @@
-﻿#include <3rdParty/glm.h>
+﻿#pragma once
+#include "VulkanWindows.h"
+
+#include <3rdParty/glm.h>
 
 #include <limits>
 #include <numeric>
@@ -173,4 +176,13 @@ namespace std {
 			       (std::hash<T>{}(a_arg.m_data[2]) << 2) ^ (std::hash<T>{}(a_arg.m_data[3]) << 3);
 		}
 	};
+
+	static_assert(sizeof(SNorm<int8_t>) == 1);
+	static_assert(sizeof(SNorm2<int8_t>) == 2);
+	static_assert(sizeof(SNorm3<int8_t>) == 3);
+	static_assert(sizeof(SNorm4<int8_t>) == 4);
+	static_assert(sizeof(SNorm<int16_t>) == 2);
+	static_assert(sizeof(SNorm2<int16_t>) == 4);
+	static_assert(sizeof(SNorm3<int16_t>) == 6);
+	static_assert(sizeof(SNorm4<int16_t>) == 8);
 }    // namespace std

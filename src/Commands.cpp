@@ -2,11 +2,7 @@
 
 #include "EngineInternal.h"
 
-#define WIN32_LEAN_AND_MEAN
-#define NOCOMM
-#define NOMINMAX
-#include "vulkan/vulkan.hpp"
-#include <windows.h>
+#include "VulkanWindows.h"
 
 using namespace CR::Graphics;
 using namespace std;

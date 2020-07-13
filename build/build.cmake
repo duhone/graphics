@@ -20,6 +20,7 @@ set(SRCS
     ${root}/src/Constants.h
     ${root}/src/DescriptorPool.h
     ${root}/src/DescriptorPool.cpp
+    ${root}/src/Formats.h
     ${root}/src/SpriteBasic.cpp
     ${root}/src/SpriteTemplateBasicImpl.h
     ${root}/src/SpriteTemplateBasic.cpp
@@ -37,6 +38,7 @@ set(SRCS
     ${root}/src/Commands.cpp
     ${root}/src/Pipeline.h
     ${root}/src/Pipeline.cpp
+    ${root}/src/VulkanWindows.h
     ${root}/src/shaders/Basic.h
     ${root}/src/shaders/Basic.cpp
     ${root}/src/shaders/Basic.vert

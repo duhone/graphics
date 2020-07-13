@@ -1,9 +1,5 @@
 ﻿#pragma once
-#define WIN32_LEAN_AND_MEAN
-#define NOCOMM
-#define NOMINMAX
-#include "vulkan/vulkan.hpp"
-#include <windows.h>
+#include "VulkanWindows.h"
 
 #include <3rdParty/glm.h>
 
