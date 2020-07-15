@@ -7,8 +7,14 @@
 #include <vector>
 
 namespace CR::Graphics {
+	namespace detail {
+		class VertexBufferBase;
+	}
+
 	// Source vertex struct must be tightly packed.
 	class VertexBufferLayout {
+		friend detail::VertexBufferBase;
+
 	  public:
 		VertexBufferLayout()                             = default;
 		~VertexBufferLayout()                            = default;
@@ -48,11 +54,21 @@ namespace CR::Graphics {
 			VertexBufferBase& operator=(VertexBufferBase&) = delete;
 			VertexBufferBase& operator                     =(VertexBufferBase&& a_other) noexcept;
 
+			[[nodiscard]] const vk::VertexInputBindingDescription& GetBindingDescription() const {
+				return m_bindingDescription;
+			}
+			[[nodiscard]] const std::vector<vk::VertexInputAttributeDescription>& GetAttrDescriptions() const {
+				return m_attrDescriptions;
+			}
+
 		  private:
 			vk::Buffer m_buffer;
 			vk::DeviceMemory m_bufferMemory;
 			vk::Buffer m_stagingBuffer;
 			vk::DeviceMemory m_stagingBufferMemory;
+
+			vk::VertexInputBindingDescription m_bindingDescription;
+			std::vector<vk::VertexInputAttributeDescription> m_attrDescriptions;
 		};
 	}    // namespace detail
 
@@ -82,6 +98,14 @@ namespace CR::Graphics {
 		[[nodiscard]] const T* cend() const noexcept { return m_data + m_size; }
 
 		[[nodiscard]] bool empty() const { return m_size == 0; }
+
+		[[nodiscard]] const vk::VertexInputBindingDescription& GetBindingDescription() const {
+			return m_base.GetBindingDescription();
+		}
+
+		[[nodiscard]] const std::vector<vk::VertexInputAttributeDescription>& GetAttrDescriptions() const {
+			return m_base.GetAttrDescriptions();
+		}
 
 	  private:
 		T* m_data{nullptr};

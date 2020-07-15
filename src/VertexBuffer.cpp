@@ -42,6 +42,20 @@ detail::VertexBufferBase::VertexBufferBase(const VertexBufferLayout& a_layout, u
 	device.bindBufferMemory(m_stagingBuffer, m_stagingBufferMemory, 0);
 
 	*a_data = device.mapMemory(m_stagingBufferMemory, 0, VK_WHOLE_SIZE);
+
+	// Only support instance vertex buffers at the moment. And binding would need to be changed in the pipeline as
+	// appropriate, although only ever 1 binding at the moment.
+	m_bindingDescription.binding   = 0;
+	m_bindingDescription.stride    = a_layout.GetStride();
+	m_bindingDescription.inputRate = vk::VertexInputRate::eInstance;
+
+	for(const auto& entry : a_layout.m_layout) {
+		vk::VertexInputAttributeDescription desc;
+		desc.binding  = 0;
+		desc.location = entry.Location;
+		desc.offset   = entry.Offset;
+		desc.format   = entry.format;
+	}
 }
 
 detail::VertexBufferBase::~VertexBufferBase() {
