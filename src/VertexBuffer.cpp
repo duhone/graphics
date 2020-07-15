@@ -6,13 +6,11 @@ using namespace std;
 using namespace CR;
 using namespace CR::Graphics;
 
-detail::VertexBufferBase::VertexBufferBase(uint32_t a_bytes, void** a_data) {
-	Core::Log::Assert(a_bytes % 256 == 0, "vertex buffers must be a multiple of 256 bytes in size");
-
+detail::VertexBufferBase::VertexBufferBase(const VertexBufferLayout& a_layout, uint32_t a_vertCount, void** a_data) {
 	vk::BufferCreateInfo createInfo;
 	createInfo.flags       = vk::BufferCreateFlags{};
 	createInfo.sharingMode = vk::SharingMode::eExclusive;
-	createInfo.size        = a_bytes;
+	createInfo.size        = a_layout.GetStride() * a_vertCount;
 	createInfo.usage       = vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst;
 
 	// main buffer

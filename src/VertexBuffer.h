@@ -24,6 +24,8 @@ namespace CR::Graphics {
 		template<typename T>
 		void AddVariable(const T& a_var) noexcept;
 
+		uint32_t GetStride() const { return m_nextOffset; }
+
 	  private:
 		struct Entry {
 			vk::Format format{vk::Format::eUndefined};
@@ -39,7 +41,7 @@ namespace CR::Graphics {
 		class VertexBufferBase {
 		  public:
 			VertexBufferBase() = default;
-			VertexBufferBase(uint32_t a_bytes, void** a_data);
+			VertexBufferBase(const VertexBufferLayout& a_layout, uint32_t a_vertCount, void** a_data);
 			~VertexBufferBase();
 			VertexBufferBase(VertexBufferBase&) = delete;
 			VertexBufferBase(VertexBufferBase&& a_other) noexcept;
@@ -58,7 +60,10 @@ namespace CR::Graphics {
 	class VertexBuffer {
 	  public:
 		VertexBuffer() = default;
-		VertexBuffer(uint32_t a_bytes) : m_base(a_bytes, (void**)&m_data) { m_size = a_bytes; }
+		VertexBuffer(const VertexBufferLayout& a_layout, uint32_t a_vertCount) :
+		    m_base(a_layout, a_vertCount, (void**)&m_data) {
+			m_size = a_vertCount;
+		}
 		~VertexBuffer()                = default;
 		VertexBuffer(VertexBuffer<T>&) = delete;
 		VertexBuffer(VertexBuffer<T>&& a_other) noexcept;
@@ -69,9 +74,14 @@ namespace CR::Graphics {
 		[[nodiscard]] const vk::Buffer& GetHandle() const noexcept { return m_base.m_buffer; }
 		[[nodiscard]] const vk::Buffer& GetStagingHandle() const noexcept { return m_base.m_stagingBuffer; }
 
-		[[nodiscard]] T* GetData() noexcept { return m_data; }
+		[[nodiscard]] T* begin() noexcept { return m_data; }
+		[[nodiscard]] const T* begin() const noexcept { return m_data; }
+		[[nodiscard]] const T* cbegin() const noexcept { return m_data; }
+		[[nodiscard]] T* end() noexcept { return m_data + m_size; }
+		[[nodiscard]] const T* end() const noexcept { return m_data + m_size; }
+		[[nodiscard]] const T* cend() const noexcept { return m_data + m_size; }
 
-		[[nodiscard]] uint32_t GetSize() const noexcept { return m_size; }
+		[[nodiscard]] bool empty() const { return m_size == 0; }
 
 	  private:
 		T* m_data{nullptr};

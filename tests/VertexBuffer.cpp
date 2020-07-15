@@ -34,8 +34,15 @@ TEST_CASE_FIXTURE(TestFixture, "vertexbuffer") {
 	layout.AddVariable(dummyVert.Loc4);
 	layout.AddVariable(dummyVert.Loc5);
 
-	auto buffer = VertexBuffer<float>((uint32_t)1_Kb * sizeof(float));
-	float* data = buffer.GetData();
-	REQUIRE(data != nullptr);
-	for(uint32_t i = 0; i < 1_Kb; ++i) { data[i] = 1.0f; }
+	auto buffer = VertexBuffer<Vertex>(layout, 1000);
+
+	REQUIRE(!buffer.empty());
+	for(Vertex& vert : buffer) {
+		vert.Loc0 = {0.2f, 0.3f};
+		vert.Loc1 = {-0.5f, 0.5f, 0.0f};
+		vert.Loc2 = 1.0f;
+		vert.Loc3 = {0, 1, 2, 3};
+		vert.Loc4 = {4, 5};
+		vert.Loc5 = {0.0f, 20.0f, -2000.0f};
+	}
 }
