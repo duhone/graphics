@@ -35,36 +35,50 @@ namespace CR::Graphics {
 		uint16_t m_nextOffset{0};
 	};
 
+	namespace detail {
+		class VertexBufferBase {
+		  public:
+			VertexBufferBase() = default;
+			VertexBufferBase(uint32_t a_bytes, void** a_data);
+			~VertexBufferBase();
+			VertexBufferBase(VertexBufferBase&) = delete;
+			VertexBufferBase(VertexBufferBase&& a_other) noexcept;
+			VertexBufferBase& operator=(VertexBufferBase&) = delete;
+			VertexBufferBase& operator                     =(VertexBufferBase&& a_other) noexcept;
+
+		  private:
+			vk::Buffer m_buffer;
+			vk::DeviceMemory m_bufferMemory;
+			vk::Buffer m_stagingBuffer;
+			vk::DeviceMemory m_stagingBufferMemory;
+		};
+	}    // namespace detail
+
+	template<typename T>
 	class VertexBuffer {
 	  public:
 		VertexBuffer() = default;
-		VertexBuffer(uint32_t a_bytes);
-		~VertexBuffer();
-		VertexBuffer(VertexBuffer&) = delete;
-		VertexBuffer(VertexBuffer&& a_other) noexcept;
-		VertexBuffer& operator=(VertexBuffer&) = delete;
-		VertexBuffer& operator                 =(VertexBuffer&& a_other) noexcept;
+		VertexBuffer(uint32_t a_bytes) : m_base(a_bytes, (void**)&m_data) { m_size = a_bytes; }
+		~VertexBuffer()                = default;
+		VertexBuffer(VertexBuffer<T>&) = delete;
+		VertexBuffer(VertexBuffer<T>&& a_other) noexcept;
+		VertexBuffer& operator=(VertexBuffer<T>&) = delete;
+		VertexBuffer& operator                    =(VertexBuffer<T>&& a_other) noexcept;
 
 		// Must perform a buffer copy from staging to main anytime you have updated the buffer with new data.
-		[[nodiscard]] const vk::Buffer& GetHandle() const noexcept { return m_buffer; }
-		[[nodiscard]] const vk::Buffer& GetStagingHandle() const noexcept { return m_stagingBuffer; }
+		[[nodiscard]] const vk::Buffer& GetHandle() const noexcept { return m_base.m_buffer; }
+		[[nodiscard]] const vk::Buffer& GetStagingHandle() const noexcept { return m_base.m_stagingBuffer; }
 
-		[[nodiscard]] std::byte* GetData() const noexcept { return m_data; }
-
-		template<typename T>
-		[[nodiscard]] T* GetData() noexcept {
-			return (T*)GetData();
-		}
+		[[nodiscard]] T* GetData() noexcept { return m_data; }
 
 		[[nodiscard]] uint32_t GetSize() const noexcept { return m_size; }
 
 	  private:
-		vk::Buffer m_buffer;
-		vk::DeviceMemory m_bufferMemory;
-		vk::Buffer m_stagingBuffer;
-		vk::DeviceMemory m_stagingBufferMemory;
-		std::byte* m_data{nullptr};
-		uint32_t m_size;
+		T* m_data{nullptr};
+		uint32_t m_size{0};
+
+		// must be last, so it initializes last
+		detail::VertexBufferBase m_base;
 	};
 
 	template<typename T>
@@ -75,5 +89,20 @@ namespace CR::Graphics {
 		m_nextOffset += sizeof(a_var);
 		entry.format = GetVKFormat(a_var);
 		m_layout.push_back(entry);
+	}
+
+	template<typename T>
+	VertexBuffer<T>::VertexBuffer(VertexBuffer<T>&& a_other) noexcept {
+		*this = move(a_other);
+	}
+
+	template<typename T>
+	VertexBuffer<T>& VertexBuffer<T>::operator=(VertexBuffer<T>&& a_other) noexcept {
+		m_base = std::move(a_other.m_base);
+		m_data = a_other.m_data;
+		m_size = a_other.m_size;
+
+		a_other.m_data = nullptr;
+		a_other.m_size = 0;
 	}
 }    // namespace CR::Graphics

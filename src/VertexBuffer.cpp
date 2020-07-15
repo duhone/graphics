@@ -6,8 +6,8 @@ using namespace std;
 using namespace CR;
 using namespace CR::Graphics;
 
-VertexBuffer::VertexBuffer(uint32_t a_bytes) : m_size(a_bytes) {
-	Core::Log::Assert(a_bytes % 256 == 0, "uniform buffers must be a multiple of 256 bytes in size");
+detail::VertexBufferBase::VertexBufferBase(uint32_t a_bytes, void** a_data) {
+	Core::Log::Assert(a_bytes % 256 == 0, "vertex buffers must be a multiple of 256 bytes in size");
 
 	vk::BufferCreateInfo createInfo;
 	createInfo.flags       = vk::BufferCreateFlags{};
@@ -43,10 +43,10 @@ VertexBuffer::VertexBuffer(uint32_t a_bytes) : m_size(a_bytes) {
 
 	device.bindBufferMemory(m_stagingBuffer, m_stagingBufferMemory, 0);
 
-	m_data = (std::byte*)device.mapMemory(m_stagingBufferMemory, 0, VK_WHOLE_SIZE);
+	*a_data = device.mapMemory(m_stagingBufferMemory, 0, VK_WHOLE_SIZE);
 }
 
-VertexBuffer::~VertexBuffer() {
+detail::VertexBufferBase::~VertexBufferBase() {
 	if(m_buffer) {
 		auto& device = GetDevice();
 		device.unmapMemory(m_stagingBufferMemory);
@@ -57,24 +57,22 @@ VertexBuffer::~VertexBuffer() {
 	}
 }
 
-VertexBuffer::VertexBuffer(VertexBuffer&& a_other) noexcept {
+detail::VertexBufferBase::VertexBufferBase(VertexBufferBase&& a_other) noexcept {
 	*this = move(a_other);
 }
 
-VertexBuffer& VertexBuffer::operator=(VertexBuffer&& a_other) noexcept {
-	this->~VertexBuffer();
+detail::VertexBufferBase& detail::VertexBufferBase::operator=(VertexBufferBase&& a_other) noexcept {
+	this->~VertexBufferBase();
 
 	m_buffer              = a_other.m_buffer;
 	m_bufferMemory        = a_other.m_bufferMemory;
 	m_stagingBuffer       = a_other.m_stagingBuffer;
 	m_stagingBufferMemory = a_other.m_stagingBufferMemory;
-	m_data                = a_other.m_data;
 
 	a_other.m_buffer              = vk::Buffer{};
 	a_other.m_bufferMemory        = vk::DeviceMemory{};
 	a_other.m_stagingBuffer       = vk::Buffer{};
 	a_other.m_stagingBufferMemory = vk::DeviceMemory{};
-	a_other.m_data                = nullptr;
 
 	return *this;
 }
