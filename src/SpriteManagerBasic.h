@@ -6,6 +6,8 @@
 #include "Graphics/SpriteTemplateBasic.h"
 #include "Pipeline.h"
 #include "UniformBufferDynamic.h"
+#include "VertexBuffer.h"
+#include "types/UNorm.h"
 
 #include <3rdParty/glm.h>
 
@@ -73,12 +75,20 @@ namespace CR::Graphics {
 		void Draw(CommandBuffer& a_commandBuffer);
 
 	  private:
+		struct Vertex {
+			glm::vec2 Offset;
+			glm::u16vec2 TextureFrame;
+			UNorm4<uint8_t> Color;
+			glm::u16vec2 FrameSize;
+			glm::vec4 Rotation;
+		};
 		SpriteTemplates m_spriteTemplates;
 		Sprites m_sprites;
 		uint16_t m_currentFrame{0};
 
 		Pipeline Pipeline;
 		UniformBufferDynamic UniformBuffer;
+		VertexBuffer<Vertex> m_vertexBuffer;
 		vk::DescriptorSet DescSet;
 	};
 

@@ -20,7 +20,17 @@ SpriteManagerBasic::SpriteManagerBasic() {
 	pipeInfo.ShaderModule = embed::GetBasic();
 	Pipeline              = Graphics::Pipeline(pipeInfo);
 	UniformBuffer         = UniformBufferDynamic{sizeof(SpriteUniformData) * c_maxSprites};
-	DescSet               = CreateDescriptorSet(Pipeline.GetDescLayout(), UniformBuffer);
+
+	Vertex dummy;
+	VertexBufferLayout layout;
+	layout.AddVariable(dummy.Offset);
+	layout.AddVariable(dummy.TextureFrame);
+	layout.AddVariable(dummy.Color);
+	layout.AddVariable(dummy.FrameSize);
+	layout.AddVariable(dummy.Rotation);
+	m_vertexBuffer = VertexBuffer<Vertex>(layout, c_maxSprites);
+
+	DescSet = CreateDescriptorSet(Pipeline.GetDescLayout(), UniformBuffer);
 }
 
 SpriteManagerBasic::~SpriteManagerBasic() {
@@ -142,6 +152,8 @@ void SpriteManagerBasic::Frame() {
 }
 
 void SpriteManagerBasic::Draw(CommandBuffer& a_commandBuffer) {
+	Vertex* spriteData = m_vertexBuffer.begin();
+
 	SpriteUniformData* uniformData = UniformBuffer.GetData<SpriteUniformData>();
 	for(uint32_t sprite = 0; sprite < c_maxSprites; ++sprite) {
 		if(m_sprites.Used[sprite]) {
@@ -159,6 +171,13 @@ void SpriteManagerBasic::Draw(CommandBuffer& a_commandBuffer) {
 			float cosAngle               = cos(m_sprites.Rotations[sprite]);
 			glm::mat2 rot                = glm::mat2{cosAngle, -sinAngle, sinAngle, cosAngle};
 			uniformData[sprite].Rotation = glm::vec4{rot[0][0], rot[0][1], rot[1][0], rot[1][1]};
+
+			spriteData[sprite].Offset       = m_sprites.Positions[sprite];
+			spriteData[sprite].TextureFrame = {m_spriteTemplates.TextureIndices[templIndex],
+			                                   m_sprites.CurrentFrame[sprite]};
+			spriteData[sprite].Color        = m_sprites.Colors[sprite];
+			spriteData[sprite].FrameSize    = m_spriteTemplates.FrameSizes[templIndex];
+			spriteData[sprite].Rotation     = glm::vec4{rot[0][0], rot[0][1], rot[1][0], rot[1][1]};
 		}
 	}
 

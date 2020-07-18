@@ -9,5 +9,5 @@ Event::Event() {
 }
 
 Event::~Event() {
-	GetDevice().destroyEvent(m_event);
+	if(m_event) { GetDevice().destroyEvent(m_event); }
 }

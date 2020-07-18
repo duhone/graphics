@@ -7,10 +7,10 @@ namespace CR::Graphics {
 	  public:
 		Event();
 		~Event();
-		Event(const Event&) = delete;
-		Event(Event&&)      = delete;
+		Event(const Event&)    = delete;
+		Event(Event&& a_other) = delete;
 		Event& operator=(const Event&) = delete;
-		Event& operator=(Event&&) = delete;
+		Event& operator=(Event&& a_other) = delete;
 
 		operator vk::Event() { return m_event; }
 

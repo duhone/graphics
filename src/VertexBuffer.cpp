@@ -61,14 +61,7 @@ detail::VertexBufferBase::VertexBufferBase(const VertexBufferLayout& a_layout, u
 }
 
 detail::VertexBufferBase::~VertexBufferBase() {
-	if(m_buffer) {
-		auto& device = GetDevice();
-		device.unmapMemory(m_stagingBufferMemory);
-		device.destroyBuffer(m_stagingBuffer);
-		device.freeMemory(m_stagingBufferMemory);
-		device.destroyBuffer(m_buffer);
-		device.freeMemory(m_bufferMemory);
-	}
+	Free();
 }
 
 detail::VertexBufferBase::VertexBufferBase(VertexBufferBase&& a_other) noexcept {
@@ -76,7 +69,7 @@ detail::VertexBufferBase::VertexBufferBase(VertexBufferBase&& a_other) noexcept 
 }
 
 detail::VertexBufferBase& detail::VertexBufferBase::operator=(VertexBufferBase&& a_other) noexcept {
-	this->~VertexBufferBase();
+	Free();
 
 	m_buffer              = a_other.m_buffer;
 	m_bufferMemory        = a_other.m_bufferMemory;
@@ -89,6 +82,17 @@ detail::VertexBufferBase& detail::VertexBufferBase::operator=(VertexBufferBase&&
 	a_other.m_stagingBufferMemory = vk::DeviceMemory{};
 
 	return *this;
+}
+
+void detail::VertexBufferBase::Free() {
+	if(m_buffer) {
+		auto& device = GetDevice();
+		device.unmapMemory(m_stagingBufferMemory);
+		device.destroyBuffer(m_stagingBuffer);
+		device.freeMemory(m_stagingBufferMemory);
+		device.destroyBuffer(m_buffer);
+		device.freeMemory(m_bufferMemory);
+	}
 }
 
 void detail::VertexBufferBase::Release(CommandBuffer& a_cmdBuffer, uint32_t a_size) {

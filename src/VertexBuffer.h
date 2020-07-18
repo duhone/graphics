@@ -67,6 +67,8 @@ namespace CR::Graphics {
 			void Acquire(CommandBuffer& a_cmdBuffer);
 
 		  private:
+			void Free();
+
 			vk::Buffer m_buffer;
 			vk::DeviceMemory m_bufferMemory;
 			vk::Buffer m_stagingBuffer;
@@ -151,5 +153,7 @@ namespace CR::Graphics {
 
 		a_other.m_data = nullptr;
 		a_other.m_size = 0;
+
+		return *this;
 	}
 }    // namespace CR::Graphics
