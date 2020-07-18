@@ -20,6 +20,8 @@ set(SRCS
     ${root}/src/Constants.h
     ${root}/src/DescriptorPool.h
     ${root}/src/DescriptorPool.cpp
+    ${root}/src/Event.h
+    ${root}/src/Event.cpp
     ${root}/src/Formats.h
     ${root}/src/SpriteBasic.cpp
     ${root}/src/SpriteTemplateBasicImpl.h

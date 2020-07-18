@@ -25,4 +25,8 @@ namespace CR::Graphics::Commands {
 
 	void CopyBufferToBuffer(CommandBuffer& a_cmdBuffer, const vk::Buffer& a_bufferSrc, vk::Buffer& a_bufferDst,
 	                        uint32_t a_size);
+
+	void SetEvent(CommandBuffer& a_cmdBuffer, const vk::Event& a_event);
+	void WaitEvent(CommandBuffer& a_cmdBuffer, const vk::Event& a_event);
+
 }    // namespace CR::Graphics::Commands

@@ -1,5 +1,7 @@
 ﻿#include "VertexBuffer.h"
 
+#include "Commands.h"
+
 #include "core/Log.h"
 
 using namespace std;
@@ -87,4 +89,13 @@ detail::VertexBufferBase& detail::VertexBufferBase::operator=(VertexBufferBase&&
 	a_other.m_stagingBufferMemory = vk::DeviceMemory{};
 
 	return *this;
+}
+
+void detail::VertexBufferBase::Release(CommandBuffer& a_cmdBuffer, uint32_t a_size) {
+	Commands::CopyBufferToBuffer(a_cmdBuffer, m_stagingBuffer, m_buffer, a_size);
+	Commands::SetEvent(a_cmdBuffer, m_copyEvent);
+}
+
+void detail::VertexBufferBase::Acquire(CommandBuffer& a_cmdBuffer) {
+	Commands::WaitEvent(a_cmdBuffer, m_copyEvent);
 }

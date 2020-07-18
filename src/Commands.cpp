@@ -150,3 +150,19 @@ void Commands::CopyBufferToBuffer(CommandBuffer& a_cmdBuffer, const vk::Buffer& 
 
 	vkcmd.copyBuffer(a_bufferSrc, a_bufferDst, cpy);
 }
+
+void Commands::SetEvent(CommandBuffer& a_cmdBuffer, const vk::Event& a_event) {
+	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
+	vkcmd.setEvent(a_event, vk::PipelineStageFlagBits::eBottomOfPipe);
+}
+
+void Commands::WaitEvent(CommandBuffer& a_cmdBuffer, const vk::Event& a_event) {
+	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
+
+	vk::MemoryBarrier memBarrier;
+	memBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+	memBarrier.dstAccessMask = vk::AccessFlagBits::eVertexAttributeRead;
+
+	vkcmd.waitEvents(a_event, vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexInput, memBarrier,
+	                 nullptr, nullptr);
+}

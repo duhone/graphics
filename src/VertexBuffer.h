@@ -1,6 +1,8 @@
 ﻿#pragma once
 
+#include "CommandPool.h"
 #include "EngineInternal.h"
+#include "Event.h"
 #include "Formats.h"
 
 #include <memory>
@@ -30,7 +32,7 @@ namespace CR::Graphics {
 		template<typename T>
 		void AddVariable(const T& a_var) noexcept;
 
-		uint32_t GetStride() const { return m_nextOffset; }
+		[[nodiscard]] uint32_t GetStride() const noexcept { return m_nextOffset; }
 
 	  private:
 		struct Entry {
@@ -54,18 +56,23 @@ namespace CR::Graphics {
 			VertexBufferBase& operator=(VertexBufferBase&) = delete;
 			VertexBufferBase& operator                     =(VertexBufferBase&& a_other) noexcept;
 
-			[[nodiscard]] const vk::VertexInputBindingDescription& GetBindingDescription() const {
+			[[nodiscard]] const vk::VertexInputBindingDescription& GetBindingDescription() const noexcept {
 				return m_bindingDescription;
 			}
-			[[nodiscard]] const std::vector<vk::VertexInputAttributeDescription>& GetAttrDescriptions() const {
+			[[nodiscard]] const std::vector<vk::VertexInputAttributeDescription>& GetAttrDescriptions() const noexcept {
 				return m_attrDescriptions;
 			}
+
+			void Release(CommandBuffer& a_cmdBuffer, uint32_t a_size);
+			void Acquire(CommandBuffer& a_cmdBuffer);
 
 		  private:
 			vk::Buffer m_buffer;
 			vk::DeviceMemory m_bufferMemory;
 			vk::Buffer m_stagingBuffer;
 			vk::DeviceMemory m_stagingBufferMemory;
+
+			Event m_copyEvent;
 
 			vk::VertexInputBindingDescription m_bindingDescription;
 			std::vector<vk::VertexInputAttributeDescription> m_attrDescriptions;
@@ -97,15 +104,21 @@ namespace CR::Graphics {
 		[[nodiscard]] const T* end() const noexcept { return m_data + m_size; }
 		[[nodiscard]] const T* cend() const noexcept { return m_data + m_size; }
 
-		[[nodiscard]] bool empty() const { return m_size == 0; }
+		[[nodiscard]] bool empty() const noexcept { return m_size == 0; }
 
-		[[nodiscard]] const vk::VertexInputBindingDescription& GetBindingDescription() const {
+		[[nodiscard]] const vk::VertexInputBindingDescription& GetBindingDescription() const noexcept {
 			return m_base.GetBindingDescription();
 		}
 
-		[[nodiscard]] const std::vector<vk::VertexInputAttributeDescription>& GetAttrDescriptions() const {
+		[[nodiscard]] const std::vector<vk::VertexInputAttributeDescription>& GetAttrDescriptions() const noexcept {
 			return m_base.GetAttrDescriptions();
 		}
+
+		// Must release the buffer after all writes for the current frame are done, then later you must acquire the
+		// buffer before any commands are issued that use it. Seperate the 2 calls by as much time as possible to avoid
+		// pipeline stalls.
+		void Release(CommandBuffer& a_cmdBuffer) { m_base.Release(a_cmdBuffer, m_size); }
+		void Acquire(CommandBuffer& a_cmdBuffer) { m_base.Acquire(a_cmdBuffer); }
 
 	  private:
 		T* m_data{nullptr};
