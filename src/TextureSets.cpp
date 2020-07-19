@@ -345,3 +345,10 @@ uint16_t TextureSets::GetMaxFrames(uint16_t a_textureIndex) {
 
 	return g_textureSets[set].m_headers[slot].Frames;
 }
+
+bool TextureSets::IsReady(uint16_t a_textureIndex) {
+	auto set  = GetSet(a_textureIndex);
+	auto slot = GetSlot(a_textureIndex);
+
+	return g_textureSets[set].m_ready[slot];
+}

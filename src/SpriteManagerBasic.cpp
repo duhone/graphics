@@ -51,6 +51,7 @@ uint8_t SpriteManagerBasic::CreateTemplate(const std::string_view a_name, const 
 	Core::Log::Require(result != c_maxSpriteTemplates, "Ran out of available sprite templates");
 
 	m_spriteTemplates.Used[result]           = true;
+	m_spriteTemplates.Ready[result]          = false;
 	m_spriteTemplates.Names[result]          = a_name;
 	m_spriteTemplates.FrameSizes[result]     = a_frameSize;
 	m_spriteTemplates.TextureIndices[result] = TextureSets::GetTextureIndex(a_textureName);
@@ -100,71 +101,79 @@ void SpriteManagerBasic::FreeSprite(uint16_t a_index) {
 
 void SpriteManagerBasic::Frame(CommandBuffer& a_commandBuffer) {
 	++m_currentFrame;
+
+	for(size_t i = 0; i < c_maxSpriteTemplates; ++i) {
+		if(m_spriteTemplates.Used[i] && !m_spriteTemplates.Ready[i]) {
+			m_spriteTemplates.Ready[i] = TextureSets::IsReady(m_spriteTemplates.TextureIndices[i]);
+		}
+	}
+
 	Pipeline.Frame(DescSet);
 
 	Vertex* spriteData    = m_vertexBuffer.begin();
 	m_numSpritesThisFrame = 0;
 
 	for(uint32_t sprite = 0; sprite < c_maxSprites; ++sprite) {
-		if(m_sprites.Used[sprite]) {
-			auto& templIndex = m_sprites.TemplateIndices[sprite];
-			switch(m_spriteTemplates.FrameRates[templIndex]) {
-				case eFrameRate::None:
-					// Nothing to do
-					break;
-				case eFrameRate::FPS10:
-					if(m_currentFrame % (6 * GetFrameRateDivisor()) == 0) {
-						++m_sprites.CurrentFrame[sprite];
-						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
-					}
-					break;
-				case eFrameRate::FPS12:
-					if(m_currentFrame % (5 * GetFrameRateDivisor()) == 0) {
-						++m_sprites.CurrentFrame[sprite];
-						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
-					}
-					break;
-				case eFrameRate::FPS15:
-					if(m_currentFrame % (4 * GetFrameRateDivisor()) == 0) {
-						++m_sprites.CurrentFrame[sprite];
-						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
-					}
-					break;
-				case eFrameRate::FPS20:
-					if(m_currentFrame % (3 * GetFrameRateDivisor()) == 0) {
-						++m_sprites.CurrentFrame[sprite];
-						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
-					}
-					break;
-				case eFrameRate::FPS30:
-					if(m_currentFrame % (2 * GetFrameRateDivisor()) == 0) {
-						++m_sprites.CurrentFrame[sprite];
-						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
-					}
-					break;
-				case eFrameRate::FPS60: {
-					if(m_currentFrame % (1 * GetFrameRateDivisor()) == 0) {
-						++m_sprites.CurrentFrame[sprite];
-						m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
-					}
-				} break;
-				default:
-					break;
-			}
+		if(!m_sprites.Used[sprite]) { continue; }
+		auto& templIndex = m_sprites.TemplateIndices[sprite];
+		if(!m_spriteTemplates.Ready[templIndex]) { continue; }
 
-			float sinAngle = sin(m_sprites.Rotations[sprite]);
-			float cosAngle = cos(m_sprites.Rotations[sprite]);
-			glm::mat2 rot  = glm::mat2{cosAngle, -sinAngle, sinAngle, cosAngle};
-
-			spriteData->Offset       = m_sprites.Positions[sprite];
-			spriteData->TextureFrame = {m_spriteTemplates.TextureIndices[templIndex], m_sprites.CurrentFrame[sprite]};
-			spriteData->Color        = m_sprites.Colors[sprite];
-			spriteData->FrameSize    = m_spriteTemplates.FrameSizes[templIndex];
-			spriteData->Rotation     = glm::vec4{rot[0][0], rot[0][1], rot[1][0], rot[1][1]};
-
-			++spriteData;
-			++m_numSpritesThisFrame;
+		switch(m_spriteTemplates.FrameRates[templIndex]) {
+			case eFrameRate::None:
+				// Nothing to do
+				break;
+			case eFrameRate::FPS10:
+				if(m_currentFrame % (6 * GetFrameRateDivisor()) == 0) {
+					++m_sprites.CurrentFrame[sprite];
+					m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
+				}
+				break;
+			case eFrameRate::FPS12:
+				if(m_currentFrame % (5 * GetFrameRateDivisor()) == 0) {
+					++m_sprites.CurrentFrame[sprite];
+					m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
+				}
+				break;
+			case eFrameRate::FPS15:
+				if(m_currentFrame % (4 * GetFrameRateDivisor()) == 0) {
+					++m_sprites.CurrentFrame[sprite];
+					m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
+				}
+				break;
+			case eFrameRate::FPS20:
+				if(m_currentFrame % (3 * GetFrameRateDivisor()) == 0) {
+					++m_sprites.CurrentFrame[sprite];
+					m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
+				}
+				break;
+			case eFrameRate::FPS30:
+				if(m_currentFrame % (2 * GetFrameRateDivisor()) == 0) {
+					++m_sprites.CurrentFrame[sprite];
+					m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
+				}
+				break;
+			case eFrameRate::FPS60: {
+				if(m_currentFrame % (1 * GetFrameRateDivisor()) == 0) {
+					++m_sprites.CurrentFrame[sprite];
+					m_sprites.CurrentFrame[sprite] %= m_spriteTemplates.MaxFrames[templIndex];
+				}
+			} break;
+			default:
+				break;
 		}
+
+		float sinAngle = sin(m_sprites.Rotations[sprite]);
+		float cosAngle = cos(m_sprites.Rotations[sprite]);
+		glm::mat2 rot  = glm::mat2{cosAngle, -sinAngle, sinAngle, cosAngle};
+
+		spriteData->Offset       = m_sprites.Positions[sprite];
+		spriteData->TextureFrame = {m_spriteTemplates.TextureIndices[templIndex], m_sprites.CurrentFrame[sprite]};
+		spriteData->Color        = m_sprites.Colors[sprite];
+		spriteData->FrameSize    = m_spriteTemplates.FrameSizes[templIndex];
+		spriteData->Rotation     = glm::vec4{rot[0][0], rot[0][1], rot[1][0], rot[1][1]};
+
+		++spriteData;
+		++m_numSpritesThisFrame;
 	}
 	m_vertexBuffer.Release(a_commandBuffer);
 }

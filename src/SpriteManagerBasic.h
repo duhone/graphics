@@ -24,6 +24,7 @@ namespace CR::Graphics {
 
 	struct SpriteTemplates {
 		std::bitset<c_maxSpriteTemplates> Used;
+		std::bitset<c_maxSpriteTemplates> Ready;
 		uint16_t TextureIndices[c_maxSprites];
 		std::string Names[c_maxSpriteTemplates];
 		glm::uvec2 FrameSizes[c_maxSpriteTemplates];

@@ -526,6 +526,7 @@ Engine::~Engine() {
 
 void Engine::ExecutePending() {
 	for(auto& func : m_nextFrameFuncs) { func(); }
+	m_nextFrameFuncs.clear();
 }
 
 void Graphics::CreateEngine(const EngineSettings& a_settings) {
@@ -595,6 +596,8 @@ void Graphics::ShutdownEngine() {
 	GetEngine()->m_spriteManagerBasic.reset();
 	TextureSets::Shutdown();
 	DescriptorPoolDestroy();
+	GetEngine()->ExecutePending();
+	GetEngine()->m_Device.waitIdle();
 	GetEngine().reset();
 }
 
