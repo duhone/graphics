@@ -239,9 +239,7 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	if(a_settings.EnableDebug) {
 		vector<vk::LayerProperties> layers = selectedDevice.enumerateDeviceLayerProperties();
 		for(const auto& layer : layers) {
-			if("VK_LAYER_LUNARG_standard_validation"s == layer.layerName) {
-				enabledDeviceLayers.emplace_back(layer.layerName);
-			}
+			if("VK_LAYER_KHRONOS_validation"s == layer.layerName) { enabledDeviceLayers.emplace_back(layer.layerName); }
 		}
 	}
 
