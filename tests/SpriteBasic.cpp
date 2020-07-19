@@ -12,7 +12,7 @@ using namespace CR;
 using namespace CR::Graphics;
 using namespace std;
 
-TEST_CASE_FIXTURE(TestFixture, "sprites_basic") {
+TEST_CASE("sprites_basic") {
 	Platform::MemoryMappedFile crtexHarry(Platform::GetCurrentProcessPath() / "BonusHarrySelect.crtexd");
 	Platform::MemoryMappedFile crtexComp = (Platform::GetCurrentProcessPath() / "CompletionScreen.crtexd");
 	TextureCreateInfo texInfo[2];
@@ -49,9 +49,7 @@ TEST_CASE_FIXTURE(TestFixture, "sprites_basic") {
 
 	glm::vec2 step{1.0f, 2.0f};
 
-	bool loop = false;
-	do {
-		glfwPollEvents();
+	for(int loops = 0; loops < 100; ++loops) {
 		position += step;
 		if(position.x > 1280.0f) { step.x = -1.0f; }
 		if(position.x < 0.0f) { step.x = 1.0f; }
@@ -59,10 +57,10 @@ TEST_CASE_FIXTURE(TestFixture, "sprites_basic") {
 		if(position.y < 0.0f) { step.y = 2.0f; }
 		sprite2.SetPosition(position);
 		Frame();
-	} while(loop && !glfwWindowShouldClose(Window));
+	}
 }
 
-TEST_CASE_FIXTURE(TestFixture, "sprites_rotation") {
+TEST_CASE("sprites_rotation") {
 	Platform::MemoryMappedFile crtexLeaf(Platform::GetCurrentProcessPath() / "leaf.crtexd");
 	Platform::MemoryMappedFile crtexBrick(Platform::GetCurrentProcessPath() / "brick.crtexd");
 	TextureCreateInfo texInfo[2];
@@ -97,20 +95,18 @@ TEST_CASE_FIXTURE(TestFixture, "sprites_rotation") {
 
 	spriteLeaf.SetRotation(glm::radians(45.0f));
 
-	float brickStep = 1.0f;
+	float brickStep = 0.01f;
 	float brickRot  = 0.0f;
 
-	bool loop = false;
-	do {
-		brickRot += brickStep * m_frameTime;
+	for(int loops = 0; loops < 100; ++loops) {
+		brickRot += brickStep;
 		spriteBrick.SetRotation(brickRot);
 
-		glfwPollEvents();
 		Frame();
-	} while(loop && !glfwWindowShouldClose(Window));
+	}
 }
 
-TEST_CASE_FIXTURE(TestFixture, "sprites_stress") {
+TEST_CASE("sprites_stress") {
 	TextureSet texSet;
 	{
 		vector<TextureCreateInfo> textureInfos;
@@ -189,8 +185,7 @@ TEST_CASE_FIXTURE(TestFixture, "sprites_stress") {
 
 	templates.clear();
 
-	bool loop = true;
-	do {
+	for(int loops = 0; loops < 100; ++loops) {
 		for(size_t i = 0; i < sprites.size(); ++i) {
 			auto pos  = spriteData[i].Position;
 			auto step = spriteData[i].PositionStep;
@@ -209,7 +204,6 @@ TEST_CASE_FIXTURE(TestFixture, "sprites_stress") {
 			spriteData[i].Rotation = rot;
 			sprites[i].SetRotation(rot);
 		}
-		glfwPollEvents();
 		Frame();
-	} while(loop && !glfwWindowShouldClose(Window));
+	}
 }

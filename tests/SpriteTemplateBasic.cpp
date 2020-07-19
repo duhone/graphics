@@ -12,7 +12,7 @@ using namespace CR;
 using namespace CR::Graphics;
 using namespace std;
 
-TEST_CASE_FIXTURE(TestFixture, "sprite_template_basic") {
+TEST_CASE("sprite_template_basic") {
 	Platform::MemoryMappedFile crtexComp = (Platform::GetCurrentProcessPath() / "CompletionScreen.crtexd");
 	TextureCreateInfo texInfo;
 	texInfo.TextureData = Core::Span<const byte>{crtexComp.data(), crtexComp.size()};

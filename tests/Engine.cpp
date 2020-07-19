@@ -6,4 +6,4 @@
 
 using namespace CR::Graphics;
 
-TEST_CASE_FIXTURE(TestFixture, "engine creation/destruction") {}
+TEST_CASE("engine creation/destruction") {}

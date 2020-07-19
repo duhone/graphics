@@ -11,7 +11,7 @@ using namespace CR;
 using namespace CR::Graphics;
 using namespace std;
 
-TEST_CASE_FIXTURE(TestFixture, "texture_set") {
+TEST_CASE("texture_set") {
 	Platform::MemoryMappedFile crtexSpencer(Platform::GetCurrentProcessPath() / "BonusHarrySelect.crtexd");
 	Platform::MemoryMappedFile crtexComp(Platform::GetCurrentProcessPath() / "CompletionScreen.crtexd");
 	TextureCreateInfo texInfo[2];

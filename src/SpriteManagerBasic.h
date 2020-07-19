@@ -31,15 +31,6 @@ namespace CR::Graphics {
 		uint16_t MaxFrames[c_maxSprites];
 	};
 
-	struct SpriteUniformData {
-		glm::vec4 Position;    // z and w are unused.
-		glm::vec4 Color;
-		glm::vec4 FrameSize;
-		glm::vec4 Rotation;    // really a mat2
-	};
-	static_assert((sizeof(SpriteUniformData) * c_maxSprites) / c_maxSpriteTemplates < 64 * 1024,
-	              "64KB max uniform range");
-
 	struct Sprites {
 		std::bitset<c_maxSprites> Used;
 		std::string Names[c_maxSprites];
@@ -75,6 +66,8 @@ namespace CR::Graphics {
 		void Draw(CommandBuffer& a_commandBuffer);
 
 	  private:
+#pragma pack(push)
+#pragma pack(1)
 		struct Vertex {
 			glm::vec2 Offset;
 			glm::u16vec2 TextureFrame;
@@ -82,6 +75,8 @@ namespace CR::Graphics {
 			glm::u16vec2 FrameSize;
 			glm::vec4 Rotation;
 		};
+#pragma pack(pop)
+
 		SpriteTemplates m_spriteTemplates;
 		Sprites m_sprites;
 		uint16_t m_currentFrame{0};

@@ -35,11 +35,11 @@ class TestFixture {
 		settings.RefreshRate        = displayMode->refreshRate;
 		m_frameTime                 = 1.0f / displayMode->refreshRate;
 
-		REQUIRE_NOTHROW(CR::Graphics::CreateEngine(settings));
+		CR::Graphics::CreateEngine(settings);
 	}
 
 	~TestFixture() {
-		REQUIRE_NOTHROW(CR::Graphics::ShutdownEngine());
+		CR::Graphics::ShutdownEngine();
 
 		glfwDestroyWindow(Window);
 

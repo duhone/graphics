@@ -9,7 +9,7 @@
 using namespace CR::Graphics;
 using namespace CR::Core::Literals;
 
-TEST_CASE_FIXTURE(TestFixture, "buffer creation/update/destruction") {
+TEST_CASE("uniform buffer") {
 	auto buffer = UniformBufferDynamic((uint32_t)1_Kb * sizeof(float));
 	float* data = buffer.GetData<float>();
 	REQUIRE(data != nullptr);

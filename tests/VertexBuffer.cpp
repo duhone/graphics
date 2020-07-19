@@ -13,7 +13,7 @@
 using namespace CR::Graphics;
 using namespace CR::Core::Literals;
 
-TEST_CASE_FIXTURE(TestFixture, "vertexbuffer") {
+TEST_CASE("vertexbuffer") {
 #pragma pack(push)
 #pragma pack(1)
 	struct Vertex {
