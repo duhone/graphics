@@ -57,6 +57,7 @@ detail::VertexBufferBase::VertexBufferBase(const VertexBufferLayout& a_layout, u
 		desc.location = entry.Location;
 		desc.offset   = entry.Offset;
 		desc.format   = entry.format;
+		m_attrDescriptions.push_back(desc);
 	}
 }
 
@@ -75,6 +76,8 @@ detail::VertexBufferBase& detail::VertexBufferBase::operator=(VertexBufferBase&&
 	m_bufferMemory        = a_other.m_bufferMemory;
 	m_stagingBuffer       = a_other.m_stagingBuffer;
 	m_stagingBufferMemory = a_other.m_stagingBufferMemory;
+	m_bindingDescription  = a_other.m_bindingDescription;
+	m_attrDescriptions    = std::move(a_other.m_attrDescriptions);
 
 	a_other.m_buffer              = vk::Buffer{};
 	a_other.m_bufferMemory        = vk::DeviceMemory{};
@@ -95,8 +98,8 @@ void detail::VertexBufferBase::Free() {
 	}
 }
 
-void detail::VertexBufferBase::Release(CommandBuffer& a_cmdBuffer, uint32_t a_size) {
-	Commands::CopyBufferToBuffer(a_cmdBuffer, m_stagingBuffer, m_buffer, a_size);
+void detail::VertexBufferBase::Release(CommandBuffer& a_cmdBuffer, uint32_t a_sizeBytes) {
+	Commands::CopyBufferToBuffer(a_cmdBuffer, m_stagingBuffer, m_buffer, a_sizeBytes);
 	Commands::SetEvent(a_cmdBuffer, m_copyEvent);
 }
 

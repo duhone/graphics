@@ -63,8 +63,10 @@ namespace CR::Graphics {
 				return m_attrDescriptions;
 			}
 
-			void Release(CommandBuffer& a_cmdBuffer, uint32_t a_size);
+			void Release(CommandBuffer& a_cmdBuffer, uint32_t a_sizeBytes);
 			void Acquire(CommandBuffer& a_cmdBuffer);
+
+			[[nodiscard]] const vk::Buffer& GetHandle() const noexcept { return m_buffer; }
 
 		  private:
 			void Free();
@@ -87,7 +89,8 @@ namespace CR::Graphics {
 		VertexBuffer() = default;
 		VertexBuffer(const VertexBufferLayout& a_layout, uint32_t a_vertCount) :
 		    m_base(a_layout, a_vertCount, (void**)&m_data) {
-			m_size = a_vertCount;
+			m_size   = a_vertCount;
+			m_stride = a_layout.GetStride();
 		}
 		~VertexBuffer()                = default;
 		VertexBuffer(VertexBuffer<T>&) = delete;
@@ -95,9 +98,7 @@ namespace CR::Graphics {
 		VertexBuffer& operator=(VertexBuffer<T>&) = delete;
 		VertexBuffer& operator                    =(VertexBuffer<T>&& a_other) noexcept;
 
-		// Must perform a buffer copy from staging to main anytime you have updated the buffer with new data.
-		[[nodiscard]] const vk::Buffer& GetHandle() const noexcept { return m_base.m_buffer; }
-		[[nodiscard]] const vk::Buffer& GetStagingHandle() const noexcept { return m_base.m_stagingBuffer; }
+		[[nodiscard]] const vk::Buffer& GetHandle() const noexcept { return m_base.GetHandle(); }
 
 		[[nodiscard]] T* begin() noexcept { return m_data; }
 		[[nodiscard]] const T* begin() const noexcept { return m_data; }
@@ -119,12 +120,13 @@ namespace CR::Graphics {
 		// Must release the buffer after all writes for the current frame are done, then later you must acquire the
 		// buffer before any commands are issued that use it. Seperate the 2 calls by as much time as possible to avoid
 		// pipeline stalls.
-		void Release(CommandBuffer& a_cmdBuffer) { m_base.Release(a_cmdBuffer, m_size); }
+		void Release(CommandBuffer& a_cmdBuffer) { m_base.Release(a_cmdBuffer, m_size * m_stride); }
 		void Acquire(CommandBuffer& a_cmdBuffer) { m_base.Acquire(a_cmdBuffer); }
 
 	  private:
 		T* m_data{nullptr};
 		uint32_t m_size{0};
+		uint32_t m_stride{0};
 
 		// must be last, so it initializes last
 		detail::VertexBufferBase m_base;
@@ -147,9 +149,10 @@ namespace CR::Graphics {
 
 	template<typename T>
 	VertexBuffer<T>& VertexBuffer<T>::operator=(VertexBuffer<T>&& a_other) noexcept {
-		m_base = std::move(a_other.m_base);
-		m_data = a_other.m_data;
-		m_size = a_other.m_size;
+		m_base   = std::move(a_other.m_base);
+		m_data   = a_other.m_data;
+		m_size   = a_other.m_size;
+		m_stride = a_other.m_stride;
 
 		a_other.m_data = nullptr;
 		a_other.m_size = 0;

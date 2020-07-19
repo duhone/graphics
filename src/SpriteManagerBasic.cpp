@@ -16,11 +16,6 @@ SpriteManagerBasic::SpriteManagerBasic() {
 	m_spriteTemplates.Used.reset();
 	m_sprites.Used.reset();
 
-	CreatePipelineArgs pipeInfo;
-	pipeInfo.ShaderModule = embed::GetBasic();
-	Pipeline              = Graphics::Pipeline(pipeInfo);
-	UniformBuffer         = UniformBufferDynamic{sizeof(SpriteUniformData) * c_maxSprites};
-
 	Vertex dummy;
 	VertexBufferLayout layout;
 	layout.AddVariable(dummy.Offset);
@@ -30,7 +25,13 @@ SpriteManagerBasic::SpriteManagerBasic() {
 	layout.AddVariable(dummy.Rotation);
 	m_vertexBuffer = VertexBuffer<Vertex>(layout, c_maxSprites);
 
-	DescSet = CreateDescriptorSet(Pipeline.GetDescLayout(), UniformBuffer);
+	CreatePipelineArgs pipeInfo;
+	pipeInfo.ShaderModule      = embed::GetBasic();
+	pipeInfo.BindingDesc       = m_vertexBuffer.GetBindingDescription();
+	pipeInfo.AttribDescription = m_vertexBuffer.GetAttrDescriptions();
+	Pipeline                   = Graphics::Pipeline(pipeInfo);
+
+	DescSet = CreateDescriptorSet(Pipeline.GetDescLayout());
 }
 
 SpriteManagerBasic::~SpriteManagerBasic() {
@@ -97,9 +98,12 @@ void SpriteManagerBasic::FreeSprite(uint16_t a_index) {
 	m_sprites.Used[a_index] = false;
 }
 
-void SpriteManagerBasic::Frame() {
+void SpriteManagerBasic::Frame(CommandBuffer& a_commandBuffer) {
 	++m_currentFrame;
 	Pipeline.Frame(DescSet);
+
+	Vertex* spriteData    = m_vertexBuffer.begin();
+	m_numSpritesThisFrame = 0;
 
 	for(uint32_t sprite = 0; sprite < c_maxSprites; ++sprite) {
 		if(m_sprites.Used[sprite]) {
@@ -147,55 +151,32 @@ void SpriteManagerBasic::Frame() {
 				default:
 					break;
 			}
+
+			float sinAngle = sin(m_sprites.Rotations[sprite]);
+			float cosAngle = cos(m_sprites.Rotations[sprite]);
+			glm::mat2 rot  = glm::mat2{cosAngle, -sinAngle, sinAngle, cosAngle};
+
+			spriteData->Offset       = m_sprites.Positions[sprite];
+			spriteData->TextureFrame = {m_spriteTemplates.TextureIndices[templIndex], m_sprites.CurrentFrame[sprite]};
+			spriteData->Color        = m_sprites.Colors[sprite];
+			spriteData->FrameSize    = m_spriteTemplates.FrameSizes[templIndex];
+			spriteData->Rotation     = glm::vec4{rot[0][0], rot[0][1], rot[1][0], rot[1][1]};
+
+			++spriteData;
+			++m_numSpritesThisFrame;
 		}
 	}
+	m_vertexBuffer.Release(a_commandBuffer);
 }
 
 void SpriteManagerBasic::Draw(CommandBuffer& a_commandBuffer) {
-	Vertex* spriteData = m_vertexBuffer.begin();
-
-	SpriteUniformData* uniformData = UniformBuffer.GetData<SpriteUniformData>();
-	for(uint32_t sprite = 0; sprite < c_maxSprites; ++sprite) {
-		if(m_sprites.Used[sprite]) {
-			auto& templIndex = m_sprites.TemplateIndices[sprite];
-
-			uniformData[sprite].Position.x = m_sprites.Positions[sprite].x;
-			uniformData[sprite].Position.y = m_sprites.Positions[sprite].y;
-			uniformData[sprite].Position.z = m_spriteTemplates.TextureIndices[templIndex];
-			uniformData[sprite].Position.w = m_sprites.CurrentFrame[sprite];
-
-			uniformData[sprite].Color     = m_sprites.Colors[sprite];
-			uniformData[sprite].FrameSize = glm::vec4(m_spriteTemplates.FrameSizes[templIndex], 0.0f, 0.0f);
-
-			float sinAngle               = sin(m_sprites.Rotations[sprite]);
-			float cosAngle               = cos(m_sprites.Rotations[sprite]);
-			glm::mat2 rot                = glm::mat2{cosAngle, -sinAngle, sinAngle, cosAngle};
-			uniformData[sprite].Rotation = glm::vec4{rot[0][0], rot[0][1], rot[1][0], rot[1][1]};
-
-			spriteData[sprite].Offset       = m_sprites.Positions[sprite];
-			spriteData[sprite].TextureFrame = {m_spriteTemplates.TextureIndices[templIndex],
-			                                   m_sprites.CurrentFrame[sprite]};
-			spriteData[sprite].Color        = m_sprites.Colors[sprite];
-			spriteData[sprite].FrameSize    = m_spriteTemplates.FrameSizes[templIndex];
-			spriteData[sprite].Rotation     = glm::vec4{rot[0][0], rot[0][1], rot[1][0], rot[1][1]};
-		}
-	}
-
 	Core::Log::Assert(Pipeline, "Sprite type didn't have a pipeline");
-	Commands::BindPipeline(a_commandBuffer, Pipeline);
-	uint32_t descOffset = 0;
-	uint32_t numSprites = 0;
-	Commands::BindDescriptorSet(a_commandBuffer, Pipeline, DescSet, descOffset);
-	for(uint32_t sprite = 0; sprite < c_maxSprites; ++sprite) {
-		if(m_sprites.Used[sprite]) {
-			++numSprites;
-			if(numSprites > 256) {
-				Commands::Draw(a_commandBuffer, 4, numSprites);
-				// new batch
-				descOffset = c_maxSpritesPerBatch * sizeof(SpriteUniformData);
-				Commands::BindDescriptorSet(a_commandBuffer, Pipeline, DescSet, descOffset);
-			}
-		}
+
+	m_vertexBuffer.Acquire(a_commandBuffer);
+	if(m_numSpritesThisFrame > 0) {
+		Commands::BindPipeline(a_commandBuffer, Pipeline);
+		Commands::BindVertexBuffer(a_commandBuffer, m_vertexBuffer.GetHandle());
+		Commands::BindDescriptorSet(a_commandBuffer, Pipeline, DescSet);
+		Commands::Draw(a_commandBuffer, 4, m_numSpritesThisFrame);
 	}
-	if(numSprites > 0) { Commands::Draw(a_commandBuffer, 4, numSprites); }
 }

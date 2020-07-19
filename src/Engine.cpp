@@ -97,9 +97,7 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	if(a_settings.EnableDebug) {
 		vector<vk::LayerProperties> layers = vk::enumerateInstanceLayerProperties();
 		for(const auto& layer : layers) {
-			if("VK_LAYER_LUNARG_standard_validation"s == layer.layerName) {
-				enabledLayers.emplace_back(layer.layerName);
-			}
+			if("VK_LAYER_KHRONOS_validation"s == layer.layerName) { enabledLayers.emplace_back(layer.layerName); }
 		}
 	}
 
@@ -551,12 +549,13 @@ void Graphics::Frame() {
 	engine->m_Device.waitForFences(1, &engine->m_frameFence, true, UINT64_MAX);
 	engine->m_Device.resetFences(1, &engine->m_frameFence);
 
-	engine->m_spriteManagerBasic->Frame();
-
 	engine->m_commandBuffer = engine->m_commandPool.CreateCommandBuffer();
 
 	engine->m_commandBuffer.Begin();
+
 	TextureSets::CheckLoadingTasks(engine->m_commandBuffer);
+	engine->m_spriteManagerBasic->Frame(engine->m_commandBuffer);
+
 	Commands::RenderPassBegin(engine->m_commandBuffer, engine->m_clearColor);
 	engine->m_spriteManagerBasic->Draw(engine->m_commandBuffer);
 	Commands::RenderPassEnd(engine->m_commandBuffer);

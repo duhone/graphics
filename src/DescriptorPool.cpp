@@ -28,8 +28,7 @@ void Graphics::DescriptorPoolDestroy() {
 	GetDevice().destroyDescriptorPool(m_pool);
 }
 
-vk::DescriptorSet Graphics::CreateDescriptorSet(const vk::DescriptorSetLayout& a_layout,
-                                                UniformBufferDynamic& a_buffer) {
+vk::DescriptorSet Graphics::CreateDescriptorSet(const vk::DescriptorSetLayout& a_layout) {
 	vk::DescriptorSet result;
 	auto& device = GetDevice();
 
@@ -39,21 +38,6 @@ vk::DescriptorSet Graphics::CreateDescriptorSet(const vk::DescriptorSetLayout& a
 	info.pSetLayouts        = &a_layout;
 
 	result = device.allocateDescriptorSets(info)[0];
-
-	vk::DescriptorBufferInfo bufInfo;
-	bufInfo.buffer = a_buffer.GetHandle();
-	bufInfo.offset = 0;
-	bufInfo.range  = a_buffer.GetSize();
-
-	vk::WriteDescriptorSet writeSet;
-	writeSet.dstSet          = result;
-	writeSet.dstBinding      = 0;
-	writeSet.dstArrayElement = 0;
-	writeSet.descriptorType  = vk::DescriptorType::eUniformBufferDynamic;
-	writeSet.descriptorCount = 1;
-	writeSet.pBufferInfo     = &bufInfo;
-
-	device.updateDescriptorSets(1, &writeSet, 0, nullptr);
 
 	return result;
 }
@@ -78,7 +62,7 @@ void Graphics::UpdateDescriptorSet(const vk::DescriptorSet& a_set, const vk::Sam
 
 		vk::WriteDescriptorSet& writeSet = writeSets.emplace_back();
 		writeSet.dstSet                  = a_set;
-		writeSet.dstBinding              = 1;
+		writeSet.dstBinding              = 0;
 		writeSet.dstArrayElement         = a_textureIndices[i];
 		writeSet.descriptorType          = vk::DescriptorType::eCombinedImageSampler;
 		writeSet.descriptorCount         = 1;

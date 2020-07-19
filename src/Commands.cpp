@@ -38,6 +38,11 @@ void Commands::BindPipeline(CommandBuffer& a_cmdBuffer, Pipeline& a_pipeline) {
 	vkcmd.bindPipeline(vk::PipelineBindPoint::eGraphics, a_pipeline.GetHandle());
 }
 
+void Commands::BindVertexBuffer(CommandBuffer& a_cmdBuffer, const vk::Buffer& a_buffer) {
+	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
+	vkcmd.bindVertexBuffers(0, {a_buffer}, {0});
+}
+
 void Commands::PushConstants(CommandBuffer& a_cmdBuffer, Pipeline& a_pipeline, CR::Core::Span<std::byte> a_data) {
 	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
 	vkcmd.pushConstants(a_pipeline.GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, (uint32_t)a_data.size(),
@@ -49,10 +54,9 @@ void Commands::Draw(CommandBuffer& a_cmdBuffer, uint32_t a_vertexCount, uint32_t
 	vkcmd.draw(a_vertexCount, a_instanceCount, 0, 0);
 }
 
-void Commands::BindDescriptorSet(CommandBuffer& a_cmdBuffer, const Pipeline& a_pipeline, vk::DescriptorSet& a_set,
-                                 uint32_t a_offset) {
+void Commands::BindDescriptorSet(CommandBuffer& a_cmdBuffer, const Pipeline& a_pipeline, vk::DescriptorSet& a_set) {
 	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
-	vkcmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, a_pipeline.GetLayout(), 0, 1, &a_set, 1, &a_offset);
+	vkcmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, a_pipeline.GetLayout(), 0, 1, &a_set, 0, nullptr);
 }
 
 void Commands::TransitionToDst(CommandBuffer& a_cmdBuffer, const vk::Image& a_image, uint32_t a_layerCount) {
@@ -153,7 +157,7 @@ void Commands::CopyBufferToBuffer(CommandBuffer& a_cmdBuffer, const vk::Buffer& 
 
 void Commands::SetEvent(CommandBuffer& a_cmdBuffer, const vk::Event& a_event) {
 	vk::CommandBuffer& vkcmd = a_cmdBuffer.GetHandle();
-	vkcmd.setEvent(a_event, vk::PipelineStageFlagBits::eBottomOfPipe);
+	vkcmd.setEvent(a_event, vk::PipelineStageFlagBits::eTransfer);
 }
 
 void Commands::WaitEvent(CommandBuffer& a_cmdBuffer, const vk::Event& a_event) {

@@ -1,10 +1,8 @@
 ﻿#pragma once
 
 #include "DescriptorPool.h"
-
+#include "VulkanWindows.h"
 #include "core/Span.h"
-
-#include "vulkan/vulkan.hpp"
 
 #include <cstddef>
 #include <memory>
@@ -13,6 +11,8 @@
 namespace CR::Graphics {
 	struct CreatePipelineArgs {
 		Core::Span<const std::byte> ShaderModule;    // crsm file
+		vk::VertexInputBindingDescription BindingDesc;
+		std::vector<vk::VertexInputAttributeDescription> AttribDescription;
 	};
 
 	class Pipeline {

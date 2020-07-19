@@ -18,7 +18,7 @@
 
 namespace CR::Graphics {
 	inline constexpr uint32_t c_maxSpriteTemplates = 64;
-	inline constexpr uint32_t c_maxSprites         = 1024;
+	inline constexpr uint32_t c_maxSprites         = 4096;
 	static_assert(c_maxSpriteTemplates < std::numeric_limits<uint8_t>::max());    // index is a uint8_t
 	static_assert(c_maxSprites < std::numeric_limits<uint16_t>::max());           // index is a uint16_t
 
@@ -70,7 +70,7 @@ namespace CR::Graphics {
 		void SetSpriteColor(uint16_t a_index, const glm::vec4& a_color);
 		void SetSpriteRotation(uint16_t a_index, float a_rotation);
 
-		void Frame();
+		void Frame(CommandBuffer& a_commandBuffer);
 
 		void Draw(CommandBuffer& a_commandBuffer);
 
@@ -85,9 +85,9 @@ namespace CR::Graphics {
 		SpriteTemplates m_spriteTemplates;
 		Sprites m_sprites;
 		uint16_t m_currentFrame{0};
+		uint32_t m_numSpritesThisFrame{0};
 
 		Pipeline Pipeline;
-		UniformBufferDynamic UniformBuffer;
 		VertexBuffer<Vertex> m_vertexBuffer;
 		vk::DescriptorSet DescSet;
 	};

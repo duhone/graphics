@@ -11,7 +11,7 @@ namespace CR::Graphics {
 	void DescriptorPoolInit();
 	void DescriptorPoolDestroy();
 
-	vk::DescriptorSet CreateDescriptorSet(const vk::DescriptorSetLayout& a_layout, UniformBufferDynamic& a_buffer);
+	vk::DescriptorSet CreateDescriptorSet(const vk::DescriptorSetLayout& a_layout);
 	void UpdateDescriptorSet(const vk::DescriptorSet& a_set, const vk::Sampler& a_sampler,
 	                         const CR::Core::Span<vk::ImageView> a_imageViews,
 	                         const CR::Core::Span<uint16_t> a_textureIndices);

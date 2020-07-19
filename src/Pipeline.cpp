@@ -59,16 +59,13 @@ Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
 
 	std::vector<std::byte> specVertBuffer;
 
-	vk::SpecializationMapEntry vertSpecInfoEntrys[3];
+	vk::SpecializationMapEntry vertSpecInfoEntrys[2];
 	vertSpecInfoEntrys[0].constantID = 0;
 	vertSpecInfoEntrys[0].offset     = (uint32_t)Core::Write(specVertBuffer, 1.0f / GetWindowSize().x);
 	vertSpecInfoEntrys[0].size       = sizeof(float);
 	vertSpecInfoEntrys[1].constantID = 1;
 	vertSpecInfoEntrys[1].offset     = (uint32_t)Core::Write(specVertBuffer, 1.0f / GetWindowSize().y);
 	vertSpecInfoEntrys[1].size       = sizeof(float);
-	vertSpecInfoEntrys[2].constantID = 2;
-	vertSpecInfoEntrys[2].offset     = (uint32_t)Core::Write(specVertBuffer, c_maxSpritesPerBatch);
-	vertSpecInfoEntrys[2].size       = sizeof(c_maxSpritesPerBatch);
 
 	vk::SpecializationInfo vertSpecInfo;
 	vertSpecInfo.dataSize      = specVertBuffer.size();
@@ -99,6 +96,10 @@ Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
 
 	// defaults are fine for this one. we dont have a vertex buffer
 	vk::PipelineVertexInputStateCreateInfo vertInputInfo;
+	vertInputInfo.vertexBindingDescriptionCount   = 1;
+	vertInputInfo.pVertexBindingDescriptions      = &a_args.BindingDesc;
+	vertInputInfo.vertexAttributeDescriptionCount = (uint32_t)a_args.AttribDescription.size();
+	vertInputInfo.pVertexAttributeDescriptions    = a_args.AttribDescription.data();
 	vk::PipelineInputAssemblyStateCreateInfo vertAssemblyInfo;
 	vertAssemblyInfo.topology = vk::PrimitiveTopology::eTriangleStrip;
 
@@ -154,19 +155,15 @@ Pipeline::Pipeline(const CreatePipelineArgs& a_args) {
 	samplers.reserve(c_maxTextures);
 	for(int32_t i = 0; i < c_maxTextures; ++i) { samplers.push_back(m_sampler); }
 
-	vk::DescriptorSetLayoutBinding dslBinding[2];
+	vk::DescriptorSetLayoutBinding dslBinding[1];
 	dslBinding[0].binding            = 0;
-	dslBinding[0].descriptorCount    = 1;
-	dslBinding[0].descriptorType     = vk::DescriptorType::eUniformBufferDynamic;
-	dslBinding[0].stageFlags         = vk::ShaderStageFlagBits::eVertex;
-	dslBinding[1].binding            = 1;
-	dslBinding[1].descriptorCount    = c_maxTextures;
-	dslBinding[1].descriptorType     = vk::DescriptorType::eCombinedImageSampler;
-	dslBinding[1].stageFlags         = vk::ShaderStageFlagBits::eFragment;
-	dslBinding[1].pImmutableSamplers = samplers.data();
+	dslBinding[0].descriptorCount    = c_maxTextures;
+	dslBinding[0].descriptorType     = vk::DescriptorType::eCombinedImageSampler;
+	dslBinding[0].stageFlags         = vk::ShaderStageFlagBits::eFragment;
+	dslBinding[0].pImmutableSamplers = samplers.data();
 
 	vk::DescriptorSetLayoutCreateInfo dslInfo;
-	dslInfo.bindingCount = 2;
+	dslInfo.bindingCount = (uint32_t)size(dslBinding);
 	dslInfo.pBindings    = dslBinding;
 
 	m_descriptorSetLayout = device.createDescriptorSetLayout(dslInfo);
