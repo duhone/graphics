@@ -54,7 +54,7 @@ CommandBuffer::CommandBuffer(vk::CommandPool& commandPool, const vk::CommandBuff
     m_CommandPool(&commandPool), m_Buffer(buffer) {}
 
 CommandBuffer::~CommandBuffer() {
-	if(m_CommandPool) { GetDevice().freeCommandBuffers(*m_CommandPool, 1, &m_Buffer); }
+	if(m_CommandPool != nullptr) { GetDevice().freeCommandBuffers(*m_CommandPool, 1, &m_Buffer); }
 	m_CommandPool = nullptr;
 }
 

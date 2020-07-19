@@ -30,7 +30,7 @@ namespace {
 	constexpr uint32_t MajorVersion = 0;    // 64K max
 	constexpr uint32_t MinorVersion = 1;    // 256 max
 	constexpr uint32_t PatchVersion = 1;    // 256 max
-	constexpr uint32_t Version      = (MajorVersion << 16) | (MajorVersion << 8) | (PatchVersion);
+	constexpr uint32_t Version      = (MajorVersion << 16) | (MinorVersion << 8) | (PatchVersion);
 
 	struct Engine {
 		Engine(const EngineSettings& a_settings);
@@ -91,6 +91,7 @@ namespace {
 }    // namespace
 
 Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.ClearColor) {
+	// TODO: Should do some kind of pull down.
 	m_FrameRateDivisor = (a_settings.RefreshRate + 30) / 60;
 
 	vector<string> enabledLayers;
@@ -109,6 +110,7 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	appInfo.apiVersion         = VK_API_VERSION_1_2;
 
 	vector<const char*> enabledLayersPtrs;
+	enabledLayersPtrs.reserve(enabledLayers.size());
 	for(auto& layer : enabledLayers) { enabledLayersPtrs.push_back(layer.c_str()); }
 
 	vk::InstanceCreateInfo createInfo;
@@ -124,8 +126,8 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	Log::Assert(a_settings.Hwnd != nullptr, "Hwnd is required, headless mode not currently supported");
 
 	vk::Win32SurfaceCreateInfoKHR win32Surface;
-	win32Surface.hinstance = (HINSTANCE)a_settings.HInstance;
-	win32Surface.hwnd      = (HWND)a_settings.Hwnd;
+	win32Surface.hinstance = reinterpret_cast<HINSTANCE>(a_settings.HInstance);
+	win32Surface.hwnd      = reinterpret_cast<HWND>(a_settings.Hwnd);
 
 	m_PrimarySurface = m_Instance.createWin32SurfaceKHR(win32Surface);
 
@@ -244,6 +246,7 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	}
 
 	vector<const char*> enabledDeviceLayersPtrs;
+	enabledDeviceLayersPtrs.reserve(enabledDeviceLayers.size());
 	for(auto& layer : enabledDeviceLayers) { enabledDeviceLayersPtrs.push_back(layer.c_str()); }
 
 	auto memProps = selectedDevice.getMemoryProperties();
@@ -331,7 +334,7 @@ Engine::Engine(const EngineSettings& a_settings) : m_clearColor(a_settings.Clear
 	vk::DeviceCreateInfo createLogDevInfo;
 	createLogDevInfo.queueCreateInfoCount    = (int)size(queueInfos);
 	createLogDevInfo.pQueueCreateInfos       = data(queueInfos);
-	createLogDevInfo.pEnabledFeatures        = (vk::PhysicalDeviceFeatures*)&requiredFeatures;
+	createLogDevInfo.pEnabledFeatures        = &requiredFeatures.features;
 	createLogDevInfo.enabledLayerCount       = (uint32_t)enabledDeviceLayersPtrs.size();
 	createLogDevInfo.ppEnabledLayerNames     = enabledDeviceLayersPtrs.data();
 	createLogDevInfo.enabledExtensionCount   = (uint32_t)size(deviceExtensions);
@@ -537,7 +540,7 @@ void Graphics::CreateEngine(const EngineSettings& a_settings) {
 
 void Graphics::Frame() {
 	assert(GetEngine().get());
-	auto engine = GetEngine().get();
+	auto* engine = GetEngine().get();
 
 	engine->ExecutePending();
 

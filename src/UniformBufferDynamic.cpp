@@ -46,10 +46,12 @@ UniformBufferDynamic& UniformBufferDynamic::operator=(UniformBufferDynamic&& a_o
 	m_Buffer       = a_other.m_Buffer;
 	m_BufferMemory = a_other.m_BufferMemory;
 	m_data         = a_other.m_data;
+	m_size         = a_other.m_size;
 
 	a_other.m_Buffer       = vk::Buffer{};
 	a_other.m_BufferMemory = vk::DeviceMemory{};
 	a_other.m_data         = nullptr;
+	a_other.m_size         = 0;
 
 	return *this;
 }
