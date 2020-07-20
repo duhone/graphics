@@ -13,8 +13,8 @@ void Commands::RenderPassBegin(CommandBuffer& a_cmdBuffer, std::optional<glm::ve
 	renderPassInfo.renderArea.extent.width  = GetWindowSize().x;
 	renderPassInfo.renderArea.extent.height = GetWindowSize().y;
 	renderPassInfo.framebuffer              = GetFrameBuffer();
+	vk::ClearValue clearValue;
 	if(a_clearColor.has_value()) {
-		vk::ClearValue clearValue;
 		clearValue.color.setFloat32(
 		    {a_clearColor.value().r, a_clearColor.value().g, a_clearColor.value().b, a_clearColor.value().a});
 		renderPassInfo.clearValueCount = 1;
