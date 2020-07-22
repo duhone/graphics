@@ -54,7 +54,7 @@ set(BUILD
     ${root}/build/build.cmake
 )
 
-add_library(graphics OBJECT  
+add_library(graphics  
 	${PUBLIC_HDRS} 
 	${SRCS} 
 	${SRCS_SHADERS} 
@@ -63,6 +63,10 @@ add_library(graphics OBJECT
 	
 settingsCR(graphics)	
 createPCH(graphics)	
+
+target_precompile_headers(graphics PRIVATE 
+	${root}/src/VulkanWindows.h
+)
 
 target_include_directories(graphics PUBLIC
 	"${root}/inc"
@@ -104,7 +108,7 @@ add_executable(graphics_tests
 )
 
 settingsCR(graphics_tests)	
-createPCH(graphics_tests)
+usePCH(graphics_tests core)
 					
 target_include_directories(graphics_tests PRIVATE
 	"${root}/src"
@@ -180,3 +184,5 @@ add_custom_command(TARGET graphics_tests POST_BUILD
 add_custom_command(TARGET graphics_tests POST_BUILD
     COMMAND $<TARGET_FILE:TextureProcessor> -i ${root}/tests/data/question -o $<TARGET_FILE_DIR:graphics_tests>/question -p
 )
+
+set_property(TARGET graphics_tests APPEND PROPERTY FOLDER tests)
